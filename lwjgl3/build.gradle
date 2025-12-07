@@ -20,7 +20,6 @@ import io.github.fourlastor.construo.Target
 
 sourceSets.main.resources.srcDirs += [ rootProject.file('assets').path ]
 application.mainClass = 'io.github.some_example_name.lwjgl3.Lwjgl3Launcher'
-eclipse.project.name = appName + '-lwjgl3'
 java.sourceCompatibility = 8
 java.targetCompatibility = 8
 if (JavaVersion.current().isJava9Compatible()) {
