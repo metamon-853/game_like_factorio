@@ -21,6 +21,9 @@ public class Main extends ApplicationAdapter {
     // ポーズ状態
     private boolean isPaused;
     
+    // グリッド表示フラグ（デフォルトはオン）
+    private boolean showGrid = true;
+    
     // グリッドのサイズ
     private static final int GRID_WIDTH = 20;
     private static final int GRID_HEIGHT = 15;
@@ -58,6 +61,11 @@ public class Main extends ApplicationAdapter {
             isPaused = !isPaused;
         }
         
+        // ポーズ中にGキーでグリッド表示を切り替え
+        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.G)) {
+            showGrid = !showGrid;
+        }
+        
         // ポーズ中でない場合のみゲームを更新
         if (!isPaused) {
             // プレイヤーを更新
@@ -71,10 +79,12 @@ public class Main extends ApplicationAdapter {
             handleInput();
         }
         
-        // グリッドを描画（Lineモード）
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        drawGrid();
-        shapeRenderer.end();
+        // グリッドを描画（Lineモード）- 表示フラグがオンの場合のみ
+        if (showGrid) {
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            drawGrid();
+            shapeRenderer.end();
+        }
         
         // その他の描画（Filledモード）
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -86,6 +96,9 @@ public class Main extends ApplicationAdapter {
         player.render(shapeRenderer);
         
         shapeRenderer.end();
+        
+        // UI情報を描画（取得アイテム数など）
+        drawUI();
         
         // ポーズメニューを描画（テキスト表示用）
         if (isPaused) {
@@ -102,14 +115,36 @@ public class Main extends ApplicationAdapter {
             return;
         }
         
-        // 方向キーで移動
-        if (Gdx.input.isKeyJustPressed(Input.Keys.UP) || Gdx.input.isKeyJustPressed(Input.Keys.W)) {
+        // 各方向のキーが押されているかチェック
+        boolean up = Gdx.input.isKeyPressed(Input.Keys.UP) || Gdx.input.isKeyPressed(Input.Keys.W);
+        boolean down = Gdx.input.isKeyPressed(Input.Keys.DOWN) || Gdx.input.isKeyPressed(Input.Keys.S);
+        boolean left = Gdx.input.isKeyPressed(Input.Keys.LEFT) || Gdx.input.isKeyPressed(Input.Keys.A);
+        boolean right = Gdx.input.isKeyPressed(Input.Keys.RIGHT) || Gdx.input.isKeyPressed(Input.Keys.D);
+        
+        // 斜め移動を優先的にチェック
+        if (up && right) {
+            // 右上
+            player.move(1, 1);
+        } else if (up && left) {
+            // 左上
+            player.move(-1, 1);
+        } else if (down && right) {
+            // 右下
+            player.move(1, -1);
+        } else if (down && left) {
+            // 左下
+            player.move(-1, -1);
+        } else if (up) {
+            // 上
             player.move(0, 1);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.DOWN) || Gdx.input.isKeyJustPressed(Input.Keys.S)) {
+        } else if (down) {
+            // 下
             player.move(0, -1);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.LEFT) || Gdx.input.isKeyJustPressed(Input.Keys.A)) {
+        } else if (left) {
+            // 左
             player.move(-1, 0);
-        } else if (Gdx.input.isKeyJustPressed(Input.Keys.RIGHT) || Gdx.input.isKeyJustPressed(Input.Keys.D)) {
+        } else if (right) {
+            // 右
             player.move(1, 0);
         }
     }
@@ -131,6 +166,32 @@ public class Main extends ApplicationAdapter {
         for (int y = 0; y <= GRID_HEIGHT; y++) {
             shapeRenderer.line(0, y * tileSize, GRID_WIDTH * tileSize, y * tileSize);
         }
+    }
+    
+    /**
+     * UI情報（取得アイテム数など）を描画します。
+     */
+    private void drawUI() {
+        batch.begin();
+        
+        // フォントサイズをUI用に調整
+        font.getData().setScale(1.5f);
+        font.setColor(Color.WHITE);
+        
+        // 取得したアイテム数を表示
+        String itemText = "Items: " + itemManager.getCollectedCount();
+        float padding = 20;
+        font.draw(batch, itemText, padding, screenHeight - padding);
+        
+        // 現在のアイテム数も表示（オプション）
+        String currentItemText = "On Map: " + itemManager.getItemCount();
+        GlyphLayout layout = new GlyphLayout(font, itemText);
+        font.draw(batch, currentItemText, padding, screenHeight - padding - layout.height - 10);
+        
+        // フォントサイズを元に戻す
+        font.getData().setScale(2.0f);
+        
+        batch.end();
     }
     
     /**
@@ -160,6 +221,14 @@ public class Main extends ApplicationAdapter {
         float instructionX = (screenWidth - instructionLayout.width) / 2;
         float instructionY = screenHeight / 2 - 40;
         font.draw(batch, instructionText, instructionX, instructionY);
+        
+        // グリッド表示切り替えの説明
+        String gridText = "Press G to toggle grid: " + (showGrid ? "ON" : "OFF");
+        GlyphLayout gridLayout = new GlyphLayout(font, gridText);
+        float gridX = (screenWidth - gridLayout.width) / 2;
+        float gridY = screenHeight / 2 - 80;
+        font.draw(batch, gridText, gridX, gridY);
+        
         font.getData().setScale(2.0f); // 元に戻す
         
         batch.end();
