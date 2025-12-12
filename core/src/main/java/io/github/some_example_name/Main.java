@@ -98,6 +98,11 @@ public class Main extends ApplicationAdapter {
             showGrid = !showGrid;
         }
         
+        // ポーズ中にQキーでゲーム終了
+        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
+            Gdx.app.exit();
+        }
+        
         // ポーズ中でない場合のみゲームを更新
         if (!isPaused) {
             // プレイヤーを更新
@@ -268,6 +273,13 @@ public class Main extends ApplicationAdapter {
         float gridX = (VIEWPORT_WIDTH - gridLayout.width) / 2;
         float gridY = VIEWPORT_HEIGHT / 2 - 80;
         font.draw(batch, gridText, gridX, gridY);
+        
+        // ゲーム終了の説明
+        String quitText = "Press Q to quit";
+        GlyphLayout quitLayout = new GlyphLayout(font, quitText);
+        float quitX = (VIEWPORT_WIDTH - quitLayout.width) / 2;
+        float quitY = VIEWPORT_HEIGHT / 2 - 120;
+        font.draw(batch, quitText, quitX, quitY);
         
         font.getData().setScale(2.0f); // 元に戻す
         
