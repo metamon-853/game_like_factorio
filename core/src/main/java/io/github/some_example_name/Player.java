@@ -27,18 +27,12 @@ public class Player {
     private int targetTileX;
     private int targetTileY;
     
-    // グリッドの境界
-    private int gridWidth;
-    private int gridHeight;
-    
-    public Player(int startTileX, int startTileY, int gridWidth, int gridHeight) {
+    public Player(int startTileX, int startTileY) {
         this.tileX = startTileX;
         this.tileY = startTileY;
         this.pixelX = startTileX * TILE_SIZE;
         this.pixelY = startTileY * TILE_SIZE;
         this.isMoving = false;
-        this.gridWidth = gridWidth;
-        this.gridHeight = gridHeight;
     }
     
     /**
@@ -84,10 +78,7 @@ public class Player {
         int newTileX = tileX + dx;
         int newTileY = tileY + dy;
         
-        // 境界チェック：グリッドの範囲外に出ないようにする
-        if (newTileX < 0 || newTileX >= gridWidth || newTileY < 0 || newTileY >= gridHeight) {
-            return false; // 範囲外への移動は拒否
-        }
+        // 無限マップなので境界チェックなし
         
         targetTileX = newTileX;
         targetTileY = newTileY;

@@ -34,13 +34,9 @@ public class Main extends ApplicationAdapter {
     // グリッド表示フラグ（デフォルトはオン）
     private boolean showGrid = true;
     
-    // グリッドのサイズ
-    private static final int GRID_WIDTH = 20;
-    private static final int GRID_HEIGHT = 15;
-    
     // ゲームの論理的な画面サイズ（ピクセル単位）
-    private static final float VIEWPORT_WIDTH = GRID_WIDTH * Player.TILE_SIZE;
-    private static final float VIEWPORT_HEIGHT = GRID_HEIGHT * Player.TILE_SIZE;
+    private static final float VIEWPORT_WIDTH = 20 * Player.TILE_SIZE;
+    private static final float VIEWPORT_HEIGHT = 15 * Player.TILE_SIZE;
     
     // 画面サイズ
     private int screenWidth;
@@ -66,10 +62,10 @@ public class Main extends ApplicationAdapter {
         font.getData().setScale(2.0f); // フォントサイズを大きく
         font.setColor(Color.WHITE);
         
-        // プレイヤーを画面中央に配置
-        player = new Player(GRID_WIDTH / 2, GRID_HEIGHT / 2, GRID_WIDTH, GRID_HEIGHT);
-        // アイテムマネージャーを初期化
-        itemManager = new ItemManager(GRID_WIDTH, GRID_HEIGHT);
+        // プレイヤーを原点に配置（無限マップなので任意の位置から開始可能）
+        player = new Player(0, 0);
+        // アイテムマネージャーを初期化（無限マップ対応）
+        itemManager = new ItemManager();
         // ポーズ状態を初期化
         isPaused = false;
         // 画面サイズを取得
@@ -120,8 +116,8 @@ public class Main extends ApplicationAdapter {
             float deltaTime = Gdx.graphics.getDeltaTime();
             player.update(deltaTime);
             
-            // アイテムマネージャーを更新
-            itemManager.update(deltaTime, player);
+            // アイテムマネージャーを更新（カメラの視野範囲を渡す）
+            itemManager.update(deltaTime, player, camera);
             
             // キーボード入力処理
             handleInput();
@@ -210,21 +206,36 @@ public class Main extends ApplicationAdapter {
     }
     
     /**
-     * グリッドを描画します。
+     * グリッドを描画します（カメラの視野範囲に基づいて動的に生成）。
      */
     private void drawGrid() {
         shapeRenderer.setColor(Color.DARK_GRAY);
         
         int tileSize = Player.TILE_SIZE;
         
+        // カメラの視野範囲を計算
+        float cameraLeft = camera.position.x - camera.viewportWidth / 2;
+        float cameraRight = camera.position.x + camera.viewportWidth / 2;
+        float cameraBottom = camera.position.y - camera.viewportHeight / 2;
+        float cameraTop = camera.position.y + camera.viewportHeight / 2;
+        
+        // マージンを追加して少し広めに描画（見切れを防ぐ）
+        float margin = tileSize * 2;
+        int startTileX = (int)Math.floor((cameraLeft - margin) / tileSize);
+        int endTileX = (int)Math.ceil((cameraRight + margin) / tileSize);
+        int startTileY = (int)Math.floor((cameraBottom - margin) / tileSize);
+        int endTileY = (int)Math.ceil((cameraTop + margin) / tileSize);
+        
         // 縦線を描画
-        for (int x = 0; x <= GRID_WIDTH; x++) {
-            shapeRenderer.line(x * tileSize, 0, x * tileSize, GRID_HEIGHT * tileSize);
+        for (int x = startTileX; x <= endTileX; x++) {
+            float lineX = x * tileSize;
+            shapeRenderer.line(lineX, startTileY * tileSize, lineX, endTileY * tileSize);
         }
         
         // 横線を描画
-        for (int y = 0; y <= GRID_HEIGHT; y++) {
-            shapeRenderer.line(0, y * tileSize, GRID_WIDTH * tileSize, y * tileSize);
+        for (int y = startTileY; y <= endTileY; y++) {
+            float lineY = y * tileSize;
+            shapeRenderer.line(startTileX * tileSize, lineY, endTileX * tileSize, lineY);
         }
     }
     
