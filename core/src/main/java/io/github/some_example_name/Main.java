@@ -34,21 +34,42 @@ public class Main extends ApplicationAdapter {
     // グリッド表示フラグ（デフォルトはオン）
     private boolean showGrid = true;
     
-    // ゲームの論理的な画面サイズ（ピクセル単位）
-    private static final float VIEWPORT_WIDTH = 20 * Player.TILE_SIZE;
-    private static final float VIEWPORT_HEIGHT = 15 * Player.TILE_SIZE;
+    // ゲームの論理的な画面サイズ（ピクセル単位）- 基準サイズ
+    private static final float BASE_VIEWPORT_SIZE = 20 * Player.TILE_SIZE;
     
     // 画面サイズ
     private int screenWidth;
     private int screenHeight;
     
+    // 現在のビューポートサイズ（正方形を保つため動的に調整）
+    private float viewportWidth;
+    private float viewportHeight;
+    
     @Override
     public void create() {
+        // 画面サイズを取得
+        screenWidth = Gdx.graphics.getWidth();
+        screenHeight = Gdx.graphics.getHeight();
+        
+        // 画面のアスペクト比を計算
+        float screenAspect = (float)screenWidth / (float)screenHeight;
+        
+        // 正方形の升を保つため、画面のアスペクト比に応じてビューポートサイズを調整
+        if (screenAspect > 1.0f) {
+            // 横長の画面：高さを基準にして幅を調整
+            viewportHeight = BASE_VIEWPORT_SIZE;
+            viewportWidth = BASE_VIEWPORT_SIZE * screenAspect;
+        } else {
+            // 縦長の画面：幅を基準にして高さを調整
+            viewportWidth = BASE_VIEWPORT_SIZE;
+            viewportHeight = BASE_VIEWPORT_SIZE / screenAspect;
+        }
+        
         // カメラとビューポートを初期化
         camera = new OrthographicCamera();
-        camera.setToOrtho(false, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
-        viewport = new StretchViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, camera);
-        viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        camera.setToOrtho(false, viewportWidth, viewportHeight);
+        viewport = new StretchViewport(viewportWidth, viewportHeight, camera);
+        viewport.update(screenWidth, screenHeight);
         camera.update();
         
         // UI用のカメラを初期化（画面座標系）
@@ -68,9 +89,6 @@ public class Main extends ApplicationAdapter {
         itemManager = new ItemManager();
         // ポーズ状態を初期化
         isPaused = false;
-        // 画面サイズを取得
-        screenWidth = Gdx.graphics.getWidth();
-        screenHeight = Gdx.graphics.getHeight();
         
         // カメラをプレイヤーの初期位置に設定
         float playerCenterX = player.getPixelX() + Player.TILE_SIZE / 2;
@@ -326,14 +344,16 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void resize(int width, int height) {
+        screenWidth = width;
+        screenHeight = height;
+        
+        // ExtendViewportは自動的にアスペクト比を調整します
         viewport.update(width, height);
         camera.update();
         
         // UI用カメラも更新
         uiCamera.setToOrtho(false, width, height);
         uiCamera.update();
-        screenWidth = width;
-        screenHeight = height;
     }
     
     @Override
