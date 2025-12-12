@@ -4,11 +4,14 @@ import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
 import com.badlogic.gdx.graphics.Color;
+import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
+import com.badlogic.gdx.utils.viewport.StretchViewport;
+import com.badlogic.gdx.utils.viewport.Viewport;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
@@ -17,6 +20,10 @@ public class Main extends ApplicationAdapter {
     private BitmapFont font;
     private Player player;
     private ItemManager itemManager;
+    
+    // カメラとビューポート
+    private OrthographicCamera camera;
+    private Viewport viewport;
     
     // ポーズ状態
     private boolean isPaused;
@@ -28,12 +35,23 @@ public class Main extends ApplicationAdapter {
     private static final int GRID_WIDTH = 20;
     private static final int GRID_HEIGHT = 15;
     
+    // ゲームの論理的な画面サイズ（ピクセル単位）
+    private static final float VIEWPORT_WIDTH = GRID_WIDTH * Player.TILE_SIZE;
+    private static final float VIEWPORT_HEIGHT = GRID_HEIGHT * Player.TILE_SIZE;
+    
     // 画面サイズ
     private int screenWidth;
     private int screenHeight;
     
     @Override
     public void create() {
+        // カメラとビューポートを初期化
+        camera = new OrthographicCamera();
+        camera.setToOrtho(false, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+        viewport = new StretchViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, camera);
+        viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        camera.update();
+        
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
         font = new BitmapFont();
@@ -53,6 +71,20 @@ public class Main extends ApplicationAdapter {
 
     @Override
     public void render() {
+        // 画面サイズが変更された場合、ビューポートを更新
+        if (screenWidth != Gdx.graphics.getWidth() || screenHeight != Gdx.graphics.getHeight()) {
+            screenWidth = Gdx.graphics.getWidth();
+            screenHeight = Gdx.graphics.getHeight();
+            viewport.update(screenWidth, screenHeight);
+            camera.update();
+        }
+        
+        // ビューポートを適用
+        viewport.apply();
+        
+        // カメラを更新
+        camera.update();
+        
         // 画面をクリア
         ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
         
@@ -78,6 +110,10 @@ public class Main extends ApplicationAdapter {
             // キーボード入力処理
             handleInput();
         }
+        
+        // カメラのプロジェクション行列を設定
+        shapeRenderer.setProjectionMatrix(camera.combined);
+        batch.setProjectionMatrix(camera.combined);
         
         // グリッドを描画（Lineモード）- 表示フラグがオンの場合のみ
         if (showGrid) {
@@ -172,21 +208,23 @@ public class Main extends ApplicationAdapter {
      * UI情報（取得アイテム数など）を描画します。
      */
     private void drawUI() {
+        // UIは画面座標系で描画するため、ビューポートを無効化
+        batch.setProjectionMatrix(camera.combined);
         batch.begin();
         
         // フォントサイズをUI用に調整
         font.getData().setScale(1.5f);
         font.setColor(Color.WHITE);
         
-        // 取得したアイテム数を表示
+        // 取得したアイテム数を表示（ビューポート座標系で）
         String itemText = "Items: " + itemManager.getCollectedCount();
         float padding = 20;
-        font.draw(batch, itemText, padding, screenHeight - padding);
+        font.draw(batch, itemText, padding, VIEWPORT_HEIGHT - padding);
         
         // 現在のアイテム数も表示（オプション）
         String currentItemText = "On Map: " + itemManager.getItemCount();
         GlyphLayout layout = new GlyphLayout(font, itemText);
-        font.draw(batch, currentItemText, padding, screenHeight - padding - layout.height - 10);
+        font.draw(batch, currentItemText, padding, VIEWPORT_HEIGHT - padding - layout.height - 10);
         
         // フォントサイズを元に戻す
         font.getData().setScale(2.0f);
@@ -198,35 +236,37 @@ public class Main extends ApplicationAdapter {
      * ポーズメニューを描画します。
      */
     private void drawPauseMenu() {
-        // 半透明の背景を描画
+        // 半透明の背景を描画（ビューポート座標系で）
+        shapeRenderer.setProjectionMatrix(camera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 0, 0, 0.6f);
-        shapeRenderer.rect(0, 0, screenWidth, screenHeight);
+        shapeRenderer.rect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
         shapeRenderer.end();
         
         // テキストを描画
+        batch.setProjectionMatrix(camera.combined);
         batch.begin();
         
         // "PAUSED" テキストを中央に表示
         String pausedText = "PAUSED";
         GlyphLayout pausedLayout = new GlyphLayout(font, pausedText);
-        float pausedX = (screenWidth - pausedLayout.width) / 2;
-        float pausedY = screenHeight / 2 + 40;
+        float pausedX = (VIEWPORT_WIDTH - pausedLayout.width) / 2;
+        float pausedY = VIEWPORT_HEIGHT / 2 + 40;
         font.draw(batch, pausedText, pausedX, pausedY);
         
         // 操作説明を表示
         font.getData().setScale(1.2f);
         String instructionText = "Press ESC to resume";
         GlyphLayout instructionLayout = new GlyphLayout(font, instructionText);
-        float instructionX = (screenWidth - instructionLayout.width) / 2;
-        float instructionY = screenHeight / 2 - 40;
+        float instructionX = (VIEWPORT_WIDTH - instructionLayout.width) / 2;
+        float instructionY = VIEWPORT_HEIGHT / 2 - 40;
         font.draw(batch, instructionText, instructionX, instructionY);
         
         // グリッド表示切り替えの説明
         String gridText = "Press G to toggle grid: " + (showGrid ? "ON" : "OFF");
         GlyphLayout gridLayout = new GlyphLayout(font, gridText);
-        float gridX = (screenWidth - gridLayout.width) / 2;
-        float gridY = screenHeight / 2 - 80;
+        float gridX = (VIEWPORT_WIDTH - gridLayout.width) / 2;
+        float gridY = VIEWPORT_HEIGHT / 2 - 80;
         font.draw(batch, gridText, gridX, gridY);
         
         font.getData().setScale(2.0f); // 元に戻す
@@ -234,6 +274,12 @@ public class Main extends ApplicationAdapter {
         batch.end();
     }
 
+    @Override
+    public void resize(int width, int height) {
+        viewport.update(width, height);
+        camera.update();
+    }
+    
     @Override
     public void dispose() {
         shapeRenderer.dispose();
