@@ -67,6 +67,12 @@ public class Main extends ApplicationAdapter {
         // 画面サイズを取得
         screenWidth = Gdx.graphics.getWidth();
         screenHeight = Gdx.graphics.getHeight();
+        
+        // カメラをプレイヤーの初期位置に設定
+        float playerCenterX = player.getPixelX() + Player.TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.TILE_SIZE / 2;
+        camera.position.set(playerCenterX, playerCenterY, 0);
+        camera.update();
     }
 
     @Override
@@ -81,9 +87,6 @@ public class Main extends ApplicationAdapter {
         
         // ビューポートを適用
         viewport.apply();
-        
-        // カメラを更新
-        camera.update();
         
         // 画面をクリア
         ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
@@ -114,7 +117,15 @@ public class Main extends ApplicationAdapter {
             
             // キーボード入力処理
             handleInput();
+            
+            // カメラをプレイヤーの位置に追従させる
+            float playerCenterX = player.getPixelX() + Player.TILE_SIZE / 2;
+            float playerCenterY = player.getPixelY() + Player.TILE_SIZE / 2;
+            camera.position.set(playerCenterX, playerCenterY, 0);
         }
+        
+        // カメラを更新
+        camera.update();
         
         // カメラのプロジェクション行列を設定
         shapeRenderer.setProjectionMatrix(camera.combined);
