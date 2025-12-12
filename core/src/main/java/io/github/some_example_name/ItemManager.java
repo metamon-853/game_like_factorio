@@ -141,16 +141,23 @@ public class ItemManager {
     
     /**
      * プレイヤーとアイテムの衝突判定を行います。
+     * プレイヤーの中心がアイテムのマップ升内にある場合、アイテムを取得します。
+     * 移動中も判定を行うため、より正確に衝突を検出できます。
      * @param player プレイヤー
      */
     private void checkCollisions(Player player) {
-        int playerTileX = player.getTileX();
-        int playerTileY = player.getTileY();
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int playerMapTileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int playerMapTileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
         
         for (Item item : items) {
             if (!item.isCollected() && 
-                item.getTileX() == playerTileX && 
-                item.getTileY() == playerTileY) {
+                item.getTileX() == playerMapTileX && 
+                item.getTileY() == playerMapTileY) {
                 item.collect();
                 collectedCount++;
             }

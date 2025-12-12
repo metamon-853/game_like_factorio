@@ -91,8 +91,8 @@ public class Main extends ApplicationAdapter {
         isPaused = false;
         
         // カメラをプレイヤーの初期位置に設定
-        float playerCenterX = player.getPixelX() + Player.TILE_SIZE / 2;
-        float playerCenterY = player.getPixelY() + Player.TILE_SIZE / 2;
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
         camera.position.set(playerCenterX, playerCenterY, 0);
         camera.update();
     }
@@ -141,8 +141,8 @@ public class Main extends ApplicationAdapter {
             handleInput();
             
             // カメラをプレイヤーの位置に追従させる
-            float playerCenterX = player.getPixelX() + Player.TILE_SIZE / 2;
-            float playerCenterY = player.getPixelY() + Player.TILE_SIZE / 2;
+            float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+            float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
             camera.position.set(playerCenterX, playerCenterY, 0);
         }
         
@@ -225,11 +225,11 @@ public class Main extends ApplicationAdapter {
     
     /**
      * グリッドを描画します（カメラの視野範囲に基づいて動的に生成）。
+     * マップ升（太い線）とプレイヤー升（細い線）の両方を描画します。
      */
     private void drawGrid() {
-        shapeRenderer.setColor(Color.DARK_GRAY);
-        
-        int tileSize = Player.TILE_SIZE;
+        int mapTileSize = Player.MAP_TILE_SIZE;
+        int playerTileSize = Player.PLAYER_TILE_SIZE;
         
         // カメラの視野範囲を計算
         float cameraLeft = camera.position.x - camera.viewportWidth / 2;
@@ -238,22 +238,46 @@ public class Main extends ApplicationAdapter {
         float cameraTop = camera.position.y + camera.viewportHeight / 2;
         
         // マージンを追加して少し広めに描画（見切れを防ぐ）
-        float margin = tileSize * 2;
-        int startTileX = (int)Math.floor((cameraLeft - margin) / tileSize);
-        int endTileX = (int)Math.ceil((cameraRight + margin) / tileSize);
-        int startTileY = (int)Math.floor((cameraBottom - margin) / tileSize);
-        int endTileY = (int)Math.ceil((cameraTop + margin) / tileSize);
+        float margin = mapTileSize * 2;
         
-        // 縦線を描画
-        for (int x = startTileX; x <= endTileX; x++) {
-            float lineX = x * tileSize;
-            shapeRenderer.line(lineX, startTileY * tileSize, lineX, endTileY * tileSize);
+        // まず、プレイヤー升の細かいグリッドを描画（薄い色）
+        shapeRenderer.setColor(0.2f, 0.2f, 0.2f, 1f); // 薄いグレー
+        
+        int startPlayerTileX = (int)Math.floor((cameraLeft - margin) / playerTileSize);
+        int endPlayerTileX = (int)Math.ceil((cameraRight + margin) / playerTileSize);
+        int startPlayerTileY = (int)Math.floor((cameraBottom - margin) / playerTileSize);
+        int endPlayerTileY = (int)Math.ceil((cameraTop + margin) / playerTileSize);
+        
+        // プレイヤー升の縦線を描画
+        for (int x = startPlayerTileX; x <= endPlayerTileX; x++) {
+            float lineX = x * playerTileSize;
+            shapeRenderer.line(lineX, startPlayerTileY * playerTileSize, lineX, endPlayerTileY * playerTileSize);
         }
         
-        // 横線を描画
-        for (int y = startTileY; y <= endTileY; y++) {
-            float lineY = y * tileSize;
-            shapeRenderer.line(startTileX * tileSize, lineY, endTileX * tileSize, lineY);
+        // プレイヤー升の横線を描画
+        for (int y = startPlayerTileY; y <= endPlayerTileY; y++) {
+            float lineY = y * playerTileSize;
+            shapeRenderer.line(startPlayerTileX * playerTileSize, lineY, endPlayerTileX * playerTileSize, lineY);
+        }
+        
+        // 次に、マップ升の太いグリッドを描画（濃い色）
+        shapeRenderer.setColor(Color.DARK_GRAY);
+        
+        int startMapTileX = (int)Math.floor((cameraLeft - margin) / mapTileSize);
+        int endMapTileX = (int)Math.ceil((cameraRight + margin) / mapTileSize);
+        int startMapTileY = (int)Math.floor((cameraBottom - margin) / mapTileSize);
+        int endMapTileY = (int)Math.ceil((cameraTop + margin) / mapTileSize);
+        
+        // マップ升の縦線を描画
+        for (int x = startMapTileX; x <= endMapTileX; x++) {
+            float lineX = x * mapTileSize;
+            shapeRenderer.line(lineX, startMapTileY * mapTileSize, lineX, endMapTileY * mapTileSize);
+        }
+        
+        // マップ升の横線を描画
+        for (int y = startMapTileY; y <= endMapTileY; y++) {
+            float lineY = y * mapTileSize;
+            shapeRenderer.line(startMapTileX * mapTileSize, lineY, endMapTileX * mapTileSize, lineY);
         }
     }
     
