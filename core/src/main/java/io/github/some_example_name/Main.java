@@ -25,6 +25,9 @@ public class Main extends ApplicationAdapter {
     private OrthographicCamera camera;
     private Viewport viewport;
     
+    // UI用のカメラ（画面座標系）
+    private OrthographicCamera uiCamera;
+    
     // ポーズ状態
     private boolean isPaused;
     
@@ -51,6 +54,11 @@ public class Main extends ApplicationAdapter {
         viewport = new StretchViewport(VIEWPORT_WIDTH, VIEWPORT_HEIGHT, camera);
         viewport.update(Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
         camera.update();
+        
+        // UI用のカメラを初期化（画面座標系）
+        uiCamera = new OrthographicCamera();
+        uiCamera.setToOrtho(false, Gdx.graphics.getWidth(), Gdx.graphics.getHeight());
+        uiCamera.update();
         
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
@@ -224,23 +232,30 @@ public class Main extends ApplicationAdapter {
      * UI情報（取得アイテム数など）を描画します。
      */
     private void drawUI() {
-        // UIは画面座標系で描画するため、ビューポートを無効化
-        batch.setProjectionMatrix(camera.combined);
+        // UIは画面座標系で描画（ちらつきを防ぐため）
+        batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
         // フォントサイズをUI用に調整
-        font.getData().setScale(1.5f);
+        font.getData().setScale(2.5f);
         font.setColor(Color.WHITE);
         
-        // 取得したアイテム数を表示（ビューポート座標系で）
-        String itemText = "Items: " + itemManager.getCollectedCount();
+        // 画面右上の位置を計算（画面座標系）
         float padding = 20;
-        font.draw(batch, itemText, padding, VIEWPORT_HEIGHT - padding);
+        float rightX = screenWidth - padding;
+        float topY = screenHeight - padding;
         
-        // 現在のアイテム数も表示（オプション）
+        // 取得したアイテム数を表示（右上に配置）
+        String itemText = "Items: " + itemManager.getCollectedCount();
+        GlyphLayout itemLayout = new GlyphLayout(font, itemText);
+        float itemX = rightX - itemLayout.width;
+        font.draw(batch, itemText, itemX, topY);
+        
+        // 現在のアイテム数も表示（その下に配置）
         String currentItemText = "On Map: " + itemManager.getItemCount();
-        GlyphLayout layout = new GlyphLayout(font, itemText);
-        font.draw(batch, currentItemText, padding, VIEWPORT_HEIGHT - padding - layout.height - 10);
+        GlyphLayout currentLayout = new GlyphLayout(font, currentItemText);
+        float currentX = rightX - currentLayout.width;
+        font.draw(batch, currentItemText, currentX, topY - itemLayout.height - 10);
         
         // フォントサイズを元に戻す
         font.getData().setScale(2.0f);
@@ -301,6 +316,12 @@ public class Main extends ApplicationAdapter {
     public void resize(int width, int height) {
         viewport.update(width, height);
         camera.update();
+        
+        // UI用カメラも更新
+        uiCamera.setToOrtho(false, width, height);
+        uiCamera.update();
+        screenWidth = width;
+        screenHeight = height;
     }
     
     @Override
