@@ -267,44 +267,45 @@ public class Main extends ApplicationAdapter {
      * ポーズメニューを描画します。
      */
     private void drawPauseMenu() {
-        // 半透明の背景を描画（ビューポート座標系で）
-        shapeRenderer.setProjectionMatrix(camera.combined);
+        // 半透明の背景を描画（画面座標系で）
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0, 0, 0, 0.6f);
-        shapeRenderer.rect(0, 0, VIEWPORT_WIDTH, VIEWPORT_HEIGHT);
+        shapeRenderer.rect(0, 0, screenWidth, screenHeight);
         shapeRenderer.end();
         
-        // テキストを描画
-        batch.setProjectionMatrix(camera.combined);
+        // テキストを描画（画面座標系で）
+        batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
-        // "PAUSED" テキストを中央に表示
+        // "PAUSED" テキストを中央に表示（大きく）
+        font.getData().setScale(3.0f);
         String pausedText = "PAUSED";
         GlyphLayout pausedLayout = new GlyphLayout(font, pausedText);
-        float pausedX = (VIEWPORT_WIDTH - pausedLayout.width) / 2;
-        float pausedY = VIEWPORT_HEIGHT / 2 + 40;
+        float pausedX = (screenWidth - pausedLayout.width) / 2;
+        float pausedY = screenHeight / 2 + 60;
         font.draw(batch, pausedText, pausedX, pausedY);
         
-        // 操作説明を表示
-        font.getData().setScale(1.2f);
+        // 操作説明を表示（大きく）
+        font.getData().setScale(2.0f);
         String instructionText = "Press ESC to resume";
         GlyphLayout instructionLayout = new GlyphLayout(font, instructionText);
-        float instructionX = (VIEWPORT_WIDTH - instructionLayout.width) / 2;
-        float instructionY = VIEWPORT_HEIGHT / 2 - 40;
+        float instructionX = (screenWidth - instructionLayout.width) / 2;
+        float instructionY = screenHeight / 2 - 40;
         font.draw(batch, instructionText, instructionX, instructionY);
         
         // グリッド表示切り替えの説明
         String gridText = "Press G to toggle grid: " + (showGrid ? "ON" : "OFF");
         GlyphLayout gridLayout = new GlyphLayout(font, gridText);
-        float gridX = (VIEWPORT_WIDTH - gridLayout.width) / 2;
-        float gridY = VIEWPORT_HEIGHT / 2 - 80;
+        float gridX = (screenWidth - gridLayout.width) / 2;
+        float gridY = screenHeight / 2 - 100;
         font.draw(batch, gridText, gridX, gridY);
         
         // ゲーム終了の説明
         String quitText = "Press Q to quit";
         GlyphLayout quitLayout = new GlyphLayout(font, quitText);
-        float quitX = (VIEWPORT_WIDTH - quitLayout.width) / 2;
-        float quitY = VIEWPORT_HEIGHT / 2 - 120;
+        float quitX = (screenWidth - quitLayout.width) / 2;
+        float quitY = screenHeight / 2 - 160;
         font.draw(batch, quitText, quitX, quitY);
         
         font.getData().setScale(2.0f); // 元に戻す
