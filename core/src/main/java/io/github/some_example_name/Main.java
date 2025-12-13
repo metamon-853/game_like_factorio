@@ -1018,18 +1018,18 @@ public class Main extends ApplicationAdapter {
             float buttonWidth = 200;
             float buttonHeight = 65;
             float centerX = screenWidth / 2;
-            float centerY = screenHeight / 2;
-            float buttonSpacing = 100;
+            float centerY = screenHeight / 2 - 50;
+            float buttonSpacing = 120;
             
-            // Yesボタン
-            float yesButtonX = centerX - buttonSpacing / 2 - buttonWidth / 2;
-            float yesButtonY = centerY - 50;
-            Button yesButton = new Button(yesButtonX, yesButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            // Yesボタン（左側）
+            float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
+            float yesButtonY = centerY - buttonHeight / 2;
+            Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
             
-            // Noボタン
-            float noButtonX = centerX + buttonSpacing / 2 - buttonWidth / 2;
-            float noButtonY = centerY - 50;
-            Button noButton = new Button(noButtonX, noButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            // Noボタン（右側）
+            float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
+            float noButtonY = centerY - buttonHeight / 2;
+            Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
             
             if (yesButton.contains(mouseX, mouseY)) {
                 Gdx.app.exit();
@@ -1047,11 +1047,7 @@ public class Main extends ApplicationAdapter {
         float mouseX = Gdx.input.getX();
         float mouseY = screenHeight - Gdx.input.getY();
         
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
-        
         // ダイアログの背景を描画
-        batch.end();
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
@@ -1068,6 +1064,8 @@ public class Main extends ApplicationAdapter {
         shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
         shapeRenderer.end();
         
+        // テキストとボタンを描画
+        batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
         // メッセージテキストを描画
@@ -1083,21 +1081,21 @@ public class Main extends ApplicationAdapter {
         float buttonWidth = 200;
         float buttonHeight = 65;
         float centerX = screenWidth / 2;
-        float centerY = screenHeight / 2;
-        float buttonSpacing = 100;
+        float centerY = screenHeight / 2 - 50;
+        float buttonSpacing = 120;
         
-        // Yesボタンを描画
-        float yesButtonX = centerX - buttonSpacing / 2 - buttonWidth / 2;
-        float yesButtonY = centerY - 50;
-        Button yesButton = new Button(yesButtonX, yesButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(yesButtonX, yesButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        // Yesボタンを描画（左側）
+        float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
+        float yesButtonY = centerY - buttonHeight / 2;
+        Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
+        drawButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, 
                    "Yes", yesButton.contains(mouseX, mouseY));
         
-        // Noボタンを描画
-        float noButtonX = centerX + buttonSpacing / 2 - buttonWidth / 2;
-        float noButtonY = centerY - 50;
-        Button noButton = new Button(noButtonX, noButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(noButtonX, noButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        // Noボタンを描画（右側）
+        float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
+        float noButtonY = centerY - buttonHeight / 2;
+        Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
+        drawButton(noButtonX, noButtonY, buttonWidth, buttonHeight, 
                    "No", noButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f); // 元に戻す
