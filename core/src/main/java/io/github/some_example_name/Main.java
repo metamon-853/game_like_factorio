@@ -377,10 +377,18 @@ public class Main extends ApplicationAdapter {
         font.getData().setScale(2.5f);
         font.setColor(Color.WHITE);
         
-        // 画面右上の位置を計算（画面座標系）
+        // 画面左上の位置を計算（画面座標系）
         float padding = 20;
-        float rightX = screenWidth - padding;
+        float leftX = padding;
         float topY = screenHeight - padding;
+        
+        // FPSを表示（左上に配置）
+        int fps = Gdx.graphics.getFramesPerSecond();
+        String fpsText = "FPS: " + fps;
+        font.draw(batch, fpsText, leftX, topY);
+        
+        // 画面右上の位置を計算（画面座標系）
+        float rightX = screenWidth - padding;
         
         // 取得したアイテム数を表示（右上に配置）
         String itemText = "Items: " + itemManager.getCollectedCount();
