@@ -47,7 +47,6 @@ public class Main extends ApplicationAdapter {
     
     // ミュート状態
     private boolean isMuted = false;
-    private float volumeBeforeMute = 1.0f; // ミュート前の音量を保存
     
     // スライダー関連
     private boolean isDraggingSlider = false; // スライダーをドラッグ中かどうか
@@ -559,7 +558,6 @@ public class Main extends ApplicationAdapter {
         }
         
         masterVolume = newVolume;
-        volumeBeforeMute = masterVolume;
         updateMasterVolume();
     }
     
@@ -649,23 +647,6 @@ public class Main extends ApplicationAdapter {
         shapeRenderer.end();
         
         batch.begin();
-    }
-    
-    /**
-     * ミュート状態をトグルします。
-     */
-    private void toggleMute() {
-        if (isMuted) {
-            // ミュート解除：保存していた音量を復元
-            isMuted = false;
-            masterVolume = volumeBeforeMute;
-        } else {
-            // ミュート：現在の音量を保存してから0にする
-            volumeBeforeMute = masterVolume;
-            masterVolume = 0.0f;
-            isMuted = true;
-        }
-        updateMasterVolume();
     }
     
     /**
