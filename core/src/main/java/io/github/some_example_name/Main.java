@@ -39,7 +39,8 @@ public class Main extends ApplicationAdapter {
         MAIN_MENU,
         SOUND_MENU,
         SAVE_MENU,
-        LOAD_MENU
+        LOAD_MENU,
+        QUIT_CONFIRM
     }
     private MenuState currentMenuState = MenuState.MAIN_MENU;
     
@@ -298,7 +299,8 @@ public class Main extends ApplicationAdapter {
                     inputText.setLength(0);
                 } else if (currentMenuState == MenuState.SOUND_MENU || 
                           currentMenuState == MenuState.SAVE_MENU || 
-                          currentMenuState == MenuState.LOAD_MENU) {
+                          currentMenuState == MenuState.LOAD_MENU ||
+                          currentMenuState == MenuState.QUIT_CONFIRM) {
                     // サブメニューからメインメニューに戻る
                     currentMenuState = MenuState.MAIN_MENU;
                 } else {
@@ -331,6 +333,8 @@ public class Main extends ApplicationAdapter {
                 handleSaveMenuClick();
             } else if (currentMenuState == MenuState.LOAD_MENU) {
                 handleLoadMenuClick();
+            } else if (currentMenuState == MenuState.QUIT_CONFIRM) {
+                handleQuitConfirmClick();
             }
         }
         
@@ -393,6 +397,8 @@ public class Main extends ApplicationAdapter {
                 drawSaveMenu();
             } else if (currentMenuState == MenuState.LOAD_MENU) {
                 drawLoadMenu();
+            } else if (currentMenuState == MenuState.QUIT_CONFIRM) {
+                drawQuitConfirmDialog();
             }
         }
     }
@@ -589,7 +595,7 @@ public class Main extends ApplicationAdapter {
             } else if (soundButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.SOUND_MENU;
             } else if (quitButton.contains(mouseX, mouseY)) {
-                Gdx.app.exit();
+                currentMenuState = MenuState.QUIT_CONFIRM;
             }
         }
     }
@@ -998,6 +1004,104 @@ public class Main extends ApplicationAdapter {
                    "Back", backButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f);
+        batch.end();
+    }
+    
+    /**
+     * 終了確認ダイアログのマウスクリックを処理します。
+     */
+    private void handleQuitConfirmClick() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            
+            float buttonWidth = 200;
+            float buttonHeight = 65;
+            float centerX = screenWidth / 2;
+            float centerY = screenHeight / 2;
+            float buttonSpacing = 100;
+            
+            // Yesボタン
+            float yesButtonX = centerX - buttonSpacing / 2 - buttonWidth / 2;
+            float yesButtonY = centerY - 50;
+            Button yesButton = new Button(yesButtonX, yesButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            // Noボタン
+            float noButtonX = centerX + buttonSpacing / 2 - buttonWidth / 2;
+            float noButtonY = centerY - 50;
+            Button noButton = new Button(noButtonX, noButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            if (yesButton.contains(mouseX, mouseY)) {
+                Gdx.app.exit();
+            } else if (noButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.MAIN_MENU;
+            }
+        }
+    }
+    
+    /**
+     * 終了確認ダイアログを描画します。
+     */
+    private void drawQuitConfirmDialog() {
+        // マウスの座標を取得（ホバー判定用）
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        // ダイアログの背景を描画
+        batch.end();
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
+        float dialogWidth = 500;
+        float dialogHeight = 250;
+        float dialogX = (screenWidth - dialogWidth) / 2;
+        float dialogY = (screenHeight - dialogHeight) / 2;
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        // ダイアログの枠線を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        batch.begin();
+        
+        // メッセージテキストを描画
+        font.getData().setScale(2.5f);
+        font.setColor(Color.WHITE);
+        String messageText = "Quit Game?";
+        GlyphLayout messageLayout = new GlyphLayout(font, messageText);
+        float messageX = (screenWidth - messageLayout.width) / 2;
+        float messageY = screenHeight / 2 + 50;
+        font.draw(batch, messageText, messageX, messageY);
+        
+        // ボタンの位置とサイズを計算
+        float buttonWidth = 200;
+        float buttonHeight = 65;
+        float centerX = screenWidth / 2;
+        float centerY = screenHeight / 2;
+        float buttonSpacing = 100;
+        
+        // Yesボタンを描画
+        float yesButtonX = centerX - buttonSpacing / 2 - buttonWidth / 2;
+        float yesButtonY = centerY - 50;
+        Button yesButton = new Button(yesButtonX, yesButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        drawButton(yesButtonX, yesButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Yes", yesButton.contains(mouseX, mouseY));
+        
+        // Noボタンを描画
+        float noButtonX = centerX + buttonSpacing / 2 - buttonWidth / 2;
+        float noButtonY = centerY - 50;
+        Button noButton = new Button(noButtonX, noButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        drawButton(noButtonX, noButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "No", noButton.contains(mouseX, mouseY));
+        
+        font.getData().setScale(2.0f); // 元に戻す
+        
         batch.end();
     }
     
