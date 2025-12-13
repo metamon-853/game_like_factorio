@@ -44,9 +44,6 @@ public class Main extends ApplicationAdapter {
     
     // 音量設定（0.0f ～ 1.0f）
     private float masterVolume = 1.0f;
-    private static final float VOLUME_MIN = 0.0f;
-    private static final float VOLUME_MAX = 1.0f;
-    private static final float VOLUME_STEP = 0.1f; // 音量調整のステップ
     
     // ミュート状態
     private boolean isMuted = false;
@@ -663,32 +660,6 @@ public class Main extends ApplicationAdapter {
         shapeRenderer.end();
         
         batch.begin();
-    }
-    
-    /**
-     * 音量を増加させます。
-     */
-    private void increaseVolume() {
-        // ミュート中の場合、ミュートを解除してから音量を上げる
-        if (isMuted) {
-            isMuted = false;
-            masterVolume = volumeBeforeMute;
-        }
-        masterVolume = Math.min(VOLUME_MAX, masterVolume + VOLUME_STEP);
-        volumeBeforeMute = masterVolume; // ミュート前の音量を更新
-        updateMasterVolume();
-    }
-    
-    /**
-     * 音量を減少させます。
-     */
-    private void decreaseVolume() {
-        // ミュート中でない場合のみ音量を下げる
-        if (!isMuted) {
-            masterVolume = Math.max(VOLUME_MIN, masterVolume - VOLUME_STEP);
-            volumeBeforeMute = masterVolume; // ミュート前の音量を更新
-            updateMasterVolume();
-        }
     }
     
     /**
