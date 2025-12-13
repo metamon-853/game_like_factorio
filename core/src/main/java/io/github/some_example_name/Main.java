@@ -194,29 +194,7 @@ public class Main extends ApplicationAdapter {
             }
         }
         
-        // ポーズ中にGキーでグリッド表示を切り替え
-        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.G)) {
-            showGrid = !showGrid;
-        }
-        
-        // ポーズ中にMキーでミュートをトグル
-        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.M)) {
-            toggleMute();
-        }
-        
-        // ポーズ中にQキーでゲーム終了
-        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
-            Gdx.app.exit();
-        }
-        
-        // ポーズ中に音量調整（+/-キー）
-        if (isPaused) {
-            if (Gdx.input.isKeyJustPressed(Input.Keys.PLUS) || Gdx.input.isKeyJustPressed(Input.Keys.EQUALS)) {
-                increaseVolume();
-            } else if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS)) {
-                decreaseVolume();
-            }
-        }
+        // キーボード操作は無効化（マウス操作のみ）
         
         // ポーズ中にマウスクリックとドラッグを処理
         if (isPaused) {
@@ -488,16 +466,6 @@ public class Main extends ApplicationAdapter {
         float instructionX = (screenWidth - instructionLayout.width) / 2;
         float instructionY = screenHeight / 2 + 40;
         font.draw(batch, instructionText, instructionX, instructionY);
-        
-        // 音量調整の説明を表示
-        font.getData().setScale(1.5f);
-        font.setColor(Color.LIGHT_GRAY);
-        String volumeInstructionText = "Volume: +/- keys | Mute: M key";
-        GlyphLayout volumeInstructionLayout = new GlyphLayout(font, volumeInstructionText);
-        float volumeInstructionX = (screenWidth - volumeInstructionLayout.width) / 2;
-        float volumeInstructionY = instructionY - instructionLayout.height - 15;
-        font.draw(batch, volumeInstructionText, volumeInstructionX, volumeInstructionY);
-        font.setColor(Color.WHITE); // 色を元に戻す
         
         // ボタンの位置とサイズを計算
         float buttonWidth = 320;
