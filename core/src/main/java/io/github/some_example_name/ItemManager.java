@@ -70,11 +70,13 @@ public class ItemManager {
         // チャンクサイズ（タイル単位）
         int chunkSize = 16;
         
-        // カメラの視野範囲を計算
-        float cameraLeft = camera.position.x - camera.viewportWidth / 2;
-        float cameraRight = camera.position.x + camera.viewportWidth / 2;
-        float cameraBottom = camera.position.y - camera.viewportHeight / 2;
-        float cameraTop = camera.position.y + camera.viewportHeight / 2;
+        // カメラの視野範囲を計算（ズームを考慮）
+        float actualViewportWidth = camera.viewportWidth * camera.zoom;
+        float actualViewportHeight = camera.viewportHeight * camera.zoom;
+        float cameraLeft = camera.position.x - actualViewportWidth / 2;
+        float cameraRight = camera.position.x + actualViewportWidth / 2;
+        float cameraBottom = camera.position.y - actualViewportHeight / 2;
+        float cameraTop = camera.position.y + actualViewportHeight / 2;
         
         // マージンを追加
         float margin = Player.TILE_SIZE * chunkSize;
@@ -102,11 +104,13 @@ public class ItemManager {
      * @param player プレイヤー（プレイヤーの位置には生成しない）
      */
     private void spawnRandomItemInView(OrthographicCamera camera, Player player) {
-        // カメラの視野範囲を計算
-        float cameraLeft = camera.position.x - camera.viewportWidth / 2;
-        float cameraRight = camera.position.x + camera.viewportWidth / 2;
-        float cameraBottom = camera.position.y - camera.viewportHeight / 2;
-        float cameraTop = camera.position.y + camera.viewportHeight / 2;
+        // カメラの視野範囲を計算（ズームを考慮）
+        float actualViewportWidth = camera.viewportWidth * camera.zoom;
+        float actualViewportHeight = camera.viewportHeight * camera.zoom;
+        float cameraLeft = camera.position.x - actualViewportWidth / 2;
+        float cameraRight = camera.position.x + actualViewportWidth / 2;
+        float cameraBottom = camera.position.y - actualViewportHeight / 2;
+        float cameraTop = camera.position.y + actualViewportHeight / 2;
         
         // マージンを追加して少し広めに生成
         float margin = Player.TILE_SIZE * 2;

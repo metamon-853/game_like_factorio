@@ -3,6 +3,7 @@ package io.github.some_example_name;
 import com.badlogic.gdx.ApplicationAdapter;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
+import com.badlogic.gdx.InputAdapter;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
@@ -44,6 +45,12 @@ public class Main extends ApplicationAdapter {
     // 現在のビューポートサイズ（正方形を保つため動的に調整）
     private float viewportWidth;
     private float viewportHeight;
+    
+    // ズーム関連
+    private float cameraZoom = 1.0f; // 現在のズームレベル（1.0が基準）
+    private static final float MIN_ZOOM = 0.3f; // 最小ズーム（縮小の限界）
+    private static final float MAX_ZOOM = 3.0f; // 最大ズーム（拡大の限界）
+    private static final float ZOOM_SPEED = 0.1f; // ズームの速度
     
     @Override
     public void create() {
@@ -94,7 +101,28 @@ public class Main extends ApplicationAdapter {
         float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
         float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
         camera.position.set(playerCenterX, playerCenterY, 0);
+        camera.zoom = cameraZoom;
         camera.update();
+        
+        // マウススクロール入力を処理するInputProcessorを設定
+        Gdx.input.setInputProcessor(new InputAdapter() {
+            @Override
+            public boolean scrolled(float amountX, float amountY) {
+                // スクロール量に応じてズームを変更
+                // amountY > 0 は上スクロール（縮小）、amountY < 0 は下スクロール（拡大）
+                float zoomChange = amountY * ZOOM_SPEED;
+                cameraZoom += zoomChange;
+                
+                // ズームの範囲を制限
+                cameraZoom = Math.max(MIN_ZOOM, Math.min(MAX_ZOOM, cameraZoom));
+                
+                // カメラのズームを更新
+                camera.zoom = cameraZoom;
+                camera.update();
+                
+                return true; // イベントを処理したことを示す
+            }
+        });
     }
 
     @Override
@@ -145,6 +173,9 @@ public class Main extends ApplicationAdapter {
             float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
             camera.position.set(playerCenterX, playerCenterY, 0);
         }
+        
+        // カメラのズームを適用（スクロールで変更された可能性があるため）
+        camera.zoom = cameraZoom;
         
         // カメラを更新
         camera.update();
@@ -231,11 +262,13 @@ public class Main extends ApplicationAdapter {
         int mapTileSize = Player.MAP_TILE_SIZE;
         int playerTileSize = Player.PLAYER_TILE_SIZE;
         
-        // カメラの視野範囲を計算
-        float cameraLeft = camera.position.x - camera.viewportWidth / 2;
-        float cameraRight = camera.position.x + camera.viewportWidth / 2;
-        float cameraBottom = camera.position.y - camera.viewportHeight / 2;
-        float cameraTop = camera.position.y + camera.viewportHeight / 2;
+        // カメラの視野範囲を計算（ズームを考慮）
+        float actualViewportWidth = camera.viewportWidth * camera.zoom;
+        float actualViewportHeight = camera.viewportHeight * camera.zoom;
+        float cameraLeft = camera.position.x - actualViewportWidth / 2;
+        float cameraRight = camera.position.x + actualViewportWidth / 2;
+        float cameraBottom = camera.position.y - actualViewportHeight / 2;
+        float cameraTop = camera.position.y + actualViewportHeight / 2;
         
         // マージンを追加して少し広めに描画（見切れを防ぐ）
         float margin = mapTileSize * 2;
