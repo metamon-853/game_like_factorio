@@ -822,32 +822,63 @@ public class Main extends ApplicationAdapter {
      * セーブメニューのマウスクリックを処理します。
      */
     private void handleSaveMenuClick() {
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && !isTextInputActive) {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
             float mouseX = Gdx.input.getX();
             float mouseY = screenHeight - Gdx.input.getY();
             
-            float buttonWidth = 320;
-            float buttonHeight = 65;
             float centerX = screenWidth / 2;
             float centerY = screenHeight / 2;
             
-            // 名前入力開始ボタン
-            float inputButtonY = centerY - 80;
-            Button inputButton = new Button(centerX - buttonWidth / 2, inputButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            // 入力フィールドの範囲
+            float inputFieldWidth = 500;
+            float inputFieldHeight = 60;
+            float inputFieldX = centerX - inputFieldWidth / 2;
+            float inputFieldY = centerY + 30;
+            Button inputField = new Button(inputFieldX, inputFieldY, inputFieldWidth, inputFieldHeight);
+            
+            // ボタンのサイズ
+            float buttonWidth = 280;
+            float buttonHeight = 65;
+            float buttonSpacing = 90;
+            
+            // 保存ボタン
+            float saveButtonY = centerY - 100;
+            Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
             // 戻るボタン
-            float backButtonY = centerY - 200;
+            float backButtonY = centerY - buttonSpacing - 100;
             Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
-            if (inputButton.contains(mouseX, mouseY)) {
-                // テキスト入力を開始
+            if (inputField.contains(mouseX, mouseY)) {
+                // 入力フィールドをクリックした場合、テキスト入力を開始
                 isTextInputActive = true;
+                if (inputText.length() == 0) {
+                    currentInputLabel = "Save Name";
+                }
+            } else if (saveButton.contains(mouseX, mouseY) && inputText.length() > 0 && !isTextInputActive) {
+                // 保存ボタンをクリックした場合（入力が完了している場合のみ）
+                String text = inputText.toString().trim();
+                if (!text.isEmpty() && text.length() <= maxInputLength) {
+                    if (saveGame(text)) {
+                        Gdx.app.log("SaveGame", "Game saved successfully: " + text);
+                        isPaused = false; // セーブ後はポーズを解除
+                    } else {
+                        Gdx.app.error("SaveGame", "Failed to save game");
+                    }
+                }
+                isTextInputActive = false;
                 inputText.setLength(0);
-                currentInputLabel = "Save Name";
+                currentInputLabel = "";
             } else if (backButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.MAIN_MENU;
                 isTextInputActive = false;
                 inputText.setLength(0);
+                currentInputLabel = "";
+            } else if (!inputField.contains(mouseX, mouseY)) {
+                // 入力フィールド以外をクリックした場合、入力を終了
+                if (isTextInputActive) {
+                    isTextInputActive = false;
+                }
             }
         }
     }
@@ -901,50 +932,132 @@ public class Main extends ApplicationAdapter {
         float mouseX = Gdx.input.getX();
         float mouseY = screenHeight - Gdx.input.getY();
         
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
-        
-        // "SAVE GAME" テキストを中央に表示
-        font.getData().setScale(3.0f);
-        font.setColor(Color.WHITE);
-        String titleText = "SAVE GAME";
-        GlyphLayout titleLayout = new GlyphLayout(font, titleText);
-        float titleX = (screenWidth - titleLayout.width) / 2;
-        float titleY = screenHeight / 2 + 200;
-        font.draw(batch, titleText, titleX, titleY);
-        
-        float buttonWidth = 320;
-        float buttonHeight = 65;
         float centerX = screenWidth / 2;
         float centerY = screenHeight / 2;
         
-        // テキスト入力フィールドを描画
-        font.getData().setScale(2.0f);
+        // ダイアログのサイズ
+        float dialogWidth = 600;
+        float dialogHeight = 450;
+        float dialogX = (screenWidth - dialogWidth) / 2;
+        float dialogY = (screenHeight - dialogHeight) / 2;
+        
+        // すべてのshapeRenderer描画を先に実行
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        
+        // ダイアログの背景を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        // ダイアログの枠線を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        // 入力フィールドの背景を描画
+        float inputFieldWidth = 500;
+        float inputFieldHeight = 60;
+        float inputFieldX = centerX - inputFieldWidth / 2;
+        float inputFieldY = centerY + 30;
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        // 入力フィールドの背景
+        if (isTextInputActive) {
+            shapeRenderer.setColor(0.2f, 0.2f, 0.3f, 1f);
+        } else {
+            shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 1f);
+        }
+        shapeRenderer.rect(inputFieldX, inputFieldY, inputFieldWidth, inputFieldHeight);
+        shapeRenderer.end();
+        
+        // 入力フィールドの枠線を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        if (isTextInputActive) {
+            shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
+            // アクティブ時は太い線
+            shapeRenderer.rect(inputFieldX - 2, inputFieldY - 2, inputFieldWidth + 4, inputFieldHeight + 4);
+            shapeRenderer.rect(inputFieldX - 1, inputFieldY - 1, inputFieldWidth + 2, inputFieldHeight + 2);
+        } else {
+            shapeRenderer.setColor(0.5f, 0.5f, 0.7f, 1f);
+        }
+        shapeRenderer.rect(inputFieldX, inputFieldY, inputFieldWidth, inputFieldHeight);
+        shapeRenderer.end();
+        
+        // テキスト描画
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        // "SAVE GAME" タイトルを描画
+        font.getData().setScale(3.5f);
+        font.setColor(Color.WHITE);
+        String titleText = "SAVE GAME";
+        GlyphLayout titleLayout = new GlyphLayout(font, titleText);
+        float titleX = centerX - titleLayout.width / 2;
+        float titleY = dialogY + dialogHeight - 50;
+        font.draw(batch, titleText, titleX, titleY);
+        
+        // ラベルを描画
+        font.getData().setScale(2.2f);
+        font.setColor(Color.WHITE);
         String inputLabel = "Save Name:";
         GlyphLayout labelLayout = new GlyphLayout(font, inputLabel);
         float labelX = centerX - labelLayout.width / 2;
-        float labelY = centerY + 50;
+        float labelY = inputFieldY + inputFieldHeight + 20;
         font.draw(batch, inputLabel, labelX, labelY);
         
-        // 入力テキストを描画
-        String displayText = isTextInputActive ? inputText.toString() + "_" : (inputText.length() > 0 ? inputText.toString() : "Click button to enter name");
-        font.setColor(isTextInputActive ? Color.YELLOW : Color.LIGHT_GRAY);
+        // 入力テキストを描画（LibGDXのフォントはベースライン基準なので、中央揃えを正しく計算）
+        font.getData().setScale(2.0f);
+        String displayText = isTextInputActive ? inputText.toString() + "_" : 
+                            (inputText.length() > 0 ? inputText.toString() : "Enter save name...");
+        font.setColor(isTextInputActive ? Color.YELLOW : (inputText.length() > 0 ? Color.WHITE : Color.GRAY));
         GlyphLayout textLayout = new GlyphLayout(font, displayText);
-        float textX = centerX - textLayout.width / 2;
-        float textY = centerY;
+        float textX = inputFieldX + 15; // 左側にパディング
+        // ベースライン基準で中央揃え（Y座標はベースラインなので、height/2 + textLayout.height/2を加算）
+        float textY = inputFieldY + inputFieldHeight / 2 + textLayout.height / 2;
         font.draw(batch, displayText, textX, textY);
         
-        // 名前入力開始ボタンを描画
-        float inputButtonY = centerY - 80;
-        Button inputButton = new Button(centerX - buttonWidth / 2, inputButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, inputButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   isTextInputActive ? "Enter to confirm" : "Enter Save Name", inputButton.contains(mouseX, mouseY));
+        // 文字数制限を表示（入力フィールドの下、ラベルの上）
+        font.getData().setScale(1.5f);
+        font.setColor(Color.LIGHT_GRAY);
+        String charCountText = inputText.length() + " / " + maxInputLength;
+        GlyphLayout charCountLayout = new GlyphLayout(font, charCountText);
+        float charCountX = inputFieldX + inputFieldWidth - charCountLayout.width - 15;
+        float charCountY = inputFieldY - 5; // 入力フィールドの少し上
+        font.draw(batch, charCountText, charCountX, charCountY);
+        
+        // ボタンのサイズ
+        float buttonWidth = 280;
+        float buttonHeight = 65;
+        float buttonSpacing = 90;
+        
+        // 保存ボタンを描画
+        float saveButtonY = centerY - 100;
+        Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        String saveButtonText = isTextInputActive ? "Press Enter to Save" : 
+                               (inputText.length() > 0 ? "Save Game" : "Enter Name First");
+        drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   saveButtonText, saveButton.contains(mouseX, mouseY) && inputText.length() > 0);
         
         // 戻るボタンを描画
-        float backButtonY = centerY - 200;
+        float backButtonY = centerY - buttonSpacing - 100;
         Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Back", backButton.contains(mouseX, mouseY));
+        
+        // 既存のセーブファイルを表示（戻るボタンの下、ダイアログの下部に配置）
+        java.util.List<String> saveList = getSaveFileList();
+        if (!saveList.isEmpty() && saveList.size() <= 5) {
+            font.getData().setScale(1.3f);
+            font.setColor(Color.LIGHT_GRAY);
+            String existingText = "Existing saves: " + saveList.size();
+            GlyphLayout existingLayout = new GlyphLayout(font, existingText);
+            float existingX = centerX - existingLayout.width / 2;
+            // 戻るボタンの下に配置（ボタンのY座標 - ボタンの高さ/2 - マージン）
+            float existingY = backButtonY - buttonHeight / 2 - 25;
+            font.draw(batch, existingText, existingX, existingY);
+        }
         
         font.getData().setScale(2.0f);
         batch.end();
@@ -1169,7 +1282,9 @@ public class Main extends ApplicationAdapter {
         font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
         GlyphLayout layout = new GlyphLayout(font, text);
         float textX = x + (width - layout.width) / 2;
-        float textY = y + (height + layout.height) / 2;
+        // LibGDXのフォントはベースライン基準なので、中央揃えを正しく計算
+        // Y座標はベースラインなので、height/2 + layout.height/2を加算
+        float textY = y + height / 2 + layout.height / 2;
         font.draw(batch, text, textX, textY);
     }
 
