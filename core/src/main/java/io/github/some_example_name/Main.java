@@ -32,8 +32,28 @@ public class Main extends ApplicationAdapter {
     // ポーズ状態
     private boolean isPaused;
     
+    // メニュー状態
+    private enum MenuState {
+        MAIN_MENU,
+        SOUND_MENU
+    }
+    private MenuState currentMenuState = MenuState.MAIN_MENU;
+    
     // グリッド表示フラグ（デフォルトはオン）
     private boolean showGrid = true;
+    
+    // 音量設定（0.0f ～ 1.0f）
+    private float masterVolume = 1.0f;
+    private static final float VOLUME_MIN = 0.0f;
+    private static final float VOLUME_MAX = 1.0f;
+    private static final float VOLUME_STEP = 0.1f; // 音量調整のステップ
+    
+    // ミュート状態
+    private boolean isMuted = false;
+    private float volumeBeforeMute = 1.0f; // ミュート前の音量を保存
+    
+    // スライダー関連
+    private boolean isDraggingSlider = false; // スライダーをドラッグ中かどうか
     
     // ゲームの論理的な画面サイズ（ピクセル単位）- 基準サイズ
     private static final float BASE_VIEWPORT_SIZE = 20 * Player.TILE_SIZE;
@@ -113,6 +133,9 @@ public class Main extends ApplicationAdapter {
         // ポーズ状態を初期化
         isPaused = false;
         
+        // 音量を初期化（マスターボリュームを設定）
+        updateMasterVolume();
+        
         // カメラをプレイヤーの初期位置に設定
         float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
         float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
@@ -157,9 +180,18 @@ public class Main extends ApplicationAdapter {
         // 画面をクリア
         ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
         
-        // ESCキーでポーズ/再開を切り替え
+        // ESCキーでポーズ/再開を切り替え、またはメニューから戻る
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            isPaused = !isPaused;
+            if (isPaused && currentMenuState == MenuState.SOUND_MENU) {
+                // サウンドメニューからメインメニューに戻る
+                currentMenuState = MenuState.MAIN_MENU;
+            } else {
+                // ポーズ/再開を切り替え
+                isPaused = !isPaused;
+                if (!isPaused) {
+                    currentMenuState = MenuState.MAIN_MENU; // ポーズ解除時にメニュー状態をリセット
+                }
+            }
         }
         
         // ポーズ中にGキーでグリッド表示を切り替え
@@ -167,14 +199,33 @@ public class Main extends ApplicationAdapter {
             showGrid = !showGrid;
         }
         
+        // ポーズ中にMキーでミュートをトグル
+        if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+            toggleMute();
+        }
+        
         // ポーズ中にQキーでゲーム終了
         if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
             Gdx.app.exit();
         }
         
-        // ポーズ中にマウスクリックを処理
+        // ポーズ中に音量調整（+/-キー）
         if (isPaused) {
-            handlePauseMenuClick();
+            if (Gdx.input.isKeyJustPressed(Input.Keys.PLUS) || Gdx.input.isKeyJustPressed(Input.Keys.EQUALS)) {
+                increaseVolume();
+            } else if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS)) {
+                decreaseVolume();
+            }
+        }
+        
+        // ポーズ中にマウスクリックとドラッグを処理
+        if (isPaused) {
+            if (currentMenuState == MenuState.MAIN_MENU) {
+                handlePauseMenuClick();
+            } else if (currentMenuState == MenuState.SOUND_MENU) {
+                handleSoundMenuClick();
+                handleSoundMenuDrag();
+            }
         }
         
         // ポーズ中でない場合のみゲームを更新
@@ -228,7 +279,11 @@ public class Main extends ApplicationAdapter {
         
         // ポーズメニューを描画（テキスト表示用）
         if (isPaused) {
-            drawPauseMenu();
+            if (currentMenuState == MenuState.MAIN_MENU) {
+                drawPauseMenu();
+            } else if (currentMenuState == MenuState.SOUND_MENU) {
+                drawSoundMenu();
+            }
         }
     }
     
@@ -390,13 +445,19 @@ public class Main extends ApplicationAdapter {
             float gridButtonY = centerY - 20;
             Button gridButton = new Button(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
+            // Soundメニューボタン
+            float soundButtonY = centerY - buttonSpacing - 20;
+            Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
             // ゲーム終了ボタン
-            float quitButtonY = centerY - buttonSpacing - 20;
+            float quitButtonY = centerY - buttonSpacing * 2 - 20;
             Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
             // ボタンがクリックされたかを判定
             if (gridButton.contains(mouseX, mouseY)) {
                 showGrid = !showGrid;
+            } else if (soundButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.SOUND_MENU;
             } else if (quitButton.contains(mouseX, mouseY)) {
                 Gdx.app.exit();
             }
@@ -428,6 +489,16 @@ public class Main extends ApplicationAdapter {
         float instructionY = screenHeight / 2 + 40;
         font.draw(batch, instructionText, instructionX, instructionY);
         
+        // 音量調整の説明を表示
+        font.getData().setScale(1.5f);
+        font.setColor(Color.LIGHT_GRAY);
+        String volumeInstructionText = "Volume: +/- keys | Mute: M key";
+        GlyphLayout volumeInstructionLayout = new GlyphLayout(font, volumeInstructionText);
+        float volumeInstructionX = (screenWidth - volumeInstructionLayout.width) / 2;
+        float volumeInstructionY = instructionY - instructionLayout.height - 15;
+        font.draw(batch, volumeInstructionText, volumeInstructionX, volumeInstructionY);
+        font.setColor(Color.WHITE); // 色を元に戻す
+        
         // ボタンの位置とサイズを計算
         float buttonWidth = 320;
         float buttonHeight = 65;
@@ -440,14 +511,252 @@ public class Main extends ApplicationAdapter {
         drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Toggle Grid: " + (showGrid ? "ON" : "OFF"));
         
+        // Soundメニューボタンを描画
+        float soundButtonY = centerY - buttonSpacing - 20;
+        drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Sound");
+        
         // ゲーム終了ボタンを描画
-        float quitButtonY = centerY - buttonSpacing - 20;
+        float quitButtonY = centerY - buttonSpacing * 2 - 20;
         drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Quit Game");
         
         font.getData().setScale(2.0f); // 元に戻す
         
         batch.end();
+    }
+    
+    /**
+     * サウンドメニューのマウスクリックを処理します。
+     */
+    private void handleSoundMenuClick() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            
+            float buttonWidth = 320;
+            float buttonHeight = 65;
+            float centerX = screenWidth / 2;
+            float centerY = screenHeight / 2;
+            
+            // 戻るボタン
+            float backButtonY = centerY - 200;
+            Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            // ミュートトグルボタン
+            float muteButtonY = centerY + 100;
+            Button muteButton = new Button(centerX - buttonWidth / 2, muteButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            // スライダーの位置を計算
+            float sliderWidth = 400;
+            float sliderHeight = 20;
+            float sliderX = centerX - sliderWidth / 2;
+            float sliderY = centerY - sliderHeight / 2;
+            Button sliderArea = new Button(sliderX, sliderY, sliderWidth, sliderHeight);
+            
+            if (backButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.MAIN_MENU;
+            } else if (muteButton.contains(mouseX, mouseY)) {
+                toggleMute();
+            } else if (sliderArea.contains(mouseX, mouseY)) {
+                // スライダーをクリックした場合、その位置に音量を設定
+                updateVolumeFromSliderPosition(mouseX, sliderX, sliderWidth);
+                isDraggingSlider = true;
+            }
+        }
+        
+        // マウスボタンを離したらドラッグ終了
+        if (!Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+            isDraggingSlider = false;
+        }
+    }
+    
+    /**
+     * サウンドメニューのマウスドラッグを処理します。
+     */
+    private void handleSoundMenuDrag() {
+        if (isDraggingSlider && Gdx.input.isButtonPressed(Input.Buttons.LEFT)) {
+            float mouseX = Gdx.input.getX();
+            float centerX = screenWidth / 2;
+            float sliderWidth = 400;
+            float sliderX = centerX - sliderWidth / 2;
+            
+            updateVolumeFromSliderPosition(mouseX, sliderX, sliderWidth);
+        }
+    }
+    
+    /**
+     * スライダーの位置から音量を更新します。
+     */
+    private void updateVolumeFromSliderPosition(float mouseX, float sliderX, float sliderWidth) {
+        // マウス位置をスライダーの範囲内に制限
+        float relativeX = Math.max(0, Math.min(sliderWidth, mouseX - sliderX));
+        // 0.0f ～ 1.0f の範囲に変換
+        float newVolume = relativeX / sliderWidth;
+        
+        // ミュート中の場合、ミュートを解除
+        if (isMuted && newVolume > 0) {
+            isMuted = false;
+        }
+        
+        masterVolume = newVolume;
+        volumeBeforeMute = masterVolume;
+        updateMasterVolume();
+    }
+    
+    /**
+     * サウンドメニューを描画します。
+     */
+    private void drawSoundMenu() {
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        // "SOUND SETTINGS" テキストを中央に表示
+        font.getData().setScale(3.0f);
+        font.setColor(Color.WHITE);
+        String titleText = "SOUND SETTINGS";
+        GlyphLayout titleLayout = new GlyphLayout(font, titleText);
+        float titleX = (screenWidth - titleLayout.width) / 2;
+        float titleY = screenHeight / 2 + 150;
+        font.draw(batch, titleText, titleX, titleY);
+        
+        // ボタンの位置とサイズを計算
+        float buttonWidth = 320;
+        float buttonHeight = 65;
+        float centerX = screenWidth / 2;
+        float centerY = screenHeight / 2;
+        
+        // スライダーを描画
+        drawVolumeSlider(centerX, centerY);
+        
+        // 音量表示を描画
+        font.getData().setScale(2.0f);
+        font.setColor(isMuted ? Color.RED : Color.WHITE);
+        String volumeText = "Volume: " + (int)(masterVolume * 100) + "%" + (isMuted ? " (MUTED)" : "");
+        GlyphLayout volumeLayout = new GlyphLayout(font, volumeText);
+        float volumeTextX = centerX - volumeLayout.width / 2;
+        float volumeTextY = centerY + 50;
+        font.draw(batch, volumeText, volumeTextX, volumeTextY);
+        
+        // ミュートトグルボタンを描画
+        float muteButtonY = centerY + 100;
+        drawButton(centerX - buttonWidth / 2, muteButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Mute: " + (isMuted ? "ON" : "OFF"));
+        
+        // 戻るボタンを描画
+        float backButtonY = centerY - 200;
+        drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Back");
+        
+        font.getData().setScale(2.0f); // 元に戻す
+        
+        batch.end();
+    }
+    
+    /**
+     * 音量スライダーを描画します。
+     */
+    private void drawVolumeSlider(float centerX, float centerY) {
+        batch.end();
+        
+        float sliderWidth = 400;
+        float sliderHeight = 20;
+        float sliderX = centerX - sliderWidth / 2;
+        float sliderY = centerY - sliderHeight / 2;
+        
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        
+        // スライダーの背景を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.2f, 0.2f, 0.3f, 1f);
+        shapeRenderer.rect(sliderX, sliderY, sliderWidth, sliderHeight);
+        shapeRenderer.end();
+        
+        // スライダーの枠線を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+        shapeRenderer.rect(sliderX, sliderY, sliderWidth, sliderHeight);
+        shapeRenderer.end();
+        
+        // スライダーのハンドルを描画（現在の音量位置に）
+        float handleWidth = 30;
+        float handleHeight = 40;
+        float handleX = sliderX + (masterVolume * sliderWidth) - handleWidth / 2;
+        float handleY = sliderY - (handleHeight - sliderHeight) / 2;
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(isMuted ? Color.RED : Color.WHITE);
+        shapeRenderer.rect(handleX, handleY, handleWidth, handleHeight);
+        shapeRenderer.end();
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.3f, 0.3f, 0.4f, 1f);
+        shapeRenderer.rect(handleX, handleY, handleWidth, handleHeight);
+        shapeRenderer.end();
+        
+        batch.begin();
+    }
+    
+    /**
+     * 音量を増加させます。
+     */
+    private void increaseVolume() {
+        // ミュート中の場合、ミュートを解除してから音量を上げる
+        if (isMuted) {
+            isMuted = false;
+            masterVolume = volumeBeforeMute;
+        }
+        masterVolume = Math.min(VOLUME_MAX, masterVolume + VOLUME_STEP);
+        volumeBeforeMute = masterVolume; // ミュート前の音量を更新
+        updateMasterVolume();
+    }
+    
+    /**
+     * 音量を減少させます。
+     */
+    private void decreaseVolume() {
+        // ミュート中でない場合のみ音量を下げる
+        if (!isMuted) {
+            masterVolume = Math.max(VOLUME_MIN, masterVolume - VOLUME_STEP);
+            volumeBeforeMute = masterVolume; // ミュート前の音量を更新
+            updateMasterVolume();
+        }
+    }
+    
+    /**
+     * ミュート状態をトグルします。
+     */
+    private void toggleMute() {
+        if (isMuted) {
+            // ミュート解除：保存していた音量を復元
+            isMuted = false;
+            masterVolume = volumeBeforeMute;
+        } else {
+            // ミュート：現在の音量を保存してから0にする
+            volumeBeforeMute = masterVolume;
+            masterVolume = 0.0f;
+            isMuted = true;
+        }
+        updateMasterVolume();
+    }
+    
+    /**
+     * マスターボリュームを更新します。
+     * 将来的に音声を追加したときに、この音量設定が適用されます。
+     */
+    private void updateMasterVolume() {
+        // LibGDXのマスターボリュームを設定
+        // 将来的にSoundやMusicを追加したときに、この設定が適用されます
+        // Gdx.audio.setVolume(masterVolume); // このメソッドは存在しませんが、
+        // 個別のSoundやMusicオブジェクトに対してsetVolume()を呼び出す必要があります
+    }
+    
+    /**
+     * 現在のマスターボリュームを取得します。
+     * @return 0.0f ～ 1.0f の範囲の音量値
+     */
+    public float getMasterVolume() {
+        return masterVolume;
     }
     
     /**
