@@ -1,0 +1,723 @@
+{
+  "recipes": [
+    {
+      "id": "water_recipe",
+      "result": "water",
+      "ingredients": [
+        {"itemId": "hydrogen", "quantity": 2},
+        {"itemId": "oxygen", "quantity": 1}
+      ],
+      "craftTime": 1.0,
+      "description": "水素と酸素を結合して水を作る"
+    },
+    {
+      "id": "carbon_dioxide_recipe",
+      "result": "carbon_dioxide",
+      "ingredients": [
+        {"itemId": "carbon", "quantity": 1},
+        {"itemId": "oxygen", "quantity": 2}
+      ],
+      "craftTime": 1.0,
+      "description": "炭素と酸素を結合して二酸化炭素を作る"
+    },
+    {
+      "id": "glass_recipe",
+      "result": "glass",
+      "ingredients": [
+        {"itemId": "sand", "quantity": 2},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "砂を高温で溶かしてガラスを作る"
+    },
+    {
+      "id": "ceramic_recipe",
+      "result": "ceramic",
+      "ingredients": [
+        {"itemId": "clay", "quantity": 2},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "粘土を焼いて陶器を作る"
+    },
+    {
+      "id": "iron_ingot_recipe",
+      "result": "iron_ingot",
+      "ingredients": [
+        {"itemId": "iron", "quantity": 1},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "鉄を精製してインゴットにする"
+    },
+    {
+      "id": "copper_ingot_recipe",
+      "result": "copper_ingot",
+      "ingredients": [
+        {"itemId": "copper", "quantity": 1},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "銅を精製してインゴットにする"
+    },
+    {
+      "id": "steel_recipe",
+      "result": "steel",
+      "ingredients": [
+        {"itemId": "iron_ingot", "quantity": 2},
+        {"itemId": "carbon", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "鉄と炭素を合金して鋼鉄を作る"
+    },
+    {
+      "id": "bronze_recipe",
+      "result": "bronze",
+      "ingredients": [
+        {"itemId": "copper_ingot", "quantity": 3},
+        {"itemId": "tin", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "銅とスズを合金して青銅を作る"
+    },
+    {
+      "id": "brass_recipe",
+      "result": "brass",
+      "ingredients": [
+        {"itemId": "copper_ingot", "quantity": 2},
+        {"itemId": "zinc", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "銅と亜鉛を合金して真鍮を作る"
+    },
+    {
+      "id": "paper_recipe",
+      "result": "paper",
+      "ingredients": [
+        {"itemId": "wood", "quantity": 1},
+        {"itemId": "water", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "木材を加工して紙を作る"
+    },
+    {
+      "id": "brick_recipe",
+      "result": "brick",
+      "ingredients": [
+        {"itemId": "clay", "quantity": 2},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "粘土を焼いてレンガを作る"
+    },
+    {
+      "id": "cement_recipe",
+      "result": "cement",
+      "ingredients": [
+        {"itemId": "limestone", "quantity": 2},
+        {"itemId": "clay", "quantity": 1},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "石灰石と粘土を焼いてセメントを作る"
+    },
+    {
+      "id": "concrete_recipe",
+      "result": "concrete",
+      "ingredients": [
+        {"itemId": "cement", "quantity": 1},
+        {"itemId": "sand", "quantity": 2},
+        {"itemId": "gravel", "quantity": 2},
+        {"itemId": "water", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "セメント、砂、砂利、水を混ぜてコンクリートを作る"
+    },
+    {
+      "id": "wire_recipe",
+      "result": "wire",
+      "ingredients": [
+        {"itemId": "copper_ingot", "quantity": 1},
+        {"itemId": "rubber", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "銅線を絶縁体で覆って電線を作る"
+    },
+    {
+      "id": "circuit_board_recipe",
+      "result": "circuit_board",
+      "ingredients": [
+        {"itemId": "plastic", "quantity": 2},
+        {"itemId": "copper_ingot", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "プラスチックと銅で基板を作る"
+    },
+    {
+      "id": "gear_recipe",
+      "result": "gear",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 2}
+      ],
+      "craftTime": 2.5,
+      "description": "鋼鉄を加工して歯車を作る"
+    },
+    {
+      "id": "spring_recipe",
+      "result": "spring",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "鋼鉄を加工してバネを作る"
+    },
+    {
+      "id": "screw_recipe",
+      "result": "screw",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1}
+      ],
+      "craftTime": 1.5,
+      "description": "鋼鉄を加工してねじを作る"
+    },
+    {
+      "id": "bolt_recipe",
+      "result": "bolt",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 2}
+      ],
+      "craftTime": 2.0,
+      "description": "鋼鉄を加工してボルトを作る"
+    },
+    {
+      "id": "pipe_recipe",
+      "result": "pipe",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "鋼鉄を加工してパイプを作る"
+    },
+    {
+      "id": "valve_recipe",
+      "result": "valve",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1},
+        {"itemId": "rubber", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "鋼鉄とゴムでバルブを作る"
+    },
+    {
+      "id": "pump_recipe",
+      "result": "pump",
+      "ingredients": [
+        {"itemId": "motor", "quantity": 1},
+        {"itemId": "pipe", "quantity": 2},
+        {"itemId": "valve", "quantity": 1}
+      ],
+      "craftTime": 4.0,
+      "description": "モーター、パイプ、バルブを組み合わせてポンプを作る"
+    },
+    {
+      "id": "battery_recipe",
+      "result": "battery",
+      "ingredients": [
+        {"itemId": "zinc", "quantity": 1},
+        {"itemId": "copper_ingot", "quantity": 1},
+        {"itemId": "acid", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "亜鉛、銅、酸で電池を作る"
+    },
+    {
+      "id": "motor_recipe",
+      "result": "motor",
+      "ingredients": [
+        {"itemId": "magnet", "quantity": 2},
+        {"itemId": "wire", "quantity": 3},
+        {"itemId": "iron_ingot", "quantity": 2}
+      ],
+      "craftTime": 4.0,
+      "description": "磁石、電線、鉄を組み合わせてモーターを作る"
+    },
+    {
+      "id": "magnet_recipe",
+      "result": "magnet",
+      "ingredients": [
+        {"itemId": "iron_ingot", "quantity": 1},
+        {"itemId": "electricity", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "鉄に電流を流して磁石を作る"
+    },
+    {
+      "id": "lens_recipe",
+      "result": "lens",
+      "ingredients": [
+        {"itemId": "glass", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "ガラスを加工してレンズを作る"
+    },
+    {
+      "id": "mirror_recipe",
+      "result": "mirror",
+      "ingredients": [
+        {"itemId": "glass", "quantity": 1},
+        {"itemId": "silver", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "ガラスに銀をコーティングして鏡を作る"
+    },
+    {
+      "id": "transistor_recipe",
+      "result": "transistor",
+      "ingredients": [
+        {"itemId": "silicon", "quantity": 1},
+        {"itemId": "gold", "quantity": 1}
+      ],
+      "craftTime": 3.5,
+      "description": "ケイ素と金でトランジスタを作る"
+    },
+    {
+      "id": "resistor_recipe",
+      "result": "resistor",
+      "ingredients": [
+        {"itemId": "carbon", "quantity": 1},
+        {"itemId": "ceramic", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "炭素と陶器で抵抗器を作る"
+    },
+    {
+      "id": "capacitor_recipe",
+      "result": "capacitor",
+      "ingredients": [
+        {"itemId": "aluminum", "quantity": 2},
+        {"itemId": "plastic", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "アルミニウムとプラスチックでコンデンサを作る"
+    },
+    {
+      "id": "led_recipe",
+      "result": "led",
+      "ingredients": [
+        {"itemId": "silicon", "quantity": 1},
+        {"itemId": "gallium", "quantity": 1},
+        {"itemId": "electricity", "quantity": 1}
+      ],
+      "craftTime": 3.5,
+      "description": "ケイ素とガリウムでLEDを作る"
+    },
+    {
+      "id": "sensor_recipe",
+      "result": "sensor",
+      "ingredients": [
+        {"itemId": "circuit_board", "quantity": 1},
+        {"itemId": "transistor", "quantity": 2},
+        {"itemId": "lens", "quantity": 1}
+      ],
+      "craftTime": 4.0,
+      "description": "基板、トランジスタ、レンズを組み合わせてセンサーを作る"
+    },
+    {
+      "id": "hammer_recipe",
+      "result": "hammer",
+      "ingredients": [
+        {"itemId": "iron_ingot", "quantity": 1},
+        {"itemId": "wood", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "鉄と木材でハンマーを作る"
+    },
+    {
+      "id": "saw_recipe",
+      "result": "saw",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1},
+        {"itemId": "wood", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "鋼鉄と木材でのこぎりを作る"
+    },
+    {
+      "id": "drill_recipe",
+      "result": "drill",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1},
+        {"itemId": "motor", "quantity": 1}
+      ],
+      "craftTime": 3.5,
+      "description": "鋼鉄とモーターでドリルを作る"
+    },
+    {
+      "id": "wrench_recipe",
+      "result": "wrench",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "鋼鉄を加工してレンチを作る"
+    },
+    {
+      "id": "screwdriver_recipe",
+      "result": "screwdriver",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1},
+        {"itemId": "plastic", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "鋼鉄とプラスチックでドライバーを作る"
+    },
+    {
+      "id": "knife_recipe",
+      "result": "knife",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1},
+        {"itemId": "wood", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "鋼鉄と木材でナイフを作る"
+    },
+    {
+      "id": "axe_recipe",
+      "result": "axe",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1},
+        {"itemId": "wood", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "鋼鉄と木材で斧を作る"
+    },
+    {
+      "id": "shovel_recipe",
+      "result": "shovel",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 1},
+        {"itemId": "wood", "quantity": 1}
+      ],
+      "craftTime": 2.5,
+      "description": "鋼鉄と木材でシャベルを作る"
+    },
+    {
+      "id": "pickaxe_recipe",
+      "result": "pickaxe",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 2},
+        {"itemId": "wood", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "鋼鉄と木材でつるはしを作る"
+    },
+    {
+      "id": "flashlight_recipe",
+      "result": "flashlight",
+      "ingredients": [
+        {"itemId": "battery", "quantity": 1},
+        {"itemId": "led", "quantity": 1},
+        {"itemId": "aluminum", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "電池、LED、アルミニウムで懐中電灯を作る"
+    },
+    {
+      "id": "clock_recipe",
+      "result": "clock",
+      "ingredients": [
+        {"itemId": "gear", "quantity": 3},
+        {"itemId": "spring", "quantity": 1},
+        {"itemId": "glass", "quantity": 1}
+      ],
+      "craftTime": 4.0,
+      "description": "歯車、バネ、ガラスで時計を作る"
+    },
+    {
+      "id": "calculator_recipe",
+      "result": "calculator",
+      "ingredients": [
+        {"itemId": "circuit_board", "quantity": 1},
+        {"itemId": "transistor", "quantity": 5},
+        {"itemId": "battery", "quantity": 1},
+        {"itemId": "plastic", "quantity": 1}
+      ],
+      "craftTime": 5.0,
+      "description": "基板、トランジスタ、電池、プラスチックで計算機を作る"
+    },
+    {
+      "id": "radio_recipe",
+      "result": "radio",
+      "ingredients": [
+        {"itemId": "circuit_board", "quantity": 1},
+        {"itemId": "transistor", "quantity": 3},
+        {"itemId": "resistor", "quantity": 2},
+        {"itemId": "capacitor", "quantity": 2},
+        {"itemId": "wire", "quantity": 2},
+        {"itemId": "battery", "quantity": 1}
+      ],
+      "craftTime": 6.0,
+      "description": "電子部品を組み合わせてラジオを作る"
+    },
+    {
+      "id": "camera_recipe",
+      "result": "camera",
+      "ingredients": [
+        {"itemId": "lens", "quantity": 1},
+        {"itemId": "sensor", "quantity": 1},
+        {"itemId": "circuit_board", "quantity": 1},
+        {"itemId": "plastic", "quantity": 2}
+      ],
+      "craftTime": 5.5,
+      "description": "レンズ、センサー、基板、プラスチックでカメラを作る"
+    },
+    {
+      "id": "phone_recipe",
+      "result": "phone",
+      "ingredients": [
+        {"itemId": "radio", "quantity": 1},
+        {"itemId": "circuit_board", "quantity": 1},
+        {"itemId": "battery", "quantity": 1},
+        {"itemId": "plastic", "quantity": 1}
+      ],
+      "craftTime": 6.0,
+      "description": "ラジオ、基板、電池、プラスチックで電話を作る"
+    },
+    {
+      "id": "computer_recipe",
+      "result": "computer",
+      "ingredients": [
+        {"itemId": "circuit_board", "quantity": 3},
+        {"itemId": "transistor", "quantity": 10},
+        {"itemId": "silicon", "quantity": 2},
+        {"itemId": "plastic", "quantity": 2},
+        {"itemId": "aluminum", "quantity": 1}
+      ],
+      "craftTime": 8.0,
+      "description": "大量の電子部品を組み合わせてコンピューターを作る"
+    },
+    {
+      "id": "robot_recipe",
+      "result": "robot",
+      "ingredients": [
+        {"itemId": "computer", "quantity": 1},
+        {"itemId": "motor", "quantity": 4},
+        {"itemId": "sensor", "quantity": 3},
+        {"itemId": "steel", "quantity": 5},
+        {"itemId": "wire", "quantity": 5}
+      ],
+      "craftTime": 10.0,
+      "description": "コンピューター、モーター、センサー、鋼鉄を組み合わせてロボットを作る"
+    },
+    {
+      "id": "car_recipe",
+      "result": "car",
+      "ingredients": [
+        {"itemId": "motor", "quantity": 1},
+        {"itemId": "steel", "quantity": 10},
+        {"itemId": "rubber", "quantity": 4},
+        {"itemId": "glass", "quantity": 4},
+        {"itemId": "battery", "quantity": 1}
+      ],
+      "craftTime": 12.0,
+      "description": "モーター、鋼鉄、ゴム、ガラス、電池で自動車を作る"
+    },
+    {
+      "id": "truck_recipe",
+      "result": "truck",
+      "ingredients": [
+        {"itemId": "car", "quantity": 1},
+        {"itemId": "steel", "quantity": 10}
+      ],
+      "craftTime": 8.0,
+      "description": "自動車を大型化してトラックを作る"
+    },
+    {
+      "id": "airplane_recipe",
+      "result": "airplane",
+      "ingredients": [
+        {"itemId": "motor", "quantity": 2},
+        {"itemId": "aluminum", "quantity": 15},
+        {"itemId": "glass", "quantity": 5},
+        {"itemId": "wire", "quantity": 10},
+        {"itemId": "fuel", "quantity": 5}
+      ],
+      "craftTime": 15.0,
+      "description": "モーター、アルミニウム、ガラス、電線、燃料で飛行機を作る"
+    },
+    {
+      "id": "ship_recipe",
+      "result": "ship",
+      "ingredients": [
+        {"itemId": "steel", "quantity": 50},
+        {"itemId": "motor", "quantity": 4},
+        {"itemId": "wire", "quantity": 20},
+        {"itemId": "glass", "quantity": 10}
+      ],
+      "craftTime": 20.0,
+      "description": "大量の鋼鉄とモーターで船を作る"
+    },
+    {
+      "id": "rocket_recipe",
+      "result": "rocket",
+      "ingredients": [
+        {"itemId": "aluminum", "quantity": 20},
+        {"itemId": "fuel", "quantity": 10},
+        {"itemId": "oxygen", "quantity": 10},
+        {"itemId": "computer", "quantity": 1}
+      ],
+      "craftTime": 18.0,
+      "description": "アルミニウム、燃料、酸素、コンピューターでロケットを作る"
+    },
+    {
+      "id": "book_recipe",
+      "result": "book",
+      "ingredients": [
+        {"itemId": "paper", "quantity": 10},
+        {"itemId": "leather", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "紙と革で本を作る"
+    },
+    {
+      "id": "canvas_recipe",
+      "result": "canvas",
+      "ingredients": [
+        {"itemId": "fabric", "quantity": 2},
+        {"itemId": "wood", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "布と木材でキャンバスを作る"
+    },
+    {
+      "id": "paint_recipe",
+      "result": "paint",
+      "ingredients": [
+        {"itemId": "coal", "quantity": 1},
+        {"itemId": "oil", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "石炭と油で絵の具を作る"
+    },
+    {
+      "id": "painting_recipe",
+      "result": "painting",
+      "ingredients": [
+        {"itemId": "canvas", "quantity": 1},
+        {"itemId": "paint", "quantity": 3}
+      ],
+      "craftTime": 4.0,
+      "description": "キャンバスと絵の具で絵画を作る"
+    },
+    {
+      "id": "bread_recipe",
+      "result": "bread",
+      "ingredients": [
+        {"itemId": "flour", "quantity": 2},
+        {"itemId": "water", "quantity": 1},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "小麦粉、水、火でパンを作る"
+    },
+    {
+      "id": "cheese_recipe",
+      "result": "cheese",
+      "ingredients": [
+        {"itemId": "milk", "quantity": 2},
+        {"itemId": "salt", "quantity": 1}
+      ],
+      "craftTime": 4.0,
+      "description": "牛乳と塩でチーズを作る"
+    },
+    {
+      "id": "wine_recipe",
+      "result": "wine",
+      "ingredients": [
+        {"itemId": "grape", "quantity": 5},
+        {"itemId": "water", "quantity": 1}
+      ],
+      "craftTime": 10.0,
+      "description": "ブドウを発酵させてワインを作る"
+    },
+    {
+      "id": "chocolate_recipe",
+      "result": "chocolate",
+      "ingredients": [
+        {"itemId": "cocoa", "quantity": 2},
+        {"itemId": "sugar", "quantity": 1},
+        {"itemId": "milk", "quantity": 1}
+      ],
+      "craftTime": 3.0,
+      "description": "カカオ、砂糖、牛乳でチョコレートを作る"
+    },
+    {
+      "id": "coffee_recipe",
+      "result": "coffee",
+      "ingredients": [
+        {"itemId": "coffee_bean", "quantity": 2},
+        {"itemId": "water", "quantity": 1},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "コーヒー豆、水、火でコーヒーを作る"
+    },
+    {
+      "id": "electricity_recipe",
+      "result": "electricity",
+      "ingredients": [
+        {"itemId": "magnet", "quantity": 1},
+        {"itemId": "wire", "quantity": 1},
+        {"itemId": "motor", "quantity": 1}
+      ],
+      "craftTime": 1.0,
+      "description": "磁石と電線を動かして電気を生む"
+    },
+    {
+      "id": "steam_recipe",
+      "result": "steam",
+      "ingredients": [
+        {"itemId": "water", "quantity": 1},
+        {"itemId": "fire", "quantity": 1}
+      ],
+      "craftTime": 2.0,
+      "description": "水を加熱して蒸気を作る"
+    },
+    {
+      "id": "solar_panel_recipe",
+      "result": "solar_panel",
+      "ingredients": [
+        {"itemId": "silicon", "quantity": 5},
+        {"itemId": "glass", "quantity": 2},
+        {"itemId": "aluminum", "quantity": 2},
+        {"itemId": "wire", "quantity": 3}
+      ],
+      "craftTime": 6.0,
+      "description": "ケイ素、ガラス、アルミニウム、電線で太陽光パネルを作る"
+    },
+    {
+      "id": "wind_turbine_recipe",
+      "result": "wind_turbine",
+      "ingredients": [
+        {"itemId": "motor", "quantity": 1},
+        {"itemId": "steel", "quantity": 10},
+        {"itemId": "wire", "quantity": 5}
+      ],
+      "craftTime": 8.0,
+      "description": "モーター、鋼鉄、電線で風力タービンを作る"
+    },
+    {
+      "id": "nuclear_reactor_recipe",
+      "result": "nuclear_reactor",
+      "ingredients": [
+        {"itemId": "uranium", "quantity": 5},
+        {"itemId": "steel", "quantity": 20},
+        {"itemId": "concrete", "quantity": 30},
+        {"itemId": "wire", "quantity": 10},
+        {"itemId": "computer", "quantity": 2}
+      ],
+      "craftTime": 25.0,
+      "description": "ウラン、鋼鉄、コンクリート、電線、コンピューターで原子炉を作る"
+    }
+  ]
+}
