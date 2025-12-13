@@ -150,6 +150,19 @@ public class Player {
     }
     
     /**
+     * プレイヤーの位置を設定します（ロード用）。
+     * @param playerTileX プレイヤー升X座標
+     * @param playerTileY プレイヤー升Y座標
+     */
+    public void setPosition(int playerTileX, int playerTileY) {
+        this.playerTileX = playerTileX;
+        this.playerTileY = playerTileY;
+        this.pixelX = playerTileX * PLAYER_TILE_SIZE;
+        this.pixelY = playerTileY * PLAYER_TILE_SIZE;
+        this.isMoving = false; // 移動を停止
+    }
+    
+    /**
      * プレイヤーを描画します。
      * @param shapeRenderer ShapeRendererインスタンス
      */

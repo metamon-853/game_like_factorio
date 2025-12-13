@@ -191,5 +191,40 @@ public class ItemManager {
     public int getItemCount() {
         return items.size;
     }
+    
+    /**
+     * 現在のアイテムリストを返します（セーブ用）。
+     */
+    public Array<Item> getItems() {
+        return items;
+    }
+    
+    /**
+     * アイテムリストを設定します（ロード用）。
+     */
+    public void setItems(Array<Item> items) {
+        this.items = items;
+    }
+    
+    /**
+     * 取得したアイテム数を設定します（ロード用）。
+     */
+    public void setCollectedCount(int count) {
+        this.collectedCount = count;
+    }
+    
+    /**
+     * 生成済みチャンクのセットを返します（セーブ用）。
+     */
+    public java.util.Set<String> getGeneratedChunks() {
+        return generatedChunks;
+    }
+    
+    /**
+     * 生成済みチャンクのセットを設定します（ロード用）。
+     */
+    public void setGeneratedChunks(java.util.Set<String> chunks) {
+        this.generatedChunks = chunks;
+    }
 }
 

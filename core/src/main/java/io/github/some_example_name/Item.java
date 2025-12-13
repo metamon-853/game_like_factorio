@@ -44,6 +44,16 @@ public class Item {
     }
     
     /**
+     * アイテムの種類を指定して作成します（ロード用）。
+     */
+    public Item(int tileX, int tileY, ItemType type) {
+        this.tileX = tileX;
+        this.tileY = tileY;
+        this.collected = false;
+        this.type = type;
+    }
+    
+    /**
      * アイテムを取得します。
      */
     public void collect() {
@@ -69,6 +79,13 @@ public class Item {
      */
     public int getTileY() {
         return tileY;
+    }
+    
+    /**
+     * アイテムの種類を返します。
+     */
+    public ItemType getType() {
+        return type;
     }
     
     /**

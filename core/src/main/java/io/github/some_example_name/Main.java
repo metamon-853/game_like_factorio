@@ -13,6 +13,8 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.Array;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
@@ -35,7 +37,9 @@ public class Main extends ApplicationAdapter {
     // メニュー状態
     private enum MenuState {
         MAIN_MENU,
-        SOUND_MENU
+        SOUND_MENU,
+        SAVE_MENU,
+        LOAD_MENU
     }
     private MenuState currentMenuState = MenuState.MAIN_MENU;
     
@@ -67,6 +71,115 @@ public class Main extends ApplicationAdapter {
     private static final float MIN_ZOOM = 0.3f; // 最小ズーム（縮小の限界）
     private static final float MAX_ZOOM = 3.0f; // 最大ズーム（拡大の限界）
     private static final float ZOOM_SPEED = 0.1f; // ズームの速度
+    
+    // ゲーム名（Steam向けのセーブデータ保存先に使用）
+    private static final String GAME_NAME = "game_like_factorio";
+    
+    // セーブファイル名のプレフィックス
+    private static final String SAVE_FILE_PREFIX = "savegame_";
+    private static final String SAVE_FILE_EXTENSION = ".json";
+    
+    // テキスト入力関連
+    private StringBuilder inputText = new StringBuilder();
+    private boolean isTextInputActive = false;
+    private String currentInputLabel = "";
+    private int maxInputLength = 30;
+    
+    /**
+     * セーブデータの保存先ディレクトリを取得します。
+     * Steamゲームとして標準的な場所（Documents/My Games/[ゲーム名]）を使用します。
+     * @return セーブディレクトリのFileHandle
+     */
+    private com.badlogic.gdx.files.FileHandle getSaveDirectory() {
+        try {
+            // Windowsでは、システムプロパティからDocumentsフォルダのパスを取得
+            String osName = System.getProperty("os.name").toLowerCase();
+            String documentsPath;
+            
+            if (osName.contains("win")) {
+                // Windowsの場合、環境変数からDocumentsフォルダを取得
+                documentsPath = System.getenv("USERPROFILE");
+                if (documentsPath == null) {
+                    documentsPath = System.getProperty("user.home");
+                }
+                documentsPath += "\\Documents\\My Games\\" + GAME_NAME;
+            } else if (osName.contains("mac")) {
+                // macOSの場合
+                documentsPath = System.getProperty("user.home") + "/Documents/My Games/" + GAME_NAME;
+            } else {
+                // Linuxの場合
+                documentsPath = System.getProperty("user.home") + "/Documents/My Games/" + GAME_NAME;
+            }
+            
+            // 絶対パスでFileHandleを作成
+            com.badlogic.gdx.files.FileHandle saveDir = Gdx.files.absolute(documentsPath);
+            
+            // ディレクトリが存在しない場合は作成
+            if (!saveDir.exists()) {
+                saveDir.mkdirs();
+                Gdx.app.log("SaveGame", "Created save directory at " + saveDir.file().getAbsolutePath());
+            }
+            
+            return saveDir;
+        } catch (Exception e) {
+            Gdx.app.error("SaveGame", "Error getting save directory: " + e.getMessage());
+            e.printStackTrace();
+            // フォールバック：Gdx.files.external()を使用
+            com.badlogic.gdx.files.FileHandle fallback = Gdx.files.external("Documents/My Games/" + GAME_NAME);
+            fallback.mkdirs();
+            Gdx.app.log("SaveGame", "Using fallback path: " + fallback.file().getAbsolutePath());
+            return fallback;
+        }
+    }
+    
+    /**
+     * セーブデータの保存先ファイルを取得します。
+     * @param saveName セーブデータ名（nullの場合はデフォルト名）
+     * @return セーブファイルのFileHandle
+     */
+    private com.badlogic.gdx.files.FileHandle getSaveFileHandle(String saveName) {
+        com.badlogic.gdx.files.FileHandle saveDir = getSaveDirectory();
+        String fileName;
+        if (saveName == null || saveName.trim().isEmpty()) {
+            fileName = SAVE_FILE_PREFIX + "default" + SAVE_FILE_EXTENSION;
+        } else {
+            // ファイル名に使用できない文字を置き換え
+            String sanitizedName = saveName.replaceAll("[\\\\/:*?\"<>|]", "_");
+            fileName = SAVE_FILE_PREFIX + sanitizedName + SAVE_FILE_EXTENSION;
+        }
+        return saveDir.child(fileName);
+    }
+    
+    /**
+     * 利用可能なセーブファイルのリストを取得します。
+     * @return セーブファイル名のリスト（拡張子なし）
+     */
+    private java.util.List<String> getSaveFileList() {
+        java.util.List<String> saveList = new java.util.ArrayList<>();
+        try {
+            com.badlogic.gdx.files.FileHandle saveDir = getSaveDirectory();
+            if (saveDir.exists() && saveDir.isDirectory()) {
+                com.badlogic.gdx.files.FileHandle[] files = saveDir.list();
+                for (com.badlogic.gdx.files.FileHandle file : files) {
+                    String fileName = file.name();
+                    if (fileName.startsWith(SAVE_FILE_PREFIX) && fileName.endsWith(SAVE_FILE_EXTENSION)) {
+                        // プレフィックスと拡張子を除去
+                        String saveName = fileName.substring(
+                            SAVE_FILE_PREFIX.length(),
+                            fileName.length() - SAVE_FILE_EXTENSION.length()
+                        );
+                        saveList.add(saveName);
+                    }
+                }
+            }
+        } catch (Exception e) {
+            Gdx.app.error("SaveGame", "Error getting save file list: " + e.getMessage());
+            e.printStackTrace();
+        }
+        // 名前順にソート
+        saveList.sort(String::compareToIgnoreCase);
+        return saveList;
+    }
     
     // ボタン関連
     private static class Button {
@@ -178,16 +291,31 @@ public class Main extends ApplicationAdapter {
         
         // ESCキーでポーズ/再開を切り替え、またはメニューから戻る
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (isPaused && currentMenuState == MenuState.SOUND_MENU) {
-                // サウンドメニューからメインメニューに戻る
-                currentMenuState = MenuState.MAIN_MENU;
-            } else {
-                // ポーズ/再開を切り替え
-                isPaused = !isPaused;
-                if (!isPaused) {
-                    currentMenuState = MenuState.MAIN_MENU; // ポーズ解除時にメニュー状態をリセット
+            if (isPaused) {
+                if (isTextInputActive) {
+                    // テキスト入力中の場合、入力をキャンセル
+                    isTextInputActive = false;
+                    inputText.setLength(0);
+                } else if (currentMenuState == MenuState.SOUND_MENU || 
+                          currentMenuState == MenuState.SAVE_MENU || 
+                          currentMenuState == MenuState.LOAD_MENU) {
+                    // サブメニューからメインメニューに戻る
+                    currentMenuState = MenuState.MAIN_MENU;
+                } else {
+                    // ポーズ解除
+                    isPaused = false;
+                    currentMenuState = MenuState.MAIN_MENU;
                 }
+            } else {
+                // ポーズ
+                isPaused = true;
+                currentMenuState = MenuState.MAIN_MENU;
             }
+        }
+        
+        // テキスト入力処理
+        if (isTextInputActive) {
+            handleTextInput();
         }
         
         // キーボード操作は無効化（マウス操作のみ）
@@ -199,6 +327,10 @@ public class Main extends ApplicationAdapter {
             } else if (currentMenuState == MenuState.SOUND_MENU) {
                 handleSoundMenuClick();
                 handleSoundMenuDrag();
+            } else if (currentMenuState == MenuState.SAVE_MENU) {
+                handleSaveMenuClick();
+            } else if (currentMenuState == MenuState.LOAD_MENU) {
+                handleLoadMenuClick();
             }
         }
         
@@ -257,6 +389,10 @@ public class Main extends ApplicationAdapter {
                 drawPauseMenu();
             } else if (currentMenuState == MenuState.SOUND_MENU) {
                 drawSoundMenu();
+            } else if (currentMenuState == MenuState.SAVE_MENU) {
+                drawSaveMenu();
+            } else if (currentMenuState == MenuState.LOAD_MENU) {
+                drawLoadMenu();
             }
         }
     }
@@ -424,20 +560,32 @@ public class Main extends ApplicationAdapter {
             float buttonSpacing = 80;
             
             // グリッド切り替えボタン
-            float gridButtonY = centerY - 20;
+            float gridButtonY = centerY + buttonSpacing - 20;
             Button gridButton = new Button(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
+            // セーブボタン
+            float saveButtonY = centerY - 20;
+            Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            // ロードボタン
+            float loadButtonY = centerY - buttonSpacing - 20;
+            Button loadButton = new Button(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
             // Soundメニューボタン
-            float soundButtonY = centerY - buttonSpacing - 20;
+            float soundButtonY = centerY - buttonSpacing * 2 - 20;
             Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
             // ゲーム終了ボタン
-            float quitButtonY = centerY - buttonSpacing * 2 - 20;
+            float quitButtonY = centerY - buttonSpacing * 3 - 20;
             Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
             // ボタンがクリックされたかを判定
             if (gridButton.contains(mouseX, mouseY)) {
                 showGrid = !showGrid;
+            } else if (saveButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.SAVE_MENU;
+            } else if (loadButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.LOAD_MENU;
             } else if (soundButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.SOUND_MENU;
             } else if (quitButton.contains(mouseX, mouseY)) {
@@ -471,17 +619,27 @@ public class Main extends ApplicationAdapter {
         float buttonSpacing = 80;
         
         // グリッド切り替えボタンを描画
-        float gridButtonY = centerY - 20;
+        float gridButtonY = centerY + buttonSpacing - 20;
         drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Toggle Grid: " + (showGrid ? "ON" : "OFF"));
         
+        // セーブボタンを描画
+        float saveButtonY = centerY - 20;
+        drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Save Game");
+        
+        // ロードボタンを描画
+        float loadButtonY = centerY - buttonSpacing - 20;
+        drawButton(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Load Game");
+        
         // Soundメニューボタンを描画
-        float soundButtonY = centerY - buttonSpacing - 20;
+        float soundButtonY = centerY - buttonSpacing * 2 - 20;
         drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Sound");
         
         // ゲーム終了ボタンを描画
-        float quitButtonY = centerY - buttonSpacing * 2 - 20;
+        float quitButtonY = centerY - buttonSpacing * 3 - 20;
         drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Quit Game");
         
@@ -650,6 +808,182 @@ public class Main extends ApplicationAdapter {
     }
     
     /**
+     * セーブメニューのマウスクリックを処理します。
+     */
+    private void handleSaveMenuClick() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT) && !isTextInputActive) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            
+            float buttonWidth = 320;
+            float buttonHeight = 65;
+            float centerX = screenWidth / 2;
+            float centerY = screenHeight / 2;
+            
+            // 名前入力開始ボタン
+            float inputButtonY = centerY - 80;
+            Button inputButton = new Button(centerX - buttonWidth / 2, inputButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            // 戻るボタン
+            float backButtonY = centerY - 200;
+            Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            if (inputButton.contains(mouseX, mouseY)) {
+                // テキスト入力を開始
+                isTextInputActive = true;
+                inputText.setLength(0);
+                currentInputLabel = "Save Name";
+            } else if (backButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.MAIN_MENU;
+                isTextInputActive = false;
+                inputText.setLength(0);
+            }
+        }
+    }
+    
+    /**
+     * ロードメニューのマウスクリックを処理します。
+     */
+    private void handleLoadMenuClick() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            
+            float buttonWidth = 400;
+            float buttonHeight = 50;
+            float centerX = screenWidth / 2;
+            float startY = screenHeight / 2 + 150;
+            float buttonSpacing = 60;
+            
+            java.util.List<String> saveList = getSaveFileList();
+            
+            // 各セーブファイルボタンをチェック
+            for (int i = 0; i < saveList.size() && i < 10; i++) { // 最大10個まで表示
+                float buttonY = startY - i * buttonSpacing;
+                Button saveButton = new Button(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight);
+                if (saveButton.contains(mouseX, mouseY)) {
+                    String saveName = saveList.get(i);
+                    if (loadGame(saveName)) {
+                        Gdx.app.log("LoadGame", "Game loaded successfully: " + saveName);
+                        isPaused = false; // ロード後はポーズを解除
+                    } else {
+                        Gdx.app.error("LoadGame", "Failed to load game: " + saveName);
+                    }
+                    break;
+                }
+            }
+            
+            // 戻るボタン
+            float backButtonY = screenHeight / 2 - 200;
+            Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            if (backButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.MAIN_MENU;
+            }
+        }
+    }
+    
+    /**
+     * セーブメニューを描画します。
+     */
+    private void drawSaveMenu() {
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        // "SAVE GAME" テキストを中央に表示
+        font.getData().setScale(3.0f);
+        font.setColor(Color.WHITE);
+        String titleText = "SAVE GAME";
+        GlyphLayout titleLayout = new GlyphLayout(font, titleText);
+        float titleX = (screenWidth - titleLayout.width) / 2;
+        float titleY = screenHeight / 2 + 200;
+        font.draw(batch, titleText, titleX, titleY);
+        
+        float buttonWidth = 320;
+        float buttonHeight = 65;
+        float centerX = screenWidth / 2;
+        float centerY = screenHeight / 2;
+        
+        // テキスト入力フィールドを描画
+        font.getData().setScale(2.0f);
+        String inputLabel = "Save Name:";
+        GlyphLayout labelLayout = new GlyphLayout(font, inputLabel);
+        float labelX = centerX - labelLayout.width / 2;
+        float labelY = centerY + 50;
+        font.draw(batch, inputLabel, labelX, labelY);
+        
+        // 入力テキストを描画
+        String displayText = isTextInputActive ? inputText.toString() + "_" : (inputText.length() > 0 ? inputText.toString() : "Click button to enter name");
+        font.setColor(isTextInputActive ? Color.YELLOW : Color.LIGHT_GRAY);
+        GlyphLayout textLayout = new GlyphLayout(font, displayText);
+        float textX = centerX - textLayout.width / 2;
+        float textY = centerY;
+        font.draw(batch, displayText, textX, textY);
+        
+        // 名前入力開始ボタンを描画
+        float inputButtonY = centerY - 80;
+        drawButton(centerX - buttonWidth / 2, inputButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   isTextInputActive ? "Enter to confirm" : "Enter Save Name");
+        
+        // 戻るボタンを描画
+        float backButtonY = centerY - 200;
+        drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Back");
+        
+        font.getData().setScale(2.0f);
+        batch.end();
+    }
+    
+    /**
+     * ロードメニューを描画します。
+     */
+    private void drawLoadMenu() {
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        // "LOAD GAME" テキストを中央に表示
+        font.getData().setScale(3.0f);
+        font.setColor(Color.WHITE);
+        String titleText = "LOAD GAME";
+        GlyphLayout titleLayout = new GlyphLayout(font, titleText);
+        float titleX = (screenWidth - titleLayout.width) / 2;
+        float titleY = screenHeight / 2 + 200;
+        font.draw(batch, titleText, titleX, titleY);
+        
+        float buttonWidth = 400;
+        float buttonHeight = 50;
+        float centerX = screenWidth / 2;
+        float startY = screenHeight / 2 + 150;
+        float buttonSpacing = 60;
+        
+        java.util.List<String> saveList = getSaveFileList();
+        
+        // セーブファイルリストを描画
+        font.getData().setScale(1.5f);
+        font.setColor(Color.WHITE);
+        if (saveList.isEmpty()) {
+            String noSaveText = "No save files found";
+            GlyphLayout noSaveLayout = new GlyphLayout(font, noSaveText);
+            float noSaveX = centerX - noSaveLayout.width / 2;
+            float noSaveY = screenHeight / 2;
+            font.draw(batch, noSaveText, noSaveX, noSaveY);
+        } else {
+            for (int i = 0; i < saveList.size() && i < 10; i++) { // 最大10個まで表示
+                float buttonY = startY - i * buttonSpacing;
+                String saveName = saveList.get(i);
+                drawButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight, saveName);
+            }
+        }
+        
+        // 戻るボタンを描画
+        float backButtonY = screenHeight / 2 - 200;
+        drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Back");
+        
+        font.getData().setScale(2.0f);
+        batch.end();
+    }
+    
+    /**
      * マスターボリュームを更新します。
      * 将来的に音声を追加したときに、この音量設定が適用されます。
      */
@@ -699,6 +1033,207 @@ public class Main extends ApplicationAdapter {
         font.draw(batch, text, textX, textY);
     }
 
+    /**
+     * テキスト入力を処理します。
+     */
+    private void handleTextInput() {
+        // Enterキーで確定
+        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
+            String text = inputText.toString().trim();
+            if (!text.isEmpty() && text.length() <= maxInputLength) {
+                if (currentInputLabel.equals("Save Name")) {
+                    // セーブ処理
+                    if (saveGame(text)) {
+                        Gdx.app.log("SaveGame", "Game saved successfully: " + text);
+                        isPaused = false; // セーブ後はポーズを解除
+                    } else {
+                        Gdx.app.error("SaveGame", "Failed to save game");
+                    }
+                }
+            }
+            isTextInputActive = false;
+            inputText.setLength(0);
+            currentInputLabel = "";
+            return;
+        }
+        
+        // Backspaceキーで文字削除
+        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
+            if (inputText.length() > 0) {
+                inputText.setLength(inputText.length() - 1);
+            }
+            return;
+        }
+        
+        // Shiftキーの状態を確認
+        boolean isShiftPressed = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
+        
+        // キーコードから文字を取得
+        int keycode = -1;
+        for (int i = Input.Keys.A; i <= Input.Keys.Z; i++) {
+            if (Gdx.input.isKeyJustPressed(i)) {
+                keycode = i;
+                break;
+            }
+        }
+        
+        if (keycode >= Input.Keys.A && keycode <= Input.Keys.Z) {
+            char c = (char)(keycode - Input.Keys.A + (isShiftPressed ? 'A' : 'a'));
+            if (inputText.length() < maxInputLength) {
+                inputText.append(c);
+            }
+            return;
+        }
+        
+        // 数字キー
+        for (int i = Input.Keys.NUM_0; i <= Input.Keys.NUM_9; i++) {
+            if (Gdx.input.isKeyJustPressed(i)) {
+                char c = (char)('0' + (i - Input.Keys.NUM_0));
+                if (inputText.length() < maxInputLength) {
+                    inputText.append(c);
+                }
+                return;
+            }
+        }
+        
+        // スペースキー
+        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
+            if (inputText.length() < maxInputLength) {
+                inputText.append(' ');
+            }
+            return;
+        }
+        
+        // アンダースコアとハイフン（Shift + ハイフンでアンダースコア）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS)) {
+            char c = isShiftPressed ? '_' : '-';
+            if (inputText.length() < maxInputLength) {
+                inputText.append(c);
+            }
+            return;
+        }
+    }
+    
+    /**
+     * ゲームの状態をセーブします。
+     * @param saveName セーブデータ名（nullの場合はデフォルト名）
+     * @return セーブが成功した場合true
+     */
+    public boolean saveGame(String saveName) {
+        try {
+            GameSaveData saveData = new GameSaveData();
+            
+            // プレイヤーの状態を保存
+            saveData.playerTileX = player.getPlayerTileX();
+            saveData.playerTileY = player.getPlayerTileY();
+            
+            // アイテムマネージャーの状態を保存
+            saveData.collectedCount = itemManager.getCollectedCount();
+            saveData.items = new java.util.ArrayList<>();
+            for (Item item : itemManager.getItems()) {
+                if (!item.isCollected()) {
+                    GameSaveData.ItemData itemData = new GameSaveData.ItemData(
+                        item.getTileX(),
+                        item.getTileY(),
+                        item.getType().name()
+                    );
+                    saveData.items.add(itemData);
+                }
+            }
+            
+            // 生成済みチャンクを保存
+            saveData.generatedChunks = new java.util.ArrayList<>(itemManager.getGeneratedChunks());
+            
+            // 設定を保存
+            saveData.showGrid = showGrid;
+            saveData.masterVolume = masterVolume;
+            saveData.isMuted = isMuted;
+            saveData.cameraZoom = cameraZoom;
+            
+            // JSONにシリアライズして保存
+            Json json = new Json();
+            String jsonString = json.prettyPrint(saveData);
+            
+            com.badlogic.gdx.files.FileHandle saveFile = getSaveFileHandle(saveName);
+            Gdx.app.log("SaveGame", "Writing to file: " + saveFile.file().getAbsolutePath());
+            Gdx.app.log("SaveGame", "File exists before write: " + saveFile.exists());
+            Gdx.app.log("SaveGame", "Parent directory exists: " + saveFile.parent().exists());
+            Gdx.app.log("SaveGame", "Parent directory writable: " + saveFile.parent().file().canWrite());
+            
+            saveFile.writeString(jsonString, false);
+            
+            // 保存が成功したか確認
+            if (saveFile.exists()) {
+                Gdx.app.log("SaveGame", "File successfully written. Size: " + saveFile.length() + " bytes");
+                return true;
+            } else {
+                Gdx.app.error("SaveGame", "File was not created after write operation");
+                return false;
+            }
+        } catch (Exception e) {
+            Gdx.app.error("SaveGame", "Failed to save game: " + e.getMessage());
+            e.printStackTrace();
+            return false;
+        }
+    }
+    
+    /**
+     * ゲームの状態をロードします。
+     * @param saveName セーブデータ名
+     * @return ロードが成功した場合true
+     */
+    public boolean loadGame(String saveName) {
+        try {
+            // セーブファイルが存在するか確認
+            com.badlogic.gdx.files.FileHandle saveFile = getSaveFileHandle(saveName);
+            if (!saveFile.exists()) {
+                Gdx.app.log("LoadGame", "Save file not found");
+                return false;
+            }
+            
+            // セーブファイルを読み込む
+            String jsonString = saveFile.readString();
+            Json json = new Json();
+            GameSaveData saveData = json.fromJson(GameSaveData.class, jsonString);
+            
+            // プレイヤーの状態を復元
+            player.setPosition(saveData.playerTileX, saveData.playerTileY);
+            
+            // アイテムマネージャーの状態を復元
+            itemManager.setCollectedCount(saveData.collectedCount);
+            Array<Item> loadedItems = new Array<>();
+            for (GameSaveData.ItemData itemData : saveData.items) {
+                Item.ItemType type = Item.ItemType.valueOf(itemData.type);
+                Item item = new Item(itemData.tileX, itemData.tileY, type);
+                loadedItems.add(item);
+            }
+            itemManager.setItems(loadedItems);
+            
+            // 生成済みチャンクを復元
+            java.util.Set<String> chunks = new java.util.HashSet<>(saveData.generatedChunks);
+            itemManager.setGeneratedChunks(chunks);
+            
+            // 設定を復元
+            showGrid = saveData.showGrid;
+            masterVolume = saveData.masterVolume;
+            isMuted = saveData.isMuted;
+            cameraZoom = saveData.cameraZoom;
+            updateMasterVolume();
+            
+            // カメラをプレイヤーの位置に設定
+            float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+            float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+            camera.position.set(playerCenterX, playerCenterY, 0);
+            camera.zoom = cameraZoom;
+            camera.update();
+            
+            return true;
+        } catch (Exception e) {
+            Gdx.app.error("LoadGame", "Failed to load game: " + e.getMessage());
+            return false;
+        }
+    }
+    
     @Override
     public void resize(int width, int height) {
         screenWidth = width;
