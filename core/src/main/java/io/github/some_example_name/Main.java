@@ -52,6 +52,22 @@ public class Main extends ApplicationAdapter {
     private static final float MAX_ZOOM = 3.0f; // 最大ズーム（拡大の限界）
     private static final float ZOOM_SPEED = 0.1f; // ズームの速度
     
+    // ボタン関連
+    private static class Button {
+        float x, y, width, height;
+        
+        Button(float x, float y, float width, float height) {
+            this.x = x;
+            this.y = y;
+            this.width = width;
+            this.height = height;
+        }
+        
+        boolean contains(float screenX, float screenY) {
+            return screenX >= x && screenX <= x + width && screenY >= y && screenY <= y + height;
+        }
+    }
+    
     @Override
     public void create() {
         // 画面サイズを取得
@@ -154,6 +170,11 @@ public class Main extends ApplicationAdapter {
         // ポーズ中にQキーでゲーム終了
         if (isPaused && Gdx.input.isKeyJustPressed(Input.Keys.Q)) {
             Gdx.app.exit();
+        }
+        
+        // ポーズ中にマウスクリックを処理
+        if (isPaused) {
+            handlePauseMenuClick();
         }
         
         // ポーズ中でない場合のみゲームを更新
@@ -350,53 +371,114 @@ public class Main extends ApplicationAdapter {
     }
     
     /**
+     * ポーズメニューのマウスクリックを処理します。
+     */
+    private void handlePauseMenuClick() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            // マウスの座標を取得（LibGDXの座標系はY軸が下から上なので変換が必要）
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            
+            // ボタンの位置とサイズを計算（drawPauseMenuと同じ値を使用）
+            float buttonWidth = 320;
+            float buttonHeight = 65;
+            float centerX = screenWidth / 2;
+            float centerY = screenHeight / 2;
+            float buttonSpacing = 80;
+            
+            // グリッド切り替えボタン
+            float gridButtonY = centerY - 20;
+            Button gridButton = new Button(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            // ゲーム終了ボタン
+            float quitButtonY = centerY - buttonSpacing - 20;
+            Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            // ボタンがクリックされたかを判定
+            if (gridButton.contains(mouseX, mouseY)) {
+                showGrid = !showGrid;
+            } else if (quitButton.contains(mouseX, mouseY)) {
+                Gdx.app.exit();
+            }
+        }
+    }
+    
+    /**
      * ポーズメニューを描画します。
      */
     private void drawPauseMenu() {
-        // 半透明の背景を描画（画面座標系で）
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0, 0, 0, 0.6f);
-        shapeRenderer.rect(0, 0, screenWidth, screenHeight);
-        shapeRenderer.end();
-        
         // テキストを描画（画面座標系で）
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
         // "PAUSED" テキストを中央に表示（大きく）
         font.getData().setScale(3.0f);
+        font.setColor(Color.WHITE);
         String pausedText = "PAUSED";
         GlyphLayout pausedLayout = new GlyphLayout(font, pausedText);
         float pausedX = (screenWidth - pausedLayout.width) / 2;
-        float pausedY = screenHeight / 2 + 60;
+        float pausedY = screenHeight / 2 + 100;
         font.draw(batch, pausedText, pausedX, pausedY);
         
-        // 操作説明を表示（大きく）
-        font.getData().setScale(2.0f);
+        // 操作説明を表示
+        font.getData().setScale(1.8f);
         String instructionText = "Press ESC to resume";
         GlyphLayout instructionLayout = new GlyphLayout(font, instructionText);
         float instructionX = (screenWidth - instructionLayout.width) / 2;
-        float instructionY = screenHeight / 2 - 40;
+        float instructionY = screenHeight / 2 + 40;
         font.draw(batch, instructionText, instructionX, instructionY);
         
-        // グリッド表示切り替えの説明
-        String gridText = "Press G to toggle grid: " + (showGrid ? "ON" : "OFF");
-        GlyphLayout gridLayout = new GlyphLayout(font, gridText);
-        float gridX = (screenWidth - gridLayout.width) / 2;
-        float gridY = screenHeight / 2 - 100;
-        font.draw(batch, gridText, gridX, gridY);
+        // ボタンの位置とサイズを計算
+        float buttonWidth = 320;
+        float buttonHeight = 65;
+        float centerX = screenWidth / 2;
+        float centerY = screenHeight / 2;
+        float buttonSpacing = 80;
         
-        // ゲーム終了の説明
-        String quitText = "Press Q to quit";
-        GlyphLayout quitLayout = new GlyphLayout(font, quitText);
-        float quitX = (screenWidth - quitLayout.width) / 2;
-        float quitY = screenHeight / 2 - 160;
-        font.draw(batch, quitText, quitX, quitY);
+        // グリッド切り替えボタンを描画
+        float gridButtonY = centerY - 20;
+        drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Toggle Grid: " + (showGrid ? "ON" : "OFF"));
+        
+        // ゲーム終了ボタンを描画
+        float quitButtonY = centerY - buttonSpacing - 20;
+        drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Quit Game");
         
         font.getData().setScale(2.0f); // 元に戻す
         
         batch.end();
+    }
+    
+    /**
+     * ボタンを描画します。
+     * 注意: このメソッドはbatch.begin()が既に呼ばれている状態で呼び出す必要があります。
+     */
+    private void drawButton(float x, float y, float width, float height, String text) {
+        // batchを一時的に終了してshapeRendererを使用
+        batch.end();
+        
+        // ボタンの背景を描画
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
+        shapeRenderer.rect(x, y, width, height);
+        shapeRenderer.end();
+        
+        // ボタンの枠線を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+        shapeRenderer.rect(x, y, width, height);
+        shapeRenderer.end();
+        
+        // batchを再開してテキストを描画
+        batch.begin();
+        font.getData().setScale(1.8f);
+        font.setColor(Color.WHITE);
+        GlyphLayout layout = new GlyphLayout(font, text);
+        float textX = x + (width - layout.width) / 2;
+        float textY = y + (height + layout.height) / 2;
+        font.draw(batch, text, textX, textY);
     }
 
     @Override
