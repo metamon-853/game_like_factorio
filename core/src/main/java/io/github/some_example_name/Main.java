@@ -606,15 +606,6 @@ public class Main extends ApplicationAdapter {
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
-        // "PAUSED" テキストを中央に表示（大きく）
-        font.getData().setScale(3.0f);
-        font.setColor(Color.WHITE);
-        String pausedText = "PAUSED";
-        GlyphLayout pausedLayout = new GlyphLayout(font, pausedText);
-        float pausedX = (screenWidth - pausedLayout.width) / 2;
-        float pausedY = screenHeight / 2 + 100;
-        font.draw(batch, pausedText, pausedX, pausedY);
-        
         // ボタンの位置とサイズを計算
         float buttonWidth = 320;
         float buttonHeight = 65;
@@ -626,7 +617,7 @@ public class Main extends ApplicationAdapter {
         float gridButtonY = centerY + buttonSpacing - 20;
         Button gridButton = new Button(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Toggle Grid: " + (showGrid ? "ON" : "OFF"), gridButton.contains(mouseX, mouseY));
+                   "Grid: " + (showGrid ? "ON" : "OFF"), gridButton.contains(mouseX, mouseY));
         
         // セーブボタンを描画
         float saveButtonY = centerY - 20;
