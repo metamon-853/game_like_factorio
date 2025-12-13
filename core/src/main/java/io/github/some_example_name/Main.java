@@ -464,14 +464,6 @@ public class Main extends ApplicationAdapter {
         float pausedY = screenHeight / 2 + 100;
         font.draw(batch, pausedText, pausedX, pausedY);
         
-        // 操作説明を表示
-        font.getData().setScale(1.8f);
-        String instructionText = "Press ESC to resume";
-        GlyphLayout instructionLayout = new GlyphLayout(font, instructionText);
-        float instructionX = (screenWidth - instructionLayout.width) / 2;
-        float instructionY = screenHeight / 2 + 40;
-        font.draw(batch, instructionText, instructionX, instructionY);
-        
         // ボタンの位置とサイズを計算
         float buttonWidth = 320;
         float buttonHeight = 65;
@@ -516,10 +508,6 @@ public class Main extends ApplicationAdapter {
             float backButtonY = centerY - 200;
             Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
-            // ミュートトグルボタン
-            float muteButtonY = centerY + 100;
-            Button muteButton = new Button(centerX - buttonWidth / 2, muteButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-            
             // スライダーの位置を計算
             float sliderWidth = 400;
             float sliderHeight = 20;
@@ -529,8 +517,6 @@ public class Main extends ApplicationAdapter {
             
             if (backButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.MAIN_MENU;
-            } else if (muteButton.contains(mouseX, mouseY)) {
-                toggleMute();
             } else if (sliderArea.contains(mouseX, mouseY)) {
                 // スライダーをクリックした場合、その位置に音量を設定
                 updateVolumeFromSliderPosition(mouseX, sliderX, sliderWidth);
@@ -610,11 +596,6 @@ public class Main extends ApplicationAdapter {
         float volumeTextX = centerX - volumeLayout.width / 2;
         float volumeTextY = centerY + 50;
         font.draw(batch, volumeText, volumeTextX, volumeTextY);
-        
-        // ミュートトグルボタンを描画
-        float muteButtonY = centerY + 100;
-        drawButton(centerX - buttonWidth / 2, muteButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Mute: " + (isMuted ? "ON" : "OFF"));
         
         // 戻るボタンを描画
         float backButtonY = centerY - 200;
