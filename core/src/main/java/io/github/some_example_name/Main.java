@@ -598,6 +598,10 @@ public class Main extends ApplicationAdapter {
      * ポーズメニューを描画します。
      */
     private void drawPauseMenu() {
+        // マウスの座標を取得（ホバー判定用）
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
         // テキストを描画（画面座標系で）
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
@@ -620,28 +624,33 @@ public class Main extends ApplicationAdapter {
         
         // グリッド切り替えボタンを描画
         float gridButtonY = centerY + buttonSpacing - 20;
+        Button gridButton = new Button(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Toggle Grid: " + (showGrid ? "ON" : "OFF"));
+                   "Toggle Grid: " + (showGrid ? "ON" : "OFF"), gridButton.contains(mouseX, mouseY));
         
         // セーブボタンを描画
         float saveButtonY = centerY - 20;
+        Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Save Game");
+                   "Save Game", saveButton.contains(mouseX, mouseY));
         
         // ロードボタンを描画
         float loadButtonY = centerY - buttonSpacing - 20;
+        Button loadButton = new Button(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Load Game");
+                   "Load Game", loadButton.contains(mouseX, mouseY));
         
         // Soundメニューボタンを描画
         float soundButtonY = centerY - buttonSpacing * 2 - 20;
+        Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Sound");
+                   "Sound", soundButton.contains(mouseX, mouseY));
         
         // ゲーム終了ボタンを描画
         float quitButtonY = centerY - buttonSpacing * 3 - 20;
+        Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Quit Game");
+                   "Quit Game", quitButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f); // 元に戻す
         
@@ -723,6 +732,10 @@ public class Main extends ApplicationAdapter {
      * サウンドメニューを描画します。
      */
     private void drawSoundMenu() {
+        // マウスの座標を取得（ホバー判定用）
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
@@ -755,8 +768,9 @@ public class Main extends ApplicationAdapter {
         
         // 戻るボタンを描画
         float backButtonY = centerY - 200;
+        Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Back");
+                   "Back", backButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f); // 元に戻す
         
@@ -886,6 +900,10 @@ public class Main extends ApplicationAdapter {
      * セーブメニューを描画します。
      */
     private void drawSaveMenu() {
+        // マウスの座標を取得（ホバー判定用）
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
@@ -921,13 +939,15 @@ public class Main extends ApplicationAdapter {
         
         // 名前入力開始ボタンを描画
         float inputButtonY = centerY - 80;
+        Button inputButton = new Button(centerX - buttonWidth / 2, inputButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, inputButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   isTextInputActive ? "Enter to confirm" : "Enter Save Name");
+                   isTextInputActive ? "Enter to confirm" : "Enter Save Name", inputButton.contains(mouseX, mouseY));
         
         // 戻るボタンを描画
         float backButtonY = centerY - 200;
+        Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Back");
+                   "Back", backButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f);
         batch.end();
@@ -937,6 +957,10 @@ public class Main extends ApplicationAdapter {
      * ロードメニューを描画します。
      */
     private void drawLoadMenu() {
+        // マウスの座標を取得（ホバー判定用）
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
@@ -970,14 +994,17 @@ public class Main extends ApplicationAdapter {
             for (int i = 0; i < saveList.size() && i < 10; i++) { // 最大10個まで表示
                 float buttonY = startY - i * buttonSpacing;
                 String saveName = saveList.get(i);
-                drawButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight, saveName);
+                Button saveButton = new Button(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight);
+                drawButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                          saveName, saveButton.contains(mouseX, mouseY));
             }
         }
         
         // 戻るボタンを描画
         float backButtonY = screenHeight / 2 - 200;
+        Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Back");
+                   "Back", backButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f);
         batch.end();
@@ -1005,28 +1032,48 @@ public class Main extends ApplicationAdapter {
     /**
      * ボタンを描画します。
      * 注意: このメソッドはbatch.begin()が既に呼ばれている状態で呼び出す必要があります。
+     * @param x ボタンのX座標
+     * @param y ボタンのY座標
+     * @param width ボタンの幅
+     * @param height ボタンの高さ
+     * @param text ボタンのテキスト
+     * @param isHovered ホバー状態（trueの場合、視覚的に強調表示）
      */
-    private void drawButton(float x, float y, float width, float height, String text) {
+    private void drawButton(float x, float y, float width, float height, String text, boolean isHovered) {
         // batchを一時的に終了してshapeRendererを使用
         batch.end();
         
         // ボタンの背景を描画
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
+        // ホバー時は背景色を明るくする
+        if (isHovered) {
+            shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 0.95f);
+        } else {
+            shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
+        }
         shapeRenderer.rect(x, y, width, height);
         shapeRenderer.end();
         
         // ボタンの枠線を描画
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(x, y, width, height);
+        // ホバー時は枠線を太く、明るくする
+        if (isHovered) {
+            shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
+            // 太い線を描画するために2回描画（簡易的な太線）
+            shapeRenderer.rect(x - 1, y - 1, width + 2, height + 2);
+            shapeRenderer.rect(x, y, width, height);
+        } else {
+            shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+            shapeRenderer.rect(x, y, width, height);
+        }
         shapeRenderer.end();
         
         // batchを再開してテキストを描画
         batch.begin();
         font.getData().setScale(1.8f);
-        font.setColor(Color.WHITE);
+        // ホバー時はテキストを少し明るくする
+        font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
         GlyphLayout layout = new GlyphLayout(font, text);
         float textX = x + (width - layout.width) / 2;
         float textY = y + (height + layout.height) / 2;
