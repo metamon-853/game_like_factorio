@@ -28,6 +28,9 @@ public class ItemManager {
     // 文明レベル（アイテム生成に使用）
     private CivilizationLevel civilizationLevel;
     
+    // インベントリへの参照
+    private Inventory inventory;
+    
     public ItemManager() {
         this.items = new Array<>();
         this.spawnTimer = 0f;
@@ -36,6 +39,21 @@ public class ItemManager {
         this.generatedChunks = new java.util.HashSet<>();
         this.itemDataLoader = new ItemDataLoader();
         this.civilizationLevel = new CivilizationLevel(1); // 初期はレベル1
+        this.inventory = null; // 後で設定される
+    }
+    
+    /**
+     * インベントリを設定します。
+     */
+    public void setInventory(Inventory inventory) {
+        this.inventory = inventory;
+    }
+    
+    /**
+     * インベントリを取得します。
+     */
+    public Inventory getInventory() {
+        return inventory;
     }
     
     /**
@@ -194,6 +212,15 @@ public class ItemManager {
                 item.getTileY() == playerMapTileY) {
                 item.collect();
                 collectedCount++;
+                
+                // インベントリにアイテムを追加
+                if (inventory != null && item.getItemData() != null) {
+                    inventory.addItem(item.getItemData());
+                } else if (inventory != null) {
+                    // ItemDataがない場合は、ItemTypeから推測（後方互換性）
+                    String itemId = "item_" + item.getType().name().toLowerCase();
+                    inventory.addItem(itemId);
+                }
             }
         }
     }
@@ -255,6 +282,13 @@ public class ItemManager {
      */
     public void setGeneratedChunks(java.util.Set<String> chunks) {
         this.generatedChunks = chunks;
+    }
+    
+    /**
+     * アイテムデータローダーを取得します。
+     */
+    public ItemDataLoader getItemDataLoader() {
+        return itemDataLoader;
     }
 }
 

@@ -36,6 +36,14 @@ public class Main extends ApplicationAdapter {
     private MenuSystem menuSystem;
     private InputHandler inputHandler;
     
+    // インベントリシステム
+    private Inventory inventory;
+    private InventoryUI inventoryUI;
+    private boolean inventoryOpen = false;
+    
+    // フォント管理
+    private FontManager fontManager;
+    
     // ポーズ状態
     private boolean isPaused;
     
@@ -94,19 +102,27 @@ public class Main extends ApplicationAdapter {
         
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
-        font = new BitmapFont();
+        
+        // フォントマネージャーを初期化
+        fontManager = new FontManager();
+        fontManager.initialize();
+        font = fontManager.getJapaneseFont(); // 日本語対応フォントを使用
         font.getData().setScale(2.0f); // フォントサイズを大きく
         font.setColor(Color.WHITE);
         
         // プレイヤーを原点に配置（無限マップなので任意の位置から開始可能）
         player = new Player(0, 0);
+        // インベントリを初期化
+        inventory = new Inventory();
         // アイテムマネージャーを初期化（無限マップ対応）
         itemManager = new ItemManager();
+        itemManager.setInventory(inventory); // インベントリを設定
         // ポーズ状態を初期化
         isPaused = false;
         
         // 分離したクラスのインスタンスを作成
         uiRenderer = new UIRenderer(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        inventoryUI = new InventoryUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         saveGameManager = new SaveGameManager();
         soundSettings = new SoundSettings();
         textInputHandler = new TextInputHandler();
@@ -220,6 +236,16 @@ public class Main extends ApplicationAdapter {
             }
         }
         
+        // Tabキーでインベントリを開閉（ポーズ中でない場合のみ）
+        if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
+            inventoryOpen = !inventoryOpen;
+        }
+        
+        // インベントリが開いているときはESCで閉じる
+        if (inventoryOpen && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            inventoryOpen = false;
+        }
+        
         // テキスト入力処理
         if (textInputHandler.isTextInputActive()) {
             if (textInputHandler.handleInput()) {
@@ -295,6 +321,14 @@ public class Main extends ApplicationAdapter {
         
         // UI情報を描画（取得アイテム数など）
         uiRenderer.drawUI(itemManager);
+        
+        // インベントリUIを描画
+        if (inventoryOpen) {
+            // UIRendererがbatchを終了しているので、InventoryUIで適切に処理される
+            inventoryUI.render(inventory, itemManager.getItemDataLoader());
+            // InventoryUIがbatchを開始しているので、終了する
+            batch.end();
+        }
         
         // ポーズメニューを描画
         if (isPaused) {
@@ -373,6 +407,11 @@ public class Main extends ApplicationAdapter {
             uiRenderer.updateScreenSize(width, height);
         }
         
+        // InventoryUIの画面サイズを更新
+        if (inventoryUI != null) {
+            inventoryUI.updateScreenSize(width, height);
+        }
+        
         // MenuSystemの画面サイズを更新
         if (menuSystem != null) {
             menuSystem.updateScreenSize(width, height);
@@ -383,6 +422,8 @@ public class Main extends ApplicationAdapter {
     public void dispose() {
         shapeRenderer.dispose();
         batch.dispose();
-        font.dispose();
+        if (fontManager != null) {
+            fontManager.dispose();
+        }
     }
 }
