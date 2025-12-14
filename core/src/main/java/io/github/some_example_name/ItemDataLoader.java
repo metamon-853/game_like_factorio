@@ -12,14 +12,14 @@ import java.util.Map;
  * アイテムデータをCSVファイルから読み込むクラス。
  */
 public class ItemDataLoader {
-    private Map<String, ItemData> itemDataMap;
+    private Map<Integer, ItemData> itemDataMap;
     private Array<ItemData> itemDataList;
     
     // 文明レベル1のアイテムID（定義から）
-    private static final String[] LEVEL_1_ITEM_IDS = {
-        "stone",      // 石
-        "wood",       // 木材
-        "raw_meat"    // 生肉（CSVにない場合は追加する必要がある）
+    private static final int[] LEVEL_1_ITEM_IDS = {
+        14,      // wood (木材)
+        15,      // stone (石)
+        105     // raw_meat (生肉) - 仮のID、CSVにない場合は追加する必要がある
     };
     
     public ItemDataLoader() {
@@ -61,28 +61,26 @@ public class ItemDataLoader {
                 
                 // CSVのパース（カンマ区切り、ただし引用符内のカンマは考慮しない簡易版）
                 String[] parts = parseCSVLine(line);
-                if (parts.length < 6) {
+                if (parts.length < 3) {
                     Gdx.app.log("ItemDataLoader", "Skipping invalid line: " + line);
                     continue;
                 }
                 
                 ItemData itemData = new ItemData();
-                itemData.id = parts[0].trim();
+                try {
+                    itemData.id = Integer.parseInt(parts[0].trim());
+                } catch (NumberFormatException e) {
+                    Gdx.app.log("ItemDataLoader", "Invalid item ID: " + parts[0]);
+                    continue;
+                }
                 itemData.name = parts[1].trim();
                 itemData.description = parts[2].trim();
-                try {
-                    itemData.tier = Integer.parseInt(parts[3].trim());
-                } catch (NumberFormatException e) {
-                    itemData.tier = 0;
-                }
-                itemData.category = parts[4].trim();
-                itemData.icon = parts[5].trim();
                 
-                // 文明レベルを設定（tierから推測、またはレベル1のアイテムリストから判定）
-                itemData.setCivilizationLevel(determineCivilizationLevel(itemData.id, itemData.tier));
+                // 文明レベルを設定（IDから判定）
+                itemData.setCivilizationLevel(determineCivilizationLevel(itemData.id));
                 
-                // 色を設定（カテゴリやIDに基づいて）
-                itemData.setColor(determineColor(itemData.id, itemData.category));
+                // 色を設定（IDに基づいて）
+                itemData.setColor(determineColor(itemData.id));
                 
                 itemDataMap.put(itemData.id, itemData);
                 itemDataList.add(itemData);
@@ -92,8 +90,8 @@ public class ItemDataLoader {
             e.printStackTrace();
         }
         
-        // 生肉がCSVにない場合は追加
-        if (!itemDataMap.containsKey("raw_meat")) {
+        // 生肉がCSVにない場合は追加（ID 105を使用）
+        if (!itemDataMap.containsKey(105)) {
             addRawMeatItem();
         }
         
@@ -108,16 +106,13 @@ public class ItemDataLoader {
      */
     private void addRawMeatItem() {
         ItemData rawMeat = new ItemData();
-        rawMeat.id = "raw_meat";
-        rawMeat.name = "生肉";
-        rawMeat.description = "狩猟で得られる生の肉。調理すると食べられる。";
-        rawMeat.tier = 1;
-        rawMeat.category = "food";
-        rawMeat.icon = "icons/raw_meat.png";
+        rawMeat.id = 105;
+        rawMeat.name = "Raw Meat";
+        rawMeat.description = "Raw meat obtained from hunting. Can be eaten after cooking.";
         rawMeat.setCivilizationLevel(1);
         rawMeat.setColor(new Color(0.8f, 0.4f, 0.3f, 1.0f)); // 赤みがかった色
         
-        itemDataMap.put("raw_meat", rawMeat);
+        itemDataMap.put(105, rawMeat);
         itemDataList.add(rawMeat);
     }
     
@@ -125,33 +120,27 @@ public class ItemDataLoader {
      * レベル1のアイテムが存在することを確認し、なければ追加します。
      */
     private void ensureLevel1Items() {
-        // 石が存在しない場合は追加
-        if (!itemDataMap.containsKey("stone")) {
+        // 石が存在しない場合は追加（ID 15）
+        if (!itemDataMap.containsKey(15)) {
             ItemData stone = new ItemData();
-            stone.id = "stone";
-            stone.name = "石";
-            stone.description = "地殻を構成する基本的な材料。";
-            stone.tier = 1;
-            stone.category = "material";
-            stone.icon = "icons/stone.png";
+            stone.id = 15;
+            stone.name = "Stone";
+            stone.description = "Basic material that forms the earth's crust.";
             stone.setCivilizationLevel(1);
             stone.setColor(new Color(0.5f, 0.5f, 0.5f, 1.0f)); // グレー
-            itemDataMap.put("stone", stone);
+            itemDataMap.put(15, stone);
             itemDataList.add(stone);
         }
         
-        // 木材が存在しない場合は追加
-        if (!itemDataMap.containsKey("wood")) {
+        // 木材が存在しない場合は追加（ID 14）
+        if (!itemDataMap.containsKey(14)) {
             ItemData wood = new ItemData();
-            wood.id = "wood";
-            wood.name = "木材";
-            wood.description = "樹木から得られる天然材料。";
-            wood.tier = 1;
-            wood.category = "material";
-            wood.icon = "icons/wood.png";
+            wood.id = 14;
+            wood.name = "Wood";
+            wood.description = "Natural material obtained from trees.";
             wood.setCivilizationLevel(1);
             wood.setColor(new Color(0.6f, 0.4f, 0.2f, 1.0f)); // 茶色
-            itemDataMap.put("wood", wood);
+            itemDataMap.put(14, wood);
             itemDataList.add(wood);
         }
     }
@@ -167,63 +156,65 @@ public class ItemDataLoader {
     /**
      * アイテムの文明レベルを決定します。
      */
-    private int determineCivilizationLevel(String itemId, int tier) {
+    private int determineCivilizationLevel(int itemId) {
         // レベル1のアイテムリストに含まれているかチェック
-        for (String level1Id : LEVEL_1_ITEM_IDS) {
-            if (level1Id.equals(itemId)) {
+        for (int level1Id : LEVEL_1_ITEM_IDS) {
+            if (level1Id == itemId) {
                 return 1;
             }
         }
         
-        // tierから推測（簡易版：tier 0-1はレベル1、tier 2はレベル2など）
+        // IDから簡易的に推測（IDが小さいほど基本的なアイテム）
         // より正確には、別のマッピングテーブルが必要
-        if (tier <= 1) {
+        if (itemId <= 20) {
             return 1;
-        } else if (tier == 2) {
+        } else if (itemId <= 50) {
             return 2;
+        } else if (itemId <= 75) {
+            return 3;
         } else {
-            return Math.min(10, (tier / 2) + 1);
+            return Math.min(10, (itemId / 15) + 1);
         }
     }
     
     /**
      * アイテムの色を決定します。
      */
-    private Color determineColor(String itemId, String category) {
+    private Color determineColor(int itemId) {
         // 文明レベル1のアイテムの色を設定
-        if ("stone".equals(itemId)) {
+        if (itemId == 15) { // stone
             return new Color(0.5f, 0.5f, 0.5f, 1.0f); // グレー
-        } else if ("wood".equals(itemId)) {
+        } else if (itemId == 14) { // wood
             return new Color(0.6f, 0.4f, 0.2f, 1.0f); // 茶色
-        } else if ("raw_meat".equals(itemId)) {
+        } else if (itemId == 105) { // raw_meat
             return new Color(0.8f, 0.4f, 0.3f, 1.0f); // 赤みがかった色
         }
         
-        // カテゴリに基づいて色を決定
-        switch (category) {
-            case "element":
-                return Color.CYAN;
-            case "compound":
-                return Color.BLUE;
-            case "material":
-                return Color.BROWN;
-            case "component":
-                return Color.YELLOW;
-            case "tool":
-                return Color.ORANGE;
-            case "device":
-                return Color.PURPLE;
-            case "food":
-                return new Color(0.8f, 0.4f, 0.3f, 1.0f);
-            default:
-                return Color.WHITE;
+        // ID範囲に基づいて色を決定（簡易版）
+        // より正確には、別のマッピングテーブルが必要
+        if (itemId <= 8) { // elements
+            return Color.CYAN;
+        } else if (itemId <= 11) { // compounds
+            return Color.BLUE;
+        } else if (itemId <= 31) { // materials
+            return Color.BROWN;
+        } else if (itemId <= 50) { // components
+            return Color.YELLOW;
+        } else if (itemId <= 60) { // tools
+            return Color.ORANGE;
+        } else if (itemId <= 72) { // devices/vehicles/cultural
+            return Color.PURPLE;
+        } else if (itemId <= 80) { // food
+            return new Color(0.8f, 0.4f, 0.3f, 1.0f);
+        } else { // energy/phenomenon
+            return Color.WHITE;
         }
     }
     
     /**
      * アイテムIDからアイテムデータを取得します。
      */
-    public ItemData getItemData(String itemId) {
+    public ItemData getItemData(int itemId) {
         return itemDataMap.get(itemId);
     }
     

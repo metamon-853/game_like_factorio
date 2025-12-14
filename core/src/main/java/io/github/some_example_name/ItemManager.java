@@ -216,11 +216,8 @@ public class ItemManager {
                 // インベントリにアイテムを追加
                 if (inventory != null && item.getItemData() != null) {
                     inventory.addItem(item.getItemData());
-                } else if (inventory != null) {
-                    // ItemDataがない場合は、ItemTypeから推測（後方互換性）
-                    String itemId = "item_" + item.getType().name().toLowerCase();
-                    inventory.addItem(itemId);
                 }
+                // ItemDataがない場合はスキップ（後方互換性のためのコードは削除）
             }
         }
     }

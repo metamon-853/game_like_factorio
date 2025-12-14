@@ -6,12 +6,9 @@ import com.badlogic.gdx.graphics.Color;
  * アイテムのデータを保持するクラス。
  */
 public class ItemData {
-    public String id;
+    public int id;
     public String name;
     public String description;
-    public int tier;
-    public String category;
-    public String icon;
     
     // 文明レベル（tierから推測、または別途設定可能）
     private int civilizationLevel;

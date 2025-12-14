@@ -1,69 +1,69 @@
 id,result,craftTime,description
-water_recipe,water,1.0,水素と酸素を結合して水を作る
-carbon_dioxide_recipe,carbon_dioxide,1.0,炭素と酸素を結合して二酸化炭素を作る
-glass_recipe,glass,2.0,砂を高温で溶かしてガラスを作る
-ceramic_recipe,ceramic,2.0,粘土を焼いて陶器を作る
-iron_ingot_recipe,iron_ingot,2.0,鉄を精製してインゴットにする
-copper_ingot_recipe,copper_ingot,2.0,銅を精製してインゴットにする
-steel_recipe,steel,3.0,鉄と炭素を合金して鋼鉄を作る
-bronze_recipe,bronze,3.0,銅とスズを合金して青銅を作る
-brass_recipe,brass,3.0,銅と亜鉛を合金して真鍮を作る
-paper_recipe,paper,2.0,木材を加工して紙を作る
-brick_recipe,brick,2.5,粘土を焼いてレンガを作る
-cement_recipe,cement,3.0,石灰石と粘土を焼いてセメントを作る
-concrete_recipe,concrete,3.0,セメント、砂、砂利、水を混ぜてコンクリートを作る
-wire_recipe,wire,2.0,銅線を絶縁体で覆って電線を作る
-circuit_board_recipe,circuit_board,3.0,プラスチックと銅で基板を作る
-gear_recipe,gear,2.5,鋼鉄を加工して歯車を作る
-spring_recipe,spring,2.0,鋼鉄を加工してバネを作る
-screw_recipe,screw,1.5,鋼鉄を加工してねじを作る
-bolt_recipe,bolt,2.0,鋼鉄を加工してボルトを作る
-pipe_recipe,pipe,2.0,鋼鉄を加工してパイプを作る
-valve_recipe,valve,2.5,鋼鉄とゴムでバルブを作る
-pump_recipe,pump,4.0,モーター、パイプ、バルブを組み合わせてポンプを作る
-battery_recipe,battery,3.0,亜鉛、銅、酸で電池を作る
-motor_recipe,motor,4.0,磁石、電線、鉄を組み合わせてモーターを作る
-magnet_recipe,magnet,2.5,鉄に電流を流して磁石を作る
-lens_recipe,lens,2.0,ガラスを加工してレンズを作る
-mirror_recipe,mirror,2.5,ガラスに銀をコーティングして鏡を作る
-transistor_recipe,transistor,3.5,ケイ素と金でトランジスタを作る
-resistor_recipe,resistor,2.0,炭素と陶器で抵抗器を作る
-capacitor_recipe,capacitor,2.5,アルミニウムとプラスチックでコンデンサを作る
-led_recipe,led,3.5,ケイ素とガリウムでLEDを作る
-sensor_recipe,sensor,4.0,基板、トランジスタ、レンズを組み合わせてセンサーを作る
-hammer_recipe,hammer,2.5,鉄と木材でハンマーを作る
-saw_recipe,saw,2.5,鋼鉄と木材でのこぎりを作る
-drill_recipe,drill,3.5,鋼鉄とモーターでドリルを作る
-wrench_recipe,wrench,2.0,鋼鉄を加工してレンチを作る
-screwdriver_recipe,screwdriver,2.0,鋼鉄とプラスチックでドライバーを作る
-knife_recipe,knife,2.5,鋼鉄と木材でナイフを作る
-axe_recipe,axe,2.5,鋼鉄と木材で斧を作る
-shovel_recipe,shovel,2.5,鋼鉄と木材でシャベルを作る
-pickaxe_recipe,pickaxe,3.0,鋼鉄と木材でつるはしを作る
-flashlight_recipe,flashlight,3.0,電池、LED、アルミニウムで懐中電灯を作る
-clock_recipe,clock,4.0,歯車、バネ、ガラスで時計を作る
-calculator_recipe,calculator,5.0,基板、トランジスタ、電池、プラスチックで計算機を作る
-radio_recipe,radio,6.0,電子部品を組み合わせてラジオを作る
-camera_recipe,camera,5.5,レンズ、センサー、基板、プラスチックでカメラを作る
-phone_recipe,phone,6.0,ラジオ、基板、電池、プラスチックで電話を作る
-computer_recipe,computer,8.0,大量の電子部品を組み合わせてコンピューターを作る
-robot_recipe,robot,10.0,コンピューター、モーター、センサー、鋼鉄を組み合わせてロボットを作る
-car_recipe,car,12.0,モーター、鋼鉄、ゴム、ガラス、電池で自動車を作る
-truck_recipe,truck,8.0,自動車を大型化してトラックを作る
-airplane_recipe,airplane,15.0,モーター、アルミニウム、ガラス、電線、燃料で飛行機を作る
-ship_recipe,ship,20.0,大量の鋼鉄とモーターで船を作る
-rocket_recipe,rocket,18.0,アルミニウム、燃料、酸素、コンピューターでロケットを作る
-book_recipe,book,3.0,紙と革で本を作る
-canvas_recipe,canvas,2.0,布と木材でキャンバスを作る
-paint_recipe,paint,2.0,石炭と油で絵の具を作る
-painting_recipe,painting,4.0,キャンバスと絵の具で絵画を作る
-bread_recipe,bread,3.0,小麦粉、水、火でパンを作る
-cheese_recipe,cheese,4.0,牛乳と塩でチーズを作る
-wine_recipe,wine,10.0,ブドウを発酵させてワインを作る
-chocolate_recipe,chocolate,3.0,カカオ、砂糖、牛乳でチョコレートを作る
-coffee_recipe,coffee,2.0,コーヒー豆、水、火でコーヒーを作る
-electricity_recipe,electricity,1.0,磁石と電線を動かして電気を生む
-steam_recipe,steam,2.0,水を加熱して蒸気を作る
-solar_panel_recipe,solar_panel,6.0,ケイ素、ガラス、アルミニウム、電線で太陽光パネルを作る
-wind_turbine_recipe,wind_turbine,8.0,モーター、鋼鉄、電線で風力タービンを作る
-nuclear_reactor_recipe,nuclear_reactor,25.0,ウラン、鋼鉄、コンクリート、電線、コンピューターで原子炉を作る
+water_recipe,9,1.0,Combine hydrogen and oxygen to make water
+carbon_dioxide_recipe,10,1.0,Combine carbon and oxygen to make carbon dioxide
+glass_recipe,17,2.0,Melt sand at high temperature to make glass
+ceramic_recipe,18,2.0,Fire clay to make ceramic
+iron_ingot_recipe,19,2.0,Refine iron to make ingot
+copper_ingot_recipe,20,2.0,Refine copper to make ingot
+steel_recipe,21,3.0,Alloy iron and carbon to make steel
+bronze_recipe,22,3.0,Alloy copper and tin to make bronze
+brass_recipe,23,3.0,Alloy copper and zinc to make brass
+paper_recipe,26,2.0,Process wood to make paper
+brick_recipe,30,2.5,Fire clay to make brick
+cement_recipe,91,3.0,Fire limestone and clay to make cement
+concrete_recipe,29,3.0,Mix cement, sand, gravel, and water to make concrete
+wire_recipe,31,2.0,Cover copper wire with insulation to make wire
+circuit_board_recipe,32,3.0,Make circuit board with plastic and copper
+gear_recipe,34,2.5,Process steel to make gear
+spring_recipe,35,2.0,Process steel to make spring
+screw_recipe,36,1.5,Process steel to make screw
+bolt_recipe,37,2.0,Process steel to make bolt
+pipe_recipe,38,2.0,Process steel to make pipe
+valve_recipe,39,2.5,Make valve with steel and rubber
+pump_recipe,40,4.0,Combine motor, pipe, and valve to make pump
+battery_recipe,41,3.0,Make battery with zinc, copper, and acid
+motor_recipe,33,4.0,Combine magnet, wire, and iron to make motor
+magnet_recipe,44,2.5,Pass current through iron to make magnet
+lens_recipe,42,2.0,Process glass to make lens
+mirror_recipe,43,2.5,Coat glass with silver to make mirror
+transistor_recipe,47,3.5,Make transistor with silicon and gold
+resistor_recipe,48,2.0,Make resistor with carbon and ceramic
+capacitor_recipe,49,2.5,Make capacitor with aluminum and plastic
+led_recipe,46,3.5,Make LED with silicon and gallium
+sensor_recipe,45,4.0,Combine circuit board, transistor, and lens to make sensor
+hammer_recipe,50,2.5,Make hammer with iron and wood
+saw_recipe,51,2.5,Make saw with steel and wood
+drill_recipe,52,3.5,Make drill with steel and motor
+wrench_recipe,53,2.0,Process steel to make wrench
+screwdriver_recipe,54,2.0,Make screwdriver with steel and plastic
+knife_recipe,55,2.5,Make knife with steel and wood
+axe_recipe,56,2.5,Make axe with steel and wood
+shovel_recipe,57,2.5,Make shovel with steel and wood
+pickaxe_recipe,58,3.0,Make pickaxe with steel and wood
+flashlight_recipe,59,3.0,Make flashlight with battery, LED, and aluminum
+clock_recipe,60,4.0,Make clock with gear, spring, and glass
+calculator_recipe,61,5.0,Make calculator with circuit board, transistor, battery, and plastic
+radio_recipe,62,6.0,Combine electronic components to make radio
+camera_recipe,63,5.5,Make camera with lens, sensor, circuit board, and plastic
+phone_recipe,64,6.0,Make phone with radio, circuit board, battery, and plastic
+computer_recipe,65,8.0,Combine many electronic components to make computer
+robot_recipe,66,10.0,Combine computer, motor, sensor, and steel to make robot
+car_recipe,67,12.0,Make car with motor, steel, rubber, glass, and battery
+truck_recipe,68,8.0,Enlarge car to make truck
+airplane_recipe,69,15.0,Make airplane with motor, aluminum, glass, wire, and fuel
+ship_recipe,70,20.0,Make ship with large amounts of steel and motor
+rocket_recipe,71,18.0,Make rocket with aluminum, fuel, oxygen, and computer
+book_recipe,72,3.0,Make book with paper and leather
+canvas_recipe,95,2.0,Make canvas with fabric and wood
+paint_recipe,96,2.0,Make paint with coal and oil
+painting_recipe,73,4.0,Make painting with canvas and paint
+bread_recipe,75,3.0,Make bread with flour, water, and fire
+cheese_recipe,76,4.0,Make cheese with milk and salt
+wine_recipe,77,10.0,Ferment grape to make wine
+chocolate_recipe,78,3.0,Make chocolate with cocoa, sugar, and milk
+coffee_recipe,79,2.0,Make coffee with coffee bean, water, and fire
+electricity_recipe,81,1.0,Move magnet and wire to generate electricity
+steam_recipe,82,2.0,Heat water to make steam
+solar_panel_recipe,83,6.0,Make solar panel with silicon, glass, aluminum, and wire
+wind_turbine_recipe,84,8.0,Make wind turbine with motor, steel, and wire
+nuclear_reactor_recipe,85,25.0,Make nuclear reactor with uranium, steel, concrete, wire, and computer

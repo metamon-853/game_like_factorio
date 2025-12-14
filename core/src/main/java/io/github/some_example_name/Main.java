@@ -257,8 +257,8 @@ public class Main extends ApplicationAdapter {
             int mouseY = Gdx.input.getY();
             ItemData clickedItem = inventoryUI.handleClick(mouseX, mouseY);
             
-            // アイテム図鑑ボタンがクリックされた場合
-            if (clickedItem != null && "ENCYCLOPEDIA".equals(clickedItem.id)) {
+            // アイテム図鑑ボタンがクリックされた場合（特殊値-1を使用）
+            if (clickedItem != null && clickedItem.id == -1) {
                 showEncyclopedia = true; // アイテム図鑑を表示
             }
         }

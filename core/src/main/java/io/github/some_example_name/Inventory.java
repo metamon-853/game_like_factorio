@@ -8,7 +8,7 @@ import java.util.Map;
  */
 public class Inventory {
     // アイテムIDをキーとして、数量を保持
-    private Map<String, Integer> items;
+    private Map<Integer, Integer> items;
     
     public Inventory() {
         this.items = new HashMap<>();
@@ -19,7 +19,7 @@ public class Inventory {
      * @param itemId アイテムID
      * @param amount 追加する数量（デフォルトは1）
      */
-    public void addItem(String itemId, int amount) {
+    public void addItem(int itemId, int amount) {
         if (amount <= 0) {
             return;
         }
@@ -30,7 +30,7 @@ public class Inventory {
      * アイテムを1個追加します。
      * @param itemId アイテムID
      */
-    public void addItem(String itemId) {
+    public void addItem(int itemId) {
         addItem(itemId, 1);
     }
     
@@ -49,7 +49,7 @@ public class Inventory {
      * @param itemId アイテムID
      * @return 数量（持っていない場合は0）
      */
-    public int getItemCount(String itemId) {
+    public int getItemCount(int itemId) {
         return items.getOrDefault(itemId, 0);
     }
     
@@ -59,7 +59,7 @@ public class Inventory {
      * @param amount 削除する数量
      * @return 削除に成功した場合true
      */
-    public boolean removeItem(String itemId, int amount) {
+    public boolean removeItem(int itemId, int amount) {
         int currentCount = getItemCount(itemId);
         if (currentCount < amount) {
             return false;
@@ -79,7 +79,7 @@ public class Inventory {
      * @param itemId アイテムID
      * @return 削除に成功した場合true
      */
-    public boolean removeItem(String itemId) {
+    public boolean removeItem(int itemId) {
         return removeItem(itemId, 1);
     }
     
@@ -87,7 +87,7 @@ public class Inventory {
      * すべてのアイテムエントリを取得します。
      * @return アイテムIDと数量のマップ
      */
-    public Map<String, Integer> getAllItems() {
+    public Map<Integer, Integer> getAllItems() {
         return new HashMap<>(items);
     }
     

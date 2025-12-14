@@ -50,11 +50,11 @@ public class InventoryUI {
      */
     private static class SlotInfo {
         float x, y;
-        String itemId;
+        int itemId;
         ItemData itemData;
         int count;
         
-        SlotInfo(float x, float y, String itemId, ItemData itemData, int count) {
+        SlotInfo(float x, float y, int itemId, ItemData itemData, int count) {
             this.x = x;
             this.y = y;
             this.itemId = itemId;
@@ -116,7 +116,7 @@ public class InventoryUI {
         if (encyclopediaButton != null && encyclopediaButton.contains(screenX, uiY)) {
             // 特殊なItemDataを返してアイテム図鑑ボタンがクリックされたことを示す
             ItemData encyclopediaMarker = new ItemData();
-            encyclopediaMarker.id = "ENCYCLOPEDIA";
+            encyclopediaMarker.id = -1; // 特殊値として-1を使用
             return encyclopediaMarker;
         }
         
@@ -223,7 +223,7 @@ public class InventoryUI {
         float startY = titleY - 50;
         float currentY = startY;
         
-        Map<String, Integer> items = inventory.getAllItems();
+        Map<Integer, Integer> items = inventory.getAllItems();
         int itemIndex = 0;
         
         // スロット情報をリセット
@@ -240,12 +240,12 @@ public class InventoryUI {
             font.draw(batch, emptyText, emptyX, emptyY);
             font.setColor(Color.WHITE);
         } else {
-            for (Map.Entry<String, Integer> entry : items.entrySet()) {
+            for (Map.Entry<Integer, Integer> entry : items.entrySet()) {
                 if (itemIndex >= SLOTS_PER_ROW * MAX_ROWS) {
                     break; // 最大表示数を超えたら終了
                 }
                 
-                String itemId = entry.getKey();
+                int itemId = entry.getKey();
                 int count = entry.getValue();
                 
                 ItemData itemData = itemDataLoader.getItemData(itemId);
@@ -263,7 +263,7 @@ public class InventoryUI {
                 slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemId, itemData, count));
                 
                 // 選択されているアイテムかどうかで色を変える
-                boolean isSelected = selectedItemData != null && selectedItemData.id.equals(itemId);
+                boolean isSelected = selectedItemData != null && selectedItemData.id == itemId;
                 
                 // スロットの背景を描画
                 batch.end();
@@ -420,14 +420,10 @@ public class InventoryUI {
             font.draw(batch, description, detailX + 20, descY);
         }
         
-        // カテゴリとティア
+        // 文明レベル
         font.getData().setScale(1.4f);
         font.setColor(new Color(0.6f, 0.6f, 0.8f, 1f));
         descY -= 40;
-        font.draw(batch, "Category: " + itemData.category, detailX + 20, descY);
-        descY -= 25;
-        font.draw(batch, "Tier: " + itemData.tier, detailX + 20, descY);
-        descY -= 25;
         font.draw(batch, "Civ Level: " + itemData.getCivilizationLevel(), detailX + 20, descY);
         
         font.setColor(Color.WHITE);
