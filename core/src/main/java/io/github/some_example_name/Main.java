@@ -383,7 +383,7 @@ public class Main extends ApplicationAdapter {
         // レベル1からレベル2への進行条件：アイテムを10個収集
         if (civLevel.getLevel() == 1 && itemManager.getCollectedCount() >= 10) {
             if (civLevel.levelUp()) {
-                Gdx.app.log("Civilization", "文明レベルが " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ") に上がりました！");
+                Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
             }
         }
         // レベル2以降の進行条件は今後追加
