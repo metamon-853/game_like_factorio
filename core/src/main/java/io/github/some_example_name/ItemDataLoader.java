@@ -77,7 +77,14 @@ public class ItemDataLoader {
                 itemData.description = parts[2].trim();
                 
                 // 文明レベルを設定（IDから判定）
-                itemData.setCivilizationLevel(determineCivilizationLevel(itemData.id));
+                int civLevel = determineCivilizationLevel(itemData.id);
+                itemData.setCivilizationLevel(civLevel);
+                
+                // ティアを設定（文明レベルと同じ値）
+                itemData.tier = civLevel;
+                
+                // カテゴリを設定（IDから判定）
+                itemData.category = determineCategory(itemData.id);
                 
                 // 色を設定（IDに基づいて）
                 itemData.setColor(determineColor(itemData.id));
@@ -110,6 +117,8 @@ public class ItemDataLoader {
         rawMeat.name = "Raw Meat";
         rawMeat.description = "Raw meat obtained from hunting. Can be eaten after cooking.";
         rawMeat.setCivilizationLevel(1);
+        rawMeat.tier = 1;
+        rawMeat.category = determineCategory(105);
         rawMeat.setColor(new Color(0.8f, 0.4f, 0.3f, 1.0f)); // 赤みがかった色
         
         itemDataMap.put(105, rawMeat);
@@ -127,6 +136,8 @@ public class ItemDataLoader {
             stone.name = "Stone";
             stone.description = "Basic material that forms the earth's crust.";
             stone.setCivilizationLevel(1);
+            stone.tier = 1;
+            stone.category = determineCategory(15);
             stone.setColor(new Color(0.5f, 0.5f, 0.5f, 1.0f)); // グレー
             itemDataMap.put(15, stone);
             itemDataList.add(stone);
@@ -139,6 +150,8 @@ public class ItemDataLoader {
             wood.name = "Wood";
             wood.description = "Natural material obtained from trees.";
             wood.setCivilizationLevel(1);
+            wood.tier = 1;
+            wood.category = determineCategory(14);
             wood.setColor(new Color(0.6f, 0.4f, 0.2f, 1.0f)); // 茶色
             itemDataMap.put(14, wood);
             itemDataList.add(wood);
@@ -174,6 +187,29 @@ public class ItemDataLoader {
             return 3;
         } else {
             return Math.min(10, (itemId / 15) + 1);
+        }
+    }
+    
+    /**
+     * アイテムのカテゴリを決定します。
+     */
+    private String determineCategory(int itemId) {
+        if (itemId <= 8) { // elements
+            return "元素";
+        } else if (itemId <= 11) { // compounds
+            return "化合物";
+        } else if (itemId <= 31) { // materials
+            return "材料";
+        } else if (itemId <= 50) { // components
+            return "部品";
+        } else if (itemId <= 60) { // tools
+            return "工具";
+        } else if (itemId <= 72) { // devices/vehicles/cultural
+            return "装置・乗り物・文化";
+        } else if (itemId <= 80) { // food
+            return "食料";
+        } else { // energy/phenomenon
+            return "エネルギー・現象";
         }
     }
     

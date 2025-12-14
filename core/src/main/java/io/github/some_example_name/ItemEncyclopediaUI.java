@@ -258,7 +258,7 @@ public class ItemEncyclopediaUI {
                 slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemData));
                 
                 // 選択されているアイテムかどうかで色を変える
-                boolean isSelected = selectedItemData != null && selectedItemData.id.equals(itemData.id);
+                boolean isSelected = selectedItemData != null && selectedItemData.id == itemData.id;
                 
                 // スロットの背景を描画
                 batch.end();
