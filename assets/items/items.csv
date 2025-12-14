@@ -73,9 +73,6 @@ rocket,ロケット,宇宙へ飛ぶ推進装置。,5,vehicle,icons/rocket.png
 book,本,知識を記録した媒体。,4,cultural,icons/book.png
 painting,絵画,芸術的な表現の記録。,4,cultural,icons/painting.png
 music,音楽,音の芸術。,4,cultural,icons/music.png
-philosophy,哲学,思考の体系。,5,cultural,icons/philosophy.png
-science,科学,自然法則の理解。,5,cultural,icons/science.png
-medicine,医学,健康を守る知識。,5,cultural,icons/medicine.png
 bread,パン,基本的な食物。,3,food,icons/bread.png
 cheese,チーズ,発酵した乳製品。,3,food,icons/cheese.png
 wine,ワイン,発酵した果実の飲み物。,4,food,icons/wine.png
