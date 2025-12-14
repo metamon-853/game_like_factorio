@@ -246,6 +246,13 @@ public class Main extends ApplicationAdapter {
             inventoryOpen = false;
         }
         
+        // インベントリが開いているときのマウスクリック処理
+        if (inventoryOpen && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+            int mouseX = Gdx.input.getX();
+            int mouseY = Gdx.input.getY();
+            inventoryUI.handleClick(mouseX, mouseY);
+        }
+        
         // テキスト入力処理
         if (textInputHandler.isTextInputActive()) {
             if (textInputHandler.handleInput()) {
