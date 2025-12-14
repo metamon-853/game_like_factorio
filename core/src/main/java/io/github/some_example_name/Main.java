@@ -31,6 +31,12 @@ public class Main extends ApplicationAdapter {
     // UI用のカメラ（画面座標系）
     private OrthographicCamera uiCamera;
     
+    // 分離したクラス
+    private UIRenderer uiRenderer;
+    private SaveGameManager saveGameManager;
+    private SoundSettings soundSettings;
+    private TextInputHandler textInputHandler;
+    
     // ポーズ状態
     private boolean isPaused;
     
@@ -46,12 +52,6 @@ public class Main extends ApplicationAdapter {
     
     // グリッド表示フラグ（デフォルトはオン）
     private boolean showGrid = true;
-    
-    // 音量設定（0.0f ～ 1.0f）
-    private float masterVolume = 1.0f;
-    
-    // ミュート状態
-    private boolean isMuted = false;
     
     // スライダー関連
     private boolean isDraggingSlider = false; // スライダーをドラッグ中かどうか
@@ -73,130 +73,6 @@ public class Main extends ApplicationAdapter {
     private static final float MAX_ZOOM = 3.0f; // 最大ズーム（拡大の限界）
     private static final float ZOOM_SPEED = 0.1f; // ズームの速度
     
-    // ゲーム名（Steam向けのセーブデータ保存先に使用）
-    private static final String GAME_NAME = "game_like_factorio";
-    
-    // セーブファイル名のプレフィックス
-    private static final String SAVE_FILE_PREFIX = "savegame_";
-    private static final String SAVE_FILE_EXTENSION = ".json";
-    
-    // テキスト入力関連
-    private StringBuilder inputText = new StringBuilder();
-    private boolean isTextInputActive = false;
-    private String currentInputLabel = "";
-    private int maxInputLength = 30;
-    
-    /**
-     * セーブデータの保存先ディレクトリを取得します。
-     * Steamゲームとして標準的な場所（Documents/My Games/[ゲーム名]）を使用します。
-     * @return セーブディレクトリのFileHandle
-     */
-    private com.badlogic.gdx.files.FileHandle getSaveDirectory() {
-        try {
-            // Windowsでは、システムプロパティからDocumentsフォルダのパスを取得
-            String osName = System.getProperty("os.name").toLowerCase();
-            String documentsPath;
-            
-            if (osName.contains("win")) {
-                // Windowsの場合、環境変数からDocumentsフォルダを取得
-                documentsPath = System.getenv("USERPROFILE");
-                if (documentsPath == null) {
-                    documentsPath = System.getProperty("user.home");
-                }
-                documentsPath += "\\Documents\\My Games\\" + GAME_NAME;
-            } else if (osName.contains("mac")) {
-                // macOSの場合
-                documentsPath = System.getProperty("user.home") + "/Documents/My Games/" + GAME_NAME;
-            } else {
-                // Linuxの場合
-                documentsPath = System.getProperty("user.home") + "/Documents/My Games/" + GAME_NAME;
-            }
-            
-            // 絶対パスでFileHandleを作成
-            com.badlogic.gdx.files.FileHandle saveDir = Gdx.files.absolute(documentsPath);
-            
-            // ディレクトリが存在しない場合は作成
-            if (!saveDir.exists()) {
-                saveDir.mkdirs();
-                Gdx.app.log("SaveGame", "Created save directory at " + saveDir.file().getAbsolutePath());
-            }
-            
-            return saveDir;
-        } catch (Exception e) {
-            Gdx.app.error("SaveGame", "Error getting save directory: " + e.getMessage());
-            e.printStackTrace();
-            // フォールバック：Gdx.files.external()を使用
-            com.badlogic.gdx.files.FileHandle fallback = Gdx.files.external("Documents/My Games/" + GAME_NAME);
-            fallback.mkdirs();
-            Gdx.app.log("SaveGame", "Using fallback path: " + fallback.file().getAbsolutePath());
-            return fallback;
-        }
-    }
-    
-    /**
-     * セーブデータの保存先ファイルを取得します。
-     * @param saveName セーブデータ名（nullの場合はデフォルト名）
-     * @return セーブファイルのFileHandle
-     */
-    private com.badlogic.gdx.files.FileHandle getSaveFileHandle(String saveName) {
-        com.badlogic.gdx.files.FileHandle saveDir = getSaveDirectory();
-        String fileName;
-        if (saveName == null || saveName.trim().isEmpty()) {
-            fileName = SAVE_FILE_PREFIX + "default" + SAVE_FILE_EXTENSION;
-        } else {
-            // ファイル名に使用できない文字を置き換え
-            String sanitizedName = saveName.replaceAll("[\\\\/:*?\"<>|]", "_");
-            fileName = SAVE_FILE_PREFIX + sanitizedName + SAVE_FILE_EXTENSION;
-        }
-        return saveDir.child(fileName);
-    }
-    
-    /**
-     * 利用可能なセーブファイルのリストを取得します。
-     * @return セーブファイル名のリスト（拡張子なし）
-     */
-    private java.util.List<String> getSaveFileList() {
-        java.util.List<String> saveList = new java.util.ArrayList<>();
-        try {
-            com.badlogic.gdx.files.FileHandle saveDir = getSaveDirectory();
-            if (saveDir.exists() && saveDir.isDirectory()) {
-                com.badlogic.gdx.files.FileHandle[] files = saveDir.list();
-                for (com.badlogic.gdx.files.FileHandle file : files) {
-                    String fileName = file.name();
-                    if (fileName.startsWith(SAVE_FILE_PREFIX) && fileName.endsWith(SAVE_FILE_EXTENSION)) {
-                        // プレフィックスと拡張子を除去
-                        String saveName = fileName.substring(
-                            SAVE_FILE_PREFIX.length(),
-                            fileName.length() - SAVE_FILE_EXTENSION.length()
-                        );
-                        saveList.add(saveName);
-                    }
-                }
-            }
-        } catch (Exception e) {
-            Gdx.app.error("SaveGame", "Error getting save file list: " + e.getMessage());
-            e.printStackTrace();
-        }
-        // 名前順にソート
-        saveList.sort(String::compareToIgnoreCase);
-        return saveList;
-    }
-    
-    // ボタン関連
-    private static class Button {
-        float x, y, width, height;
-        
-        Button(float x, float y, float width, float height) {
-            this.x = x;
-            this.y = y;
-            this.width = width;
-            this.height = height;
-        }
-        
-        boolean contains(float screenX, float screenY) {
-            return screenX >= x && screenX <= x + width && screenY >= y && screenY <= y + height;
-        }
-    }
     
     @Override
     public void create() {
@@ -236,15 +112,18 @@ public class Main extends ApplicationAdapter {
         font.getData().setScale(2.0f); // フォントサイズを大きく
         font.setColor(Color.WHITE);
         
+        // 分離したクラスのインスタンスを作成
+        uiRenderer = new UIRenderer(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        saveGameManager = new SaveGameManager();
+        soundSettings = new SoundSettings();
+        textInputHandler = new TextInputHandler();
+        
         // プレイヤーを原点に配置（無限マップなので任意の位置から開始可能）
         player = new Player(0, 0);
         // アイテムマネージャーを初期化（無限マップ対応）
         itemManager = new ItemManager();
         // ポーズ状態を初期化
         isPaused = false;
-        
-        // 音量を初期化（マスターボリュームを設定）
-        updateMasterVolume();
         
         // カメラをプレイヤーの初期位置に設定
         float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
@@ -293,10 +172,9 @@ public class Main extends ApplicationAdapter {
         // ESCキーでポーズ/再開を切り替え、またはメニューから戻る
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             if (isPaused) {
-                if (isTextInputActive) {
+                if (textInputHandler.isTextInputActive()) {
                     // テキスト入力中の場合、入力をキャンセル
-                    isTextInputActive = false;
-                    inputText.setLength(0);
+                    textInputHandler.setTextInputActive(false);
                 } else if (currentMenuState == MenuState.SOUND_MENU || 
                           currentMenuState == MenuState.SAVE_MENU || 
                           currentMenuState == MenuState.LOAD_MENU ||
@@ -316,8 +194,23 @@ public class Main extends ApplicationAdapter {
         }
         
         // テキスト入力処理
-        if (isTextInputActive) {
-            handleTextInput();
+        if (textInputHandler.isTextInputActive()) {
+            if (textInputHandler.handleInput()) {
+                // Enterキーが押された場合の処理
+                String text = textInputHandler.getInputText().trim();
+                if (!text.isEmpty() && text.length() <= textInputHandler.getMaxInputLength()) {
+                    if (textInputHandler.getCurrentInputLabel().equals("Save Name")) {
+                        if (saveGameManager.saveGame(text, player, itemManager, showGrid, 
+                                soundSettings.getMasterVolume(), soundSettings.isMuted(), cameraZoom)) {
+                            Gdx.app.log("SaveGame", "Game saved successfully: " + text);
+                            isPaused = false;
+                        } else {
+                            Gdx.app.error("SaveGame", "Failed to save game");
+                        }
+                    }
+                }
+                textInputHandler.setTextInputActive(false);
+            }
         }
         
         // キーボード操作は無効化（マウス操作のみ）
@@ -369,7 +262,7 @@ public class Main extends ApplicationAdapter {
         // グリッドを描画（Lineモード）- 表示フラグがオンの場合のみ
         if (showGrid) {
             shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            drawGrid();
+            uiRenderer.drawGrid(camera);
             shapeRenderer.end();
         }
         
@@ -385,7 +278,7 @@ public class Main extends ApplicationAdapter {
         shapeRenderer.end();
         
         // UI情報を描画（取得アイテム数など）
-        drawUI();
+        uiRenderer.drawUI(itemManager);
         
         // ポーズメニューを描画（テキスト表示用）
         if (isPaused) {
@@ -446,108 +339,6 @@ public class Main extends ApplicationAdapter {
         }
     }
     
-    /**
-     * グリッドを描画します（カメラの視野範囲に基づいて動的に生成）。
-     * マップ升（太い線）とプレイヤー升（細い線）の両方を描画します。
-     */
-    private void drawGrid() {
-        int mapTileSize = Player.MAP_TILE_SIZE;
-        int playerTileSize = Player.PLAYER_TILE_SIZE;
-        
-        // カメラの視野範囲を計算（ズームを考慮）
-        float actualViewportWidth = camera.viewportWidth * camera.zoom;
-        float actualViewportHeight = camera.viewportHeight * camera.zoom;
-        float cameraLeft = camera.position.x - actualViewportWidth / 2;
-        float cameraRight = camera.position.x + actualViewportWidth / 2;
-        float cameraBottom = camera.position.y - actualViewportHeight / 2;
-        float cameraTop = camera.position.y + actualViewportHeight / 2;
-        
-        // マージンを追加して少し広めに描画（見切れを防ぐ）
-        float margin = mapTileSize * 2;
-        
-        // まず、プレイヤー升の細かいグリッドを描画（薄い色）
-        shapeRenderer.setColor(0.2f, 0.2f, 0.2f, 1f); // 薄いグレー
-        
-        int startPlayerTileX = (int)Math.floor((cameraLeft - margin) / playerTileSize);
-        int endPlayerTileX = (int)Math.ceil((cameraRight + margin) / playerTileSize);
-        int startPlayerTileY = (int)Math.floor((cameraBottom - margin) / playerTileSize);
-        int endPlayerTileY = (int)Math.ceil((cameraTop + margin) / playerTileSize);
-        
-        // プレイヤー升の縦線を描画
-        for (int x = startPlayerTileX; x <= endPlayerTileX; x++) {
-            float lineX = x * playerTileSize;
-            shapeRenderer.line(lineX, startPlayerTileY * playerTileSize, lineX, endPlayerTileY * playerTileSize);
-        }
-        
-        // プレイヤー升の横線を描画
-        for (int y = startPlayerTileY; y <= endPlayerTileY; y++) {
-            float lineY = y * playerTileSize;
-            shapeRenderer.line(startPlayerTileX * playerTileSize, lineY, endPlayerTileX * playerTileSize, lineY);
-        }
-        
-        // 次に、マップ升の太いグリッドを描画（濃い色）
-        shapeRenderer.setColor(Color.DARK_GRAY);
-        
-        int startMapTileX = (int)Math.floor((cameraLeft - margin) / mapTileSize);
-        int endMapTileX = (int)Math.ceil((cameraRight + margin) / mapTileSize);
-        int startMapTileY = (int)Math.floor((cameraBottom - margin) / mapTileSize);
-        int endMapTileY = (int)Math.ceil((cameraTop + margin) / mapTileSize);
-        
-        // マップ升の縦線を描画
-        for (int x = startMapTileX; x <= endMapTileX; x++) {
-            float lineX = x * mapTileSize;
-            shapeRenderer.line(lineX, startMapTileY * mapTileSize, lineX, endMapTileY * mapTileSize);
-        }
-        
-        // マップ升の横線を描画
-        for (int y = startMapTileY; y <= endMapTileY; y++) {
-            float lineY = y * mapTileSize;
-            shapeRenderer.line(startMapTileX * mapTileSize, lineY, endMapTileX * mapTileSize, lineY);
-        }
-    }
-    
-    /**
-     * UI情報（取得アイテム数など）を描画します。
-     */
-    private void drawUI() {
-        // UIは画面座標系で描画（ちらつきを防ぐため）
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
-        
-        // フォントサイズをUI用に調整
-        font.getData().setScale(2.5f);
-        font.setColor(Color.WHITE);
-        
-        // 画面左上の位置を計算（画面座標系）
-        float padding = 20;
-        float leftX = padding;
-        float topY = screenHeight - padding;
-        
-        // FPSを表示（左上に配置）
-        int fps = Gdx.graphics.getFramesPerSecond();
-        String fpsText = "FPS: " + fps;
-        font.draw(batch, fpsText, leftX, topY);
-        
-        // 画面右上の位置を計算（画面座標系）
-        float rightX = screenWidth - padding;
-        
-        // 取得したアイテム数を表示（右上に配置）
-        String itemText = "Items: " + itemManager.getCollectedCount();
-        GlyphLayout itemLayout = new GlyphLayout(font, itemText);
-        float itemX = rightX - itemLayout.width;
-        font.draw(batch, itemText, itemX, topY);
-        
-        // 現在のアイテム数も表示（その下に配置）
-        String currentItemText = "On Map: " + itemManager.getItemCount();
-        GlyphLayout currentLayout = new GlyphLayout(font, currentItemText);
-        float currentX = rightX - currentLayout.width;
-        font.draw(batch, currentItemText, currentX, topY - itemLayout.height - 10);
-        
-        // フォントサイズを元に戻す
-        font.getData().setScale(2.0f);
-        
-        batch.end();
-    }
     
     /**
      * ポーズメニューのマウスクリックを処理します。
@@ -622,31 +413,31 @@ public class Main extends ApplicationAdapter {
         // グリッド切り替えボタンを描画
         float gridButtonY = centerY + buttonSpacing - 20;
         Button gridButton = new Button(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Grid: " + (showGrid ? "ON" : "OFF"), gridButton.contains(mouseX, mouseY));
         
         // セーブボタンを描画
         float saveButtonY = centerY - 20;
         Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Save Game", saveButton.contains(mouseX, mouseY));
         
         // ロードボタンを描画
         float loadButtonY = centerY - buttonSpacing - 20;
         Button loadButton = new Button(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Load Game", loadButton.contains(mouseX, mouseY));
         
         // Soundメニューボタンを描画
         float soundButtonY = centerY - buttonSpacing * 2 - 20;
         Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Sound", soundButton.contains(mouseX, mouseY));
         
         // ゲーム終了ボタンを描画
         float quitButtonY = centerY - buttonSpacing * 3 - 20;
         Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Quit Game", quitButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f); // 元に戻す
@@ -717,12 +508,11 @@ public class Main extends ApplicationAdapter {
         float newVolume = relativeX / sliderWidth;
         
         // ミュート中の場合、ミュートを解除
-        if (isMuted && newVolume > 0) {
-            isMuted = false;
+        if (soundSettings.isMuted() && newVolume > 0) {
+            soundSettings.setMuted(false);
         }
         
-        masterVolume = newVolume;
-        updateMasterVolume();
+        soundSettings.setMasterVolume(newVolume);
     }
     
     /**
@@ -752,12 +542,12 @@ public class Main extends ApplicationAdapter {
         float centerY = screenHeight / 2;
         
         // スライダーを描画
-        drawVolumeSlider(centerX, centerY);
+        uiRenderer.drawVolumeSlider(centerX, centerY, soundSettings.getMasterVolume(), soundSettings.isMuted());
         
         // 音量表示を描画
         font.getData().setScale(2.0f);
-        font.setColor(isMuted ? Color.RED : Color.WHITE);
-        String volumeText = "Volume: " + (int)(masterVolume * 100) + "%" + (isMuted ? " (MUTED)" : "");
+        font.setColor(soundSettings.isMuted() ? Color.RED : Color.WHITE);
+        String volumeText = "Volume: " + (int)(soundSettings.getMasterVolume() * 100) + "%" + (soundSettings.isMuted() ? " (MUTED)" : "");
         GlyphLayout volumeLayout = new GlyphLayout(font, volumeText);
         float volumeTextX = centerX - volumeLayout.width / 2;
         float volumeTextY = centerY + 50;
@@ -766,7 +556,7 @@ public class Main extends ApplicationAdapter {
         // 戻るボタンを描画
         float backButtonY = centerY - 200;
         Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Back", backButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f); // 元に戻す
@@ -774,49 +564,6 @@ public class Main extends ApplicationAdapter {
         batch.end();
     }
     
-    /**
-     * 音量スライダーを描画します。
-     */
-    private void drawVolumeSlider(float centerX, float centerY) {
-        batch.end();
-        
-        float sliderWidth = 400;
-        float sliderHeight = 20;
-        float sliderX = centerX - sliderWidth / 2;
-        float sliderY = centerY - sliderHeight / 2;
-        
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        
-        // スライダーの背景を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.2f, 0.2f, 0.3f, 1f);
-        shapeRenderer.rect(sliderX, sliderY, sliderWidth, sliderHeight);
-        shapeRenderer.end();
-        
-        // スライダーの枠線を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(sliderX, sliderY, sliderWidth, sliderHeight);
-        shapeRenderer.end();
-        
-        // スライダーのハンドルを描画（現在の音量位置に）
-        float handleWidth = 30;
-        float handleHeight = 40;
-        float handleX = sliderX + (masterVolume * sliderWidth) - handleWidth / 2;
-        float handleY = sliderY - (handleHeight - sliderHeight) / 2;
-        
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(isMuted ? Color.RED : Color.WHITE);
-        shapeRenderer.rect(handleX, handleY, handleWidth, handleHeight);
-        shapeRenderer.end();
-        
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.3f, 0.3f, 0.4f, 1f);
-        shapeRenderer.rect(handleX, handleY, handleWidth, handleHeight);
-        shapeRenderer.end();
-        
-        batch.begin();
-    }
     
     /**
      * セーブメニューのマウスクリックを処理します。
@@ -851,14 +598,14 @@ public class Main extends ApplicationAdapter {
             
             if (inputField.contains(mouseX, mouseY)) {
                 // 入力フィールドをクリックした場合、テキスト入力を開始
-                isTextInputActive = true;
-                if (inputText.length() == 0) {
-                    currentInputLabel = "Save Name";
+                textInputHandler.setTextInputActive(true);
+                if (textInputHandler.getInputText().length() == 0) {
+                    textInputHandler.setCurrentInputLabel("Save Name");
                 }
-            } else if (saveButton.contains(mouseX, mouseY) && inputText.length() > 0 && !isTextInputActive) {
+            } else if (saveButton.contains(mouseX, mouseY) && textInputHandler.getInputText().length() > 0 && !textInputHandler.isTextInputActive()) {
                 // 保存ボタンをクリックした場合（入力が完了している場合のみ）
-                String text = inputText.toString().trim();
-                if (!text.isEmpty() && text.length() <= maxInputLength) {
+                String text = textInputHandler.getInputText().trim();
+                if (!text.isEmpty() && text.length() <= textInputHandler.getMaxInputLength()) {
                     if (saveGame(text)) {
                         Gdx.app.log("SaveGame", "Game saved successfully: " + text);
                         isPaused = false; // セーブ後はポーズを解除
@@ -866,18 +613,14 @@ public class Main extends ApplicationAdapter {
                         Gdx.app.error("SaveGame", "Failed to save game");
                     }
                 }
-                isTextInputActive = false;
-                inputText.setLength(0);
-                currentInputLabel = "";
+                textInputHandler.setTextInputActive(false);
             } else if (backButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.MAIN_MENU;
-                isTextInputActive = false;
-                inputText.setLength(0);
-                currentInputLabel = "";
+                textInputHandler.setTextInputActive(false);
             } else if (!inputField.contains(mouseX, mouseY)) {
                 // 入力フィールド以外をクリックした場合、入力を終了
-                if (isTextInputActive) {
-                    isTextInputActive = false;
+                if (textInputHandler.isTextInputActive()) {
+                    textInputHandler.setTextInputActive(false);
                 }
             }
         }
@@ -897,7 +640,7 @@ public class Main extends ApplicationAdapter {
             float startY = screenHeight / 2 + 150;
             float buttonSpacing = 60;
             
-            java.util.List<String> saveList = getSaveFileList();
+            java.util.List<String> saveList = saveGameManager.getSaveFileList();
             
             // 各セーブファイルボタンをチェック
             for (int i = 0; i < saveList.size() && i < 10; i++) { // 最大10個まで表示
@@ -1009,9 +752,10 @@ public class Main extends ApplicationAdapter {
         
         // 入力テキストを描画（LibGDXのフォントはベースライン基準なので、中央揃えを正しく計算）
         font.getData().setScale(2.0f);
-        String displayText = isTextInputActive ? inputText.toString() + "_" : 
-                            (inputText.length() > 0 ? inputText.toString() : "Enter save name...");
-        font.setColor(isTextInputActive ? Color.YELLOW : (inputText.length() > 0 ? Color.WHITE : Color.GRAY));
+        String inputText = textInputHandler.getInputText();
+        String displayText = textInputHandler.isTextInputActive() ? inputText + "_" : 
+                            (inputText.length() > 0 ? inputText : "Enter save name...");
+        font.setColor(textInputHandler.isTextInputActive() ? Color.YELLOW : (inputText.length() > 0 ? Color.WHITE : Color.GRAY));
         GlyphLayout textLayout = new GlyphLayout(font, displayText);
         float textX = inputFieldX + 15; // 左側にパディング
         // ベースライン基準で中央揃え（Y座標はベースラインなので、height/2 + textLayout.height/2を加算）
@@ -1021,7 +765,7 @@ public class Main extends ApplicationAdapter {
         // 文字数制限を表示（入力フィールドの下、ラベルの上）
         font.getData().setScale(1.5f);
         font.setColor(Color.LIGHT_GRAY);
-        String charCountText = inputText.length() + " / " + maxInputLength;
+        String charCountText = inputText.length() + " / " + textInputHandler.getMaxInputLength();
         GlyphLayout charCountLayout = new GlyphLayout(font, charCountText);
         float charCountX = inputFieldX + inputFieldWidth - charCountLayout.width - 15;
         float charCountY = inputFieldY - 5; // 入力フィールドの少し上
@@ -1035,15 +779,15 @@ public class Main extends ApplicationAdapter {
         // 保存ボタンを描画
         float saveButtonY = centerY - 100;
         Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        String saveButtonText = isTextInputActive ? "Press Enter to Save" : 
+        String saveButtonText = textInputHandler.isTextInputActive() ? "Press Enter to Save" : 
                                (inputText.length() > 0 ? "Save Game" : "Enter Name First");
-        drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    saveButtonText, saveButton.contains(mouseX, mouseY) && inputText.length() > 0);
         
         // 戻るボタンを描画
         float backButtonY = centerY - buttonSpacing - 100;
         Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Back", backButton.contains(mouseX, mouseY));
         
         // 既存のセーブファイルを表示（戻るボタンの下、ダイアログの下部に配置）
@@ -1105,7 +849,7 @@ public class Main extends ApplicationAdapter {
                 float buttonY = startY - i * buttonSpacing;
                 String saveName = saveList.get(i);
                 Button saveButton = new Button(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight);
-                drawButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                uiRenderer.drawButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                           saveName, saveButton.contains(mouseX, mouseY));
             }
         }
@@ -1113,7 +857,7 @@ public class Main extends ApplicationAdapter {
         // 戻るボタンを描画
         float backButtonY = screenHeight / 2 - 200;
         Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Back", backButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f);
@@ -1201,14 +945,14 @@ public class Main extends ApplicationAdapter {
         float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
         float yesButtonY = centerY - buttonHeight / 2;
         Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
-        drawButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, 
                    "Yes", yesButton.contains(mouseX, mouseY));
         
         // Noボタンを描画（右側）
         float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
         float noButtonY = centerY - buttonHeight / 2;
         Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
-        drawButton(noButtonX, noButtonY, buttonWidth, buttonHeight, 
+        uiRenderer.drawButton(noButtonX, noButtonY, buttonWidth, buttonHeight, 
                    "No", noButton.contains(mouseX, mouseY));
         
         font.getData().setScale(2.0f); // 元に戻す
@@ -1216,220 +960,15 @@ public class Main extends ApplicationAdapter {
         batch.end();
     }
     
-    /**
-     * マスターボリュームを更新します。
-     * 将来的に音声を追加したときに、この音量設定が適用されます。
-     */
-    private void updateMasterVolume() {
-        // LibGDXのマスターボリュームを設定
-        // 将来的にSoundやMusicを追加したときに、この設定が適用されます
-        // Gdx.audio.setVolume(masterVolume); // このメソッドは存在しませんが、
-        // 個別のSoundやMusicオブジェクトに対してsetVolume()を呼び出す必要があります
-    }
-    
-    /**
-     * 現在のマスターボリュームを取得します。
-     * @return 0.0f ～ 1.0f の範囲の音量値
-     */
-    public float getMasterVolume() {
-        return masterVolume;
-    }
-    
-    /**
-     * ボタンを描画します。
-     * 注意: このメソッドはbatch.begin()が既に呼ばれている状態で呼び出す必要があります。
-     * @param x ボタンのX座標
-     * @param y ボタンのY座標
-     * @param width ボタンの幅
-     * @param height ボタンの高さ
-     * @param text ボタンのテキスト
-     * @param isHovered ホバー状態（trueの場合、視覚的に強調表示）
-     */
-    private void drawButton(float x, float y, float width, float height, String text, boolean isHovered) {
-        // batchを一時的に終了してshapeRendererを使用
-        batch.end();
-        
-        // ボタンの背景を描画
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        // ホバー時は背景色を明るくする
-        if (isHovered) {
-            shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 0.95f);
-        } else {
-            shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
-        }
-        shapeRenderer.rect(x, y, width, height);
-        shapeRenderer.end();
-        
-        // ボタンの枠線を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        // ホバー時は枠線を太く、明るくする
-        if (isHovered) {
-            shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
-            // 太い線を描画するために2回描画（簡易的な太線）
-            shapeRenderer.rect(x - 1, y - 1, width + 2, height + 2);
-            shapeRenderer.rect(x, y, width, height);
-        } else {
-            shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-            shapeRenderer.rect(x, y, width, height);
-        }
-        shapeRenderer.end();
-        
-        // batchを再開してテキストを描画
-        batch.begin();
-        font.getData().setScale(1.8f);
-        // ホバー時はテキストを少し明るくする
-        font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
-        GlyphLayout layout = new GlyphLayout(font, text);
-        float textX = x + (width - layout.width) / 2;
-        // LibGDXのフォントはベースライン基準なので、中央揃えを正しく計算
-        // Y座標はベースラインなので、height/2 + layout.height/2を加算
-        float textY = y + height / 2 + layout.height / 2;
-        font.draw(batch, text, textX, textY);
-    }
-
-    /**
-     * テキスト入力を処理します。
-     */
-    private void handleTextInput() {
-        // Enterキーで確定
-        if (Gdx.input.isKeyJustPressed(Input.Keys.ENTER)) {
-            String text = inputText.toString().trim();
-            if (!text.isEmpty() && text.length() <= maxInputLength) {
-                if (currentInputLabel.equals("Save Name")) {
-                    // セーブ処理
-                    if (saveGame(text)) {
-                        Gdx.app.log("SaveGame", "Game saved successfully: " + text);
-                        isPaused = false; // セーブ後はポーズを解除
-                    } else {
-                        Gdx.app.error("SaveGame", "Failed to save game");
-                    }
-                }
-            }
-            isTextInputActive = false;
-            inputText.setLength(0);
-            currentInputLabel = "";
-            return;
-        }
-        
-        // Backspaceキーで文字削除
-        if (Gdx.input.isKeyJustPressed(Input.Keys.BACKSPACE)) {
-            if (inputText.length() > 0) {
-                inputText.setLength(inputText.length() - 1);
-            }
-            return;
-        }
-        
-        // Shiftキーの状態を確認
-        boolean isShiftPressed = Gdx.input.isKeyPressed(Input.Keys.SHIFT_LEFT) || Gdx.input.isKeyPressed(Input.Keys.SHIFT_RIGHT);
-        
-        // キーコードから文字を取得
-        int keycode = -1;
-        for (int i = Input.Keys.A; i <= Input.Keys.Z; i++) {
-            if (Gdx.input.isKeyJustPressed(i)) {
-                keycode = i;
-                break;
-            }
-        }
-        
-        if (keycode >= Input.Keys.A && keycode <= Input.Keys.Z) {
-            char c = (char)(keycode - Input.Keys.A + (isShiftPressed ? 'A' : 'a'));
-            if (inputText.length() < maxInputLength) {
-                inputText.append(c);
-            }
-            return;
-        }
-        
-        // 数字キー
-        for (int i = Input.Keys.NUM_0; i <= Input.Keys.NUM_9; i++) {
-            if (Gdx.input.isKeyJustPressed(i)) {
-                char c = (char)('0' + (i - Input.Keys.NUM_0));
-                if (inputText.length() < maxInputLength) {
-                    inputText.append(c);
-                }
-                return;
-            }
-        }
-        
-        // スペースキー
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE)) {
-            if (inputText.length() < maxInputLength) {
-                inputText.append(' ');
-            }
-            return;
-        }
-        
-        // アンダースコアとハイフン（Shift + ハイフンでアンダースコア）
-        if (Gdx.input.isKeyJustPressed(Input.Keys.MINUS)) {
-            char c = isShiftPressed ? '_' : '-';
-            if (inputText.length() < maxInputLength) {
-                inputText.append(c);
-            }
-            return;
-        }
-    }
     
     /**
      * ゲームの状態をセーブします。
-     * @param saveName セーブデータ名（nullの場合はデフォルト名）
+     * @param saveName セーブデータ名
      * @return セーブが成功した場合true
      */
     public boolean saveGame(String saveName) {
-        try {
-            GameSaveData saveData = new GameSaveData();
-            
-            // プレイヤーの状態を保存
-            saveData.playerTileX = player.getPlayerTileX();
-            saveData.playerTileY = player.getPlayerTileY();
-            
-            // アイテムマネージャーの状態を保存
-            saveData.collectedCount = itemManager.getCollectedCount();
-            saveData.items = new java.util.ArrayList<>();
-            for (Item item : itemManager.getItems()) {
-                if (!item.isCollected()) {
-                    GameSaveData.ItemData itemData = new GameSaveData.ItemData(
-                        item.getTileX(),
-                        item.getTileY(),
-                        item.getType().name()
-                    );
-                    saveData.items.add(itemData);
-                }
-            }
-            
-            // 生成済みチャンクを保存
-            saveData.generatedChunks = new java.util.ArrayList<>(itemManager.getGeneratedChunks());
-            
-            // 設定を保存
-            saveData.showGrid = showGrid;
-            saveData.masterVolume = masterVolume;
-            saveData.isMuted = isMuted;
-            saveData.cameraZoom = cameraZoom;
-            
-            // JSONにシリアライズして保存
-            Json json = new Json();
-            String jsonString = json.prettyPrint(saveData);
-            
-            com.badlogic.gdx.files.FileHandle saveFile = getSaveFileHandle(saveName);
-            Gdx.app.log("SaveGame", "Writing to file: " + saveFile.file().getAbsolutePath());
-            Gdx.app.log("SaveGame", "File exists before write: " + saveFile.exists());
-            Gdx.app.log("SaveGame", "Parent directory exists: " + saveFile.parent().exists());
-            Gdx.app.log("SaveGame", "Parent directory writable: " + saveFile.parent().file().canWrite());
-            
-            saveFile.writeString(jsonString, false);
-            
-            // 保存が成功したか確認
-            if (saveFile.exists()) {
-                Gdx.app.log("SaveGame", "File successfully written. Size: " + saveFile.length() + " bytes");
-                return true;
-            } else {
-                Gdx.app.error("SaveGame", "File was not created after write operation");
-                return false;
-            }
-        } catch (Exception e) {
-            Gdx.app.error("SaveGame", "Failed to save game: " + e.getMessage());
-            e.printStackTrace();
-            return false;
-        }
+        return saveGameManager.saveGame(saveName, player, itemManager, showGrid,
+                soundSettings.getMasterVolume(), soundSettings.isMuted(), cameraZoom);
     }
     
     /**
@@ -1438,55 +977,24 @@ public class Main extends ApplicationAdapter {
      * @return ロードが成功した場合true
      */
     public boolean loadGame(String saveName) {
-        try {
-            // セーブファイルが存在するか確認
-            com.badlogic.gdx.files.FileHandle saveFile = getSaveFileHandle(saveName);
-            if (!saveFile.exists()) {
-                Gdx.app.log("LoadGame", "Save file not found");
-                return false;
-            }
-            
-            // セーブファイルを読み込む
-            String jsonString = saveFile.readString();
-            Json json = new Json();
-            GameSaveData saveData = json.fromJson(GameSaveData.class, jsonString);
-            
-            // プレイヤーの状態を復元
-            player.setPosition(saveData.playerTileX, saveData.playerTileY);
-            
-            // アイテムマネージャーの状態を復元
-            itemManager.setCollectedCount(saveData.collectedCount);
-            Array<Item> loadedItems = new Array<>();
-            for (GameSaveData.ItemData itemData : saveData.items) {
-                Item.ItemType type = Item.ItemType.valueOf(itemData.type);
-                Item item = new Item(itemData.tileX, itemData.tileY, type);
-                loadedItems.add(item);
-            }
-            itemManager.setItems(loadedItems);
-            
-            // 生成済みチャンクを復元
-            java.util.Set<String> chunks = new java.util.HashSet<>(saveData.generatedChunks);
-            itemManager.setGeneratedChunks(chunks);
-            
-            // 設定を復元
-            showGrid = saveData.showGrid;
-            masterVolume = saveData.masterVolume;
-            isMuted = saveData.isMuted;
-            cameraZoom = saveData.cameraZoom;
-            updateMasterVolume();
-            
-            // カメラをプレイヤーの位置に設定
-            float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
-            float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
-            camera.position.set(playerCenterX, playerCenterY, 0);
-            camera.zoom = cameraZoom;
-            camera.update();
-            
-            return true;
-        } catch (Exception e) {
-            Gdx.app.error("LoadGame", "Failed to load game: " + e.getMessage());
+        SaveGameManager.LoadResult result = saveGameManager.loadGame(saveName, player, itemManager);
+        if (result == null) {
             return false;
         }
+        
+        showGrid = result.showGrid;
+        soundSettings.setMasterVolume(result.masterVolume);
+        soundSettings.setMuted(result.isMuted);
+        cameraZoom = result.cameraZoom;
+        
+        // カメラをプレイヤーの位置に設定
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        camera.position.set(playerCenterX, playerCenterY, 0);
+        camera.zoom = cameraZoom;
+        camera.update();
+        
+        return true;
     }
     
     @Override
@@ -1501,6 +1009,11 @@ public class Main extends ApplicationAdapter {
         // UI用カメラも更新
         uiCamera.setToOrtho(false, width, height);
         uiCamera.update();
+        
+        // UIRendererの画面サイズを更新
+        if (uiRenderer != null) {
+            uiRenderer.updateScreenSize(width, height);
+        }
     }
     
     @Override
