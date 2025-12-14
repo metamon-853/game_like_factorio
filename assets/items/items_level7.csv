@@ -1,51 +1,51 @@
 id,name,description
-301,Electricity,The flow of electric charge. Powers modern civilization.
-302,Generator,A device that converts mechanical energy into electricity.
-303,Electric Motor,A device that converts electricity into motion.
-304,Battery,A device that stores electrical energy.
-305,Light Bulb,A device that produces light from electricity.
-306,Electric Wire,A conductor for transmitting electricity.
-307,Switch,A device for controlling electrical circuits.
-308,Fuse,A safety device that breaks circuits when overloaded.
-309,Circuit Breaker,A device that automatically breaks circuits.
-310,Transformer,A device for changing voltage levels.
-311,Power Plant,A facility for generating electricity.
-312,Coal Power Plant,A power plant that burns coal.
-313,Hydroelectric Dam,A dam that generates electricity from water.
-314,Transmission Line,A high-voltage line for transmitting electricity.
-315,Power Grid,A network for distributing electricity.
-316,Electrical Outlet,A point for connecting electrical devices.
-317,Plug,A connector for electrical devices.
-318,Electrical Appliance,A device powered by electricity.
-319,Refrigerator,A device for preserving food using electricity.
-320,Washing Machine,A machine for cleaning clothes.
-321,Vacuum Cleaner,A device for cleaning using suction.
-322,Electric Stove,A cooking device powered by electricity.
-323,Electric Heater,A device for heating using electricity.
-324,Electric Fan,A device for moving air using electricity.
-325,Radio,A device for receiving and transmitting radio waves.
-326,Telegraph,A device for long-distance communication using electricity.
-327,Telephone,A device for voice communication over distance.
-328,Television,A device for receiving and displaying video signals.
-329,Phonograph,A device for recording and playing sound.
-330,Record,A disc for storing audio recordings.
-331,Photography,The art of capturing images using light.
-332,Camera,A device for capturing photographs.
-333,Film,A light-sensitive material for photography.
-334,Photograph,A printed image captured by a camera.
-335,Internal Combustion Engine,An engine that burns fuel internally.
-336,Gasoline,A liquid fuel for internal combustion engines.
-337,Automobile,A vehicle powered by an internal combustion engine.
-338,Truck,A large vehicle for transporting goods.
-339,Motorcycle,A two-wheeled motorized vehicle.
-340,Airplane,A vehicle that flies through the air.
-341,Propeller,A device for generating thrust in air or water.
-342,Jet Engine,An engine that produces thrust by expelling gases.
-343,Airport,A facility for aircraft to take off and land.
-344,Runway,A strip for aircraft to take off and land.
-345,Petroleum,A liquid fuel extracted from the earth.
-346,Oil Refinery,A facility for processing petroleum.
-347,Plastic,A synthetic material made from petroleum.
-348,Synthetic Rubber,A man-made material with elastic properties.
-349,Chemical Fertilizer,A substance for enhancing plant growth.
-350,Pharmaceutical,A medicine produced through chemistry.
+7_1,Electricity,The flow of electric charge. Powers modern civilization.
+7_2,Generator,A device that converts mechanical energy into electricity.
+7_3,Electric Motor,A device that converts electricity into motion.
+7_4,Battery,A device that stores electrical energy.
+7_5,Light Bulb,A device that produces light from electricity.
+7_6,Electric Wire,A conductor for transmitting electricity.
+7_7,Switch,A device for controlling electrical circuits.
+7_8,Fuse,A safety device that breaks circuits when overloaded.
+7_9,Circuit Breaker,A device that automatically breaks circuits.
+7_10,Transformer,A device for changing voltage levels.
+7_11,Power Plant,A facility for generating electricity.
+7_12,Coal Power Plant,A power plant that burns coal.
+7_13,Hydroelectric Dam,A dam that generates electricity from water.
+7_14,Transmission Line,A high-voltage line for transmitting electricity.
+7_15,Power Grid,A network for distributing electricity.
+7_16,Electrical Outlet,A point for connecting electrical devices.
+7_17,Plug,A connector for electrical devices.
+7_18,Electrical Appliance,A device powered by electricity.
+7_19,Refrigerator,A device for preserving food using electricity.
+7_20,Washing Machine,A machine for cleaning clothes.
+7_21,Vacuum Cleaner,A device for cleaning using suction.
+7_22,Electric Stove,A cooking device powered by electricity.
+7_23,Electric Heater,A device for heating using electricity.
+7_24,Electric Fan,A device for moving air using electricity.
+7_25,Radio,A device for receiving and transmitting radio waves.
+7_26,Telegraph,A device for long-distance communication using electricity.
+7_27,Telephone,A device for voice communication over distance.
+7_28,Television,A device for receiving and displaying video signals.
+7_29,Phonograph,A device for recording and playing sound.
+7_30,Record,A disc for storing audio recordings.
+7_31,Photography,The art of capturing images using light.
+7_32,Camera,A device for capturing photographs.
+7_33,Film,A light-sensitive material for photography.
+7_34,Photograph,A printed image captured by a camera.
+7_35,Internal Combustion Engine,An engine that burns fuel internally.
+7_36,Gasoline,A liquid fuel for internal combustion engines.
+7_37,Automobile,A vehicle powered by an internal combustion engine.
+7_38,Truck,A large vehicle for transporting goods.
+7_39,Motorcycle,A two-wheeled motorized vehicle.
+7_40,Airplane,A vehicle that flies through the air.
+7_41,Propeller,A device for generating thrust in air or water.
+7_42,Jet Engine,An engine that produces thrust by expelling gases.
+7_43,Airport,A facility for aircraft to take off and land.
+7_44,Runway,A strip for aircraft to take off and land.
+7_45,Petroleum,A liquid fuel extracted from the earth.
+7_46,Oil Refinery,A facility for processing petroleum.
+7_47,Plastic,A synthetic material made from petroleum.
+7_48,Synthetic Rubber,A man-made material with elastic properties.
+7_49,Chemical Fertilizer,A substance for enhancing plant growth.
+7_50,Pharmaceutical,A medicine produced through chemistry.
