@@ -7,15 +7,15 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.utils.Array;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.Map;
 
 /**
- * インベントリUIを描画するクラス。
+ * アイテム図鑑UIを描画するクラス。
  */
-public class InventoryUI {
+public class ItemEncyclopediaUI {
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
     private BitmapFont font;
@@ -24,47 +24,46 @@ public class InventoryUI {
     private int screenHeight;
     
     // UIのサイズと位置
-    private float panelWidth = 600;
-    private float panelHeight = 500;
+    private float panelWidth = 800;
+    private float panelHeight = 600;
     private float panelX;
     private float panelY;
     
     // アイテムスロットの設定
-    private static final int SLOTS_PER_ROW = 6;
-    private static final int MAX_ROWS = 8;
+    private static final int SLOTS_PER_ROW = 8;
+    private static final int MAX_ROWS = 10;
     private static final float SLOT_SIZE = 70;
     private static final float SLOT_PADDING = 10;
     
     // アイテム詳細表示
     private ItemData selectedItemData = null;
-    private int selectedItemCount = 0;
     
     // スロット情報を保持（クリック判定用）
     private List<SlotInfo> slotInfos;
     
-    // アイテム図鑑ボタン
-    private Button encyclopediaButton;
+    // インベントリに戻るボタン
+    private Button backButton;
+    
+    // スクロール位置
+    private float scrollOffset = 0;
+    private static final float SCROLL_SPEED = 20f;
     
     /**
      * スロット情報を保持する内部クラス
      */
     private static class SlotInfo {
         float x, y;
-        String itemId;
         ItemData itemData;
-        int count;
         
-        SlotInfo(float x, float y, String itemId, ItemData itemData, int count) {
+        SlotInfo(float x, float y, ItemData itemData) {
             this.x = x;
             this.y = y;
-            this.itemId = itemId;
             this.itemData = itemData;
-            this.count = count;
         }
     }
     
-    public InventoryUI(ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
-                     OrthographicCamera uiCamera, int screenWidth, int screenHeight) {
+    public ItemEncyclopediaUI(ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
+                             OrthographicCamera uiCamera, int screenWidth, int screenHeight) {
         this.shapeRenderer = shapeRenderer;
         this.batch = batch;
         this.font = font;
@@ -90,42 +89,39 @@ public class InventoryUI {
         panelX = (screenWidth - panelWidth) / 2;
         panelY = (screenHeight - panelHeight) / 2;
         
-        // アイテム図鑑ボタンの位置を設定
+        // インベントリに戻るボタンの位置を設定
         float buttonWidth = 200;
         float buttonHeight = 50;
-        float buttonX = panelX + panelWidth - buttonWidth - 20;
+        float buttonX = panelX + 20;
         float buttonY = panelY + panelHeight - buttonHeight - 20;
-        encyclopediaButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
+        backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
     }
     
     /**
      * マウスクリックを処理します。
      * @param screenX スクリーンX座標
      * @param screenY スクリーンY座標
-     * @return クリックされたアイテムデータ（クリックされなかった場合はnull）、アイテム図鑑ボタンがクリックされた場合は特殊値としてItemData.id="ENCYCLOPEDIA"を返す
+     * @return 戻るボタンがクリックされた場合true
      */
-    public ItemData handleClick(int screenX, int screenY) {
+    public boolean handleClick(int screenX, int screenY) {
         if (slotInfos == null) {
-            return null;
+            return false;
         }
         
         // スクリーン座標をUI座標に変換（LibGDXはY座標が下から上）
         float uiY = screenHeight - screenY;
         
-        // アイテム図鑑ボタンのクリック判定
-        if (encyclopediaButton != null && encyclopediaButton.contains(screenX, uiY)) {
-            // 特殊なItemDataを返してアイテム図鑑ボタンがクリックされたことを示す
-            ItemData encyclopediaMarker = new ItemData();
-            encyclopediaMarker.id = "ENCYCLOPEDIA";
-            return encyclopediaMarker;
+        // 戻るボタンのクリック判定
+        if (backButton != null && backButton.contains(screenX, uiY)) {
+            return true; // 戻るボタンがクリックされた
         }
         
+        // アイテムスロットのクリック判定
         for (SlotInfo slot : slotInfos) {
             if (screenX >= slot.x && screenX <= slot.x + SLOT_SIZE &&
                 uiY >= slot.y && uiY <= slot.y + SLOT_SIZE) {
                 selectedItemData = slot.itemData;
-                selectedItemCount = slot.count;
-                return slot.itemData;
+                return false;
             }
         }
         
@@ -134,7 +130,7 @@ public class InventoryUI {
             float detailX = panelX + panelWidth + 20;
             float detailY = panelY;
             float detailWidth = 400;
-            float detailHeight = 300;
+            float detailHeight = 400;
             
             if (!(screenX >= detailX && screenX <= detailX + detailWidth &&
                   uiY >= detailY && uiY <= detailY + detailHeight)) {
@@ -142,16 +138,24 @@ public class InventoryUI {
             }
         }
         
-        return null;
+        return false;
     }
     
     /**
-     * インベントリUIを描画します。
-     * @param inventory インベントリ
+     * スクロール処理を行います。
+     */
+    public void handleScroll(float amountY) {
+        scrollOffset += amountY * SCROLL_SPEED;
+        // スクロール範囲を制限（必要に応じて調整）
+        scrollOffset = Math.max(0, scrollOffset);
+    }
+    
+    /**
+     * アイテム図鑑UIを描画します。
      * @param itemDataLoader アイテムデータローダー
      */
-    public void render(Inventory inventory, ItemDataLoader itemDataLoader) {
-        if (inventory == null) {
+    public void render(ItemDataLoader itemDataLoader) {
+        if (itemDataLoader == null) {
             return;
         }
         
@@ -176,17 +180,17 @@ public class InventoryUI {
         font.setColor(Color.WHITE);
         
         // タイトルを描画
-        String title = "Inventory";
+        String title = "アイテム図鑑";
         GlyphLayout titleLayout = new GlyphLayout(font, title);
         float titleX = panelX + (panelWidth - titleLayout.width) / 2;
         float titleY = panelY + panelHeight - 30;
         font.draw(batch, title, titleX, titleY);
         
-        // アイテム図鑑ボタンを描画
-        if (encyclopediaButton != null) {
+        // 戻るボタンを描画
+        if (backButton != null) {
             float mouseX = Gdx.input.getX();
             float mouseY = screenHeight - Gdx.input.getY();
-            boolean isHovered = encyclopediaButton.contains(mouseX, mouseY);
+            boolean isHovered = backButton.contains(mouseX, mouseY);
             
             batch.end();
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -195,7 +199,7 @@ public class InventoryUI {
             } else {
                 shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
             }
-            shapeRenderer.rect(encyclopediaButton.x, encyclopediaButton.y, encyclopediaButton.width, encyclopediaButton.height);
+            shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
             shapeRenderer.end();
             
             shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
@@ -204,53 +208,44 @@ public class InventoryUI {
             } else {
                 shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
             }
-            shapeRenderer.rect(encyclopediaButton.x, encyclopediaButton.y, encyclopediaButton.width, encyclopediaButton.height);
+            shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
             shapeRenderer.end();
             
             batch.begin();
             font.getData().setScale(1.8f);
             font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
-            String buttonText = "アイテム図鑑";
-            GlyphLayout buttonLayout = new GlyphLayout(font, buttonText);
-            float buttonTextX = encyclopediaButton.x + (encyclopediaButton.width - buttonLayout.width) / 2;
-            float buttonTextY = encyclopediaButton.y + encyclopediaButton.height / 2 + buttonLayout.height / 2;
-            font.draw(batch, buttonText, buttonTextX, buttonTextY);
-            font.getData().setScale(2.2f);
+            String backText = "インベントリに戻る";
+            GlyphLayout backLayout = new GlyphLayout(font, backText);
+            float backTextX = backButton.x + (backButton.width - backLayout.width) / 2;
+            float backTextY = backButton.y + backButton.height / 2 + backLayout.height / 2;
+            font.draw(batch, backText, backTextX, backTextY);
         }
         
         // アイテムリストを描画
         float startX = panelX + 20;
-        float startY = titleY - 50;
-        float currentY = startY;
+        float startY = titleY - 80;
+        float currentY = startY - scrollOffset;
         
-        Map<String, Integer> items = inventory.getAllItems();
-        int itemIndex = 0;
+        Array<ItemData> allItems = itemDataLoader.getAllItems();
         
         // スロット情報をリセット
         slotInfos = new ArrayList<>();
         
-        if (items.isEmpty()) {
-            // 空のインベントリメッセージを表示
+        if (allItems.size == 0) {
+            // 空のメッセージを表示
             font.getData().setScale(2.2f);
             font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-            String emptyText = "Inventory is empty";
+            String emptyText = "アイテムがありません";
             GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
             float emptyX = panelX + (panelWidth - emptyLayout.width) / 2;
             float emptyY = panelY + panelHeight / 2;
             font.draw(batch, emptyText, emptyX, emptyY);
             font.setColor(Color.WHITE);
         } else {
-            for (Map.Entry<String, Integer> entry : items.entrySet()) {
+            int itemIndex = 0;
+            for (ItemData itemData : allItems) {
                 if (itemIndex >= SLOTS_PER_ROW * MAX_ROWS) {
                     break; // 最大表示数を超えたら終了
-                }
-                
-                String itemId = entry.getKey();
-                int count = entry.getValue();
-                
-                ItemData itemData = itemDataLoader.getItemData(itemId);
-                if (itemData == null) {
-                    continue;
                 }
                 
                 // スロットの位置を計算
@@ -260,10 +255,10 @@ public class InventoryUI {
                 float slotY = currentY - row * (SLOT_SIZE + SLOT_PADDING);
                 
                 // スロット情報を保存（クリック判定用）
-                slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemId, itemData, count));
+                slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemData));
                 
                 // 選択されているアイテムかどうかで色を変える
-                boolean isSelected = selectedItemData != null && selectedItemData.id.equals(itemId);
+                boolean isSelected = selectedItemData != null && selectedItemData.id.equals(itemData.id);
                 
                 // スロットの背景を描画
                 batch.end();
@@ -298,22 +293,12 @@ public class InventoryUI {
                 batch.begin();
                 batch.setProjectionMatrix(uiCamera.combined);
                 
-                // アイテム名と数量を描画
+                // アイテム名を描画
                 font.getData().setScale(1.4f);
                 String displayName = itemData.name.length() > 8 ? itemData.name.substring(0, 8) : itemData.name;
                 GlyphLayout nameLayout = new GlyphLayout(font, displayName);
                 float nameX = slotX + (SLOT_SIZE - nameLayout.width) / 2;
                 font.draw(batch, displayName, nameX, slotY - SLOT_SIZE + 15);
-                
-                // 数量を描画
-                if (count > 1) {
-                    String countText = "x" + count;
-                    GlyphLayout countLayout = new GlyphLayout(font, countText);
-                    float countX = slotX + SLOT_SIZE - countLayout.width - 5;
-                    font.setColor(Color.YELLOW);
-                    font.draw(batch, countText, countX, slotY - SLOT_SIZE + 5);
-                    font.setColor(Color.WHITE);
-                }
                 
                 itemIndex++;
             }
@@ -322,7 +307,7 @@ public class InventoryUI {
         // 閉じるヒントを描画
         font.getData().setScale(1.7f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-        String hint = "Click item for details | Press TAB to close";
+        String hint = "アイテムをクリックで詳細表示 | ESCで閉じる";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
         float hintX = panelX + (panelWidth - hintLayout.width) / 2;
         font.draw(batch, hint, hintX, panelY + 20);
@@ -330,7 +315,7 @@ public class InventoryUI {
         
         // アイテム詳細パネルを描画
         if (selectedItemData != null) {
-            renderItemDetail(selectedItemData, selectedItemCount);
+            renderItemDetail(selectedItemData);
         }
         
         font.getData().setScale(2.2f);
@@ -339,11 +324,11 @@ public class InventoryUI {
     /**
      * アイテム詳細パネルを描画します。
      */
-    private void renderItemDetail(ItemData itemData, int count) {
+    private void renderItemDetail(ItemData itemData) {
         float detailX = panelX + panelWidth + 20;
         float detailY = panelY;
         float detailWidth = 400;
-        float detailHeight = 300;
+        float detailHeight = 400;
         
         batch.end();
         
@@ -378,13 +363,6 @@ public class InventoryUI {
         float textX = detailX + 100;
         float textY = detailY + detailHeight - 40;
         font.draw(batch, itemData.name, textX, textY);
-        
-        // 数量
-        if (count > 1) {
-            font.setColor(Color.YELLOW);
-            font.draw(batch, "x" + count, textX + 200, textY);
-            font.setColor(Color.WHITE);
-        }
         
         // 説明
         font.getData().setScale(1.7f);
@@ -424,11 +402,11 @@ public class InventoryUI {
         font.getData().setScale(1.4f);
         font.setColor(new Color(0.6f, 0.6f, 0.8f, 1f));
         descY -= 40;
-        font.draw(batch, "Category: " + itemData.category, detailX + 20, descY);
+        font.draw(batch, "カテゴリ: " + itemData.category, detailX + 20, descY);
         descY -= 25;
-        font.draw(batch, "Tier: " + itemData.tier, detailX + 20, descY);
+        font.draw(batch, "ティア: " + itemData.tier, detailX + 20, descY);
         descY -= 25;
-        font.draw(batch, "Civ Level: " + itemData.getCivilizationLevel(), detailX + 20, descY);
+        font.draw(batch, "文明レベル: " + itemData.getCivilizationLevel(), detailX + 20, descY);
         
         font.setColor(Color.WHITE);
     }

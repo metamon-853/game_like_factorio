@@ -39,7 +39,9 @@ public class Main extends ApplicationAdapter {
     // インベントリシステム
     private Inventory inventory;
     private InventoryUI inventoryUI;
+    private ItemEncyclopediaUI encyclopediaUI;
     private boolean inventoryOpen = false;
+    private boolean showEncyclopedia = false; // アイテム図鑑を表示するかどうか
     
     // フォント管理
     private FontManager fontManager;
@@ -123,6 +125,7 @@ public class Main extends ApplicationAdapter {
         // 分離したクラスのインスタンスを作成
         uiRenderer = new UIRenderer(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         inventoryUI = new InventoryUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        encyclopediaUI = new ItemEncyclopediaUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         saveGameManager = new SaveGameManager();
         soundSettings = new SoundSettings();
         textInputHandler = new TextInputHandler();
@@ -239,18 +242,37 @@ public class Main extends ApplicationAdapter {
         // Tabキーでインベントリを開閉（ポーズ中でない場合のみ）
         if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
             inventoryOpen = !inventoryOpen;
+            showEncyclopedia = false; // インベントリを開くときは図鑑を閉じる
         }
         
-        // インベントリが開いているときはESCで閉じる
-        if (inventoryOpen && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+        // インベントリまたは図鑑が開いているときはESCで閉じる
+        if ((inventoryOpen || showEncyclopedia) && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             inventoryOpen = false;
+            showEncyclopedia = false;
         }
         
         // インベントリが開いているときのマウスクリック処理
-        if (inventoryOpen && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+        if (inventoryOpen && !showEncyclopedia && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
             int mouseX = Gdx.input.getX();
             int mouseY = Gdx.input.getY();
-            inventoryUI.handleClick(mouseX, mouseY);
+            ItemData clickedItem = inventoryUI.handleClick(mouseX, mouseY);
+            
+            // アイテム図鑑ボタンがクリックされた場合
+            if (clickedItem != null && "ENCYCLOPEDIA".equals(clickedItem.id)) {
+                showEncyclopedia = true; // アイテム図鑑を表示
+            }
+        }
+        
+        // アイテム図鑑が開いているときのマウスクリック処理
+        if (showEncyclopedia && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+            int mouseX = Gdx.input.getX();
+            int mouseY = Gdx.input.getY();
+            boolean backClicked = encyclopediaUI.handleClick(mouseX, mouseY);
+            
+            // 戻るボタンがクリックされた場合
+            if (backClicked) {
+                showEncyclopedia = false; // インベントリに戻る
+            }
         }
         
         // テキスト入力処理
@@ -329,12 +351,19 @@ public class Main extends ApplicationAdapter {
         // UI情報を描画（取得アイテム数など）
         uiRenderer.drawUI(itemManager);
         
-        // インベントリUIを描画
+        // インベントリUIまたはアイテム図鑑UIを描画
         if (inventoryOpen) {
-            // UIRendererがbatchを終了しているので、InventoryUIで適切に処理される
-            inventoryUI.render(inventory, itemManager.getItemDataLoader());
-            // InventoryUIがbatchを開始しているので、終了する
-            batch.end();
+            if (showEncyclopedia) {
+                // アイテム図鑑を表示
+                encyclopediaUI.render(itemManager.getItemDataLoader());
+                // ItemEncyclopediaUIがbatchを開始しているので、終了する
+                batch.end();
+            } else {
+                // インベントリを表示
+                inventoryUI.render(inventory, itemManager.getItemDataLoader());
+                // InventoryUIがbatchを開始しているので、終了する
+                batch.end();
+            }
         }
         
         // ポーズメニューを描画
@@ -417,6 +446,11 @@ public class Main extends ApplicationAdapter {
         // InventoryUIの画面サイズを更新
         if (inventoryUI != null) {
             inventoryUI.updateScreenSize(width, height);
+        }
+        
+        // ItemEncyclopediaUIの画面サイズを更新
+        if (encyclopediaUI != null) {
+            encyclopediaUI.updateScreenSize(width, height);
         }
         
         // MenuSystemの画面サイズを更新
