@@ -14,8 +14,11 @@ public class Item {
     // 取得済みかどうか
     private boolean collected;
     
-    // アイテムの種類（色分け用）
+    // アイテムの種類（色分け用）- 後方互換性のため残す
     private ItemType type;
+    
+    // アイテムデータ（新しいシステム）
+    private ItemData itemData;
     
     public enum ItemType {
         RED(Color.RED),
@@ -34,6 +37,21 @@ public class Item {
         }
     }
     
+    /**
+     * アイテムデータを指定して作成します（推奨）。
+     */
+    public Item(int tileX, int tileY, ItemData itemData) {
+        this.tileX = tileX;
+        this.tileY = tileY;
+        this.collected = false;
+        this.itemData = itemData;
+        // 後方互換性のため、ItemTypeも設定（色から推測）
+        this.type = determineItemType(itemData.getColor());
+    }
+    
+    /**
+     * 後方互換性のためのコンストラクタ（ItemTypeを使用）。
+     */
     public Item(int tileX, int tileY) {
         this.tileX = tileX;
         this.tileY = tileY;
@@ -41,6 +59,7 @@ public class Item {
         // ランダムに種類を決定
         ItemType[] types = ItemType.values();
         this.type = types[(int)(Math.random() * types.length)];
+        this.itemData = null;
     }
     
     /**
@@ -51,6 +70,23 @@ public class Item {
         this.tileY = tileY;
         this.collected = false;
         this.type = type;
+        this.itemData = null;
+    }
+    
+    /**
+     * 色からItemTypeを推測します。
+     */
+    private ItemType determineItemType(Color color) {
+        // 簡易的な色マッチング
+        if (color.r > 0.7f && color.g < 0.5f && color.b < 0.5f) {
+            return ItemType.RED;
+        } else if (color.r < 0.5f && color.g < 0.5f && color.b > 0.7f) {
+            return ItemType.BLUE;
+        } else if (color.r > 0.7f && color.g > 0.7f && color.b < 0.5f) {
+            return ItemType.YELLOW;
+        } else {
+            return ItemType.PURPLE;
+        }
     }
     
     /**
@@ -82,10 +118,27 @@ public class Item {
     }
     
     /**
-     * アイテムの種類を返します。
+     * アイテムの種類を返します（後方互換性のため）。
      */
     public ItemType getType() {
         return type;
+    }
+    
+    /**
+     * アイテムデータを返します。
+     */
+    public ItemData getItemData() {
+        return itemData;
+    }
+    
+    /**
+     * アイテムの色を返します。
+     */
+    public Color getColor() {
+        if (itemData != null) {
+            return itemData.getColor();
+        }
+        return type.getColor();
     }
     
     /**
@@ -101,7 +154,8 @@ public class Item {
         float pixelY = tileY * Player.TILE_SIZE;
         
         // アイテムを円形で描画
-        shapeRenderer.setColor(type.getColor());
+        Color itemColor = getColor();
+        shapeRenderer.setColor(itemColor);
         shapeRenderer.circle(pixelX + Player.TILE_SIZE / 2, pixelY + Player.TILE_SIZE / 2, Player.TILE_SIZE / 3);
         
         // 中心に小さな点を描画

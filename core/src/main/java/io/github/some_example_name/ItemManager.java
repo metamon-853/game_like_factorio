@@ -22,12 +22,34 @@ public class ItemManager {
     // 生成済みのチャンクを記録（無限マップ用）
     private java.util.Set<String> generatedChunks;
     
+    // アイテムデータローダー
+    private ItemDataLoader itemDataLoader;
+    
+    // 文明レベル（アイテム生成に使用）
+    private CivilizationLevel civilizationLevel;
+    
     public ItemManager() {
         this.items = new Array<>();
         this.spawnTimer = 0f;
         this.spawnInterval = 3.0f; // 3秒ごとにアイテムを生成
         this.collectedCount = 0;
         this.generatedChunks = new java.util.HashSet<>();
+        this.itemDataLoader = new ItemDataLoader();
+        this.civilizationLevel = new CivilizationLevel(1); // 初期はレベル1
+    }
+    
+    /**
+     * 文明レベルを設定します。
+     */
+    public void setCivilizationLevel(CivilizationLevel level) {
+        this.civilizationLevel = level;
+    }
+    
+    /**
+     * 文明レベルを取得します。
+     */
+    public CivilizationLevel getCivilizationLevel() {
+        return civilizationLevel;
     }
     
     /**
@@ -139,7 +161,15 @@ public class ItemManager {
         }
         
         if (!positionOccupied) {
-            items.add(new Item(tileX, tileY));
+            // 現在の文明レベルで利用可能なアイテムからランダムに選択
+            Array<ItemData> availableItems = itemDataLoader.getAvailableItems(civilizationLevel.getLevel());
+            if (availableItems.size > 0) {
+                ItemData selectedItemData = availableItems.random();
+                items.add(new Item(tileX, tileY, selectedItemData));
+            } else {
+                // フォールバック：旧システムを使用
+                items.add(new Item(tileX, tileY));
+            }
         }
     }
     

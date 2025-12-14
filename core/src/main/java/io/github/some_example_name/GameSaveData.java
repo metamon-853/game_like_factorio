@@ -22,6 +22,9 @@ public class GameSaveData {
     public boolean isMuted;
     public float cameraZoom;
     
+    // 文明レベル
+    public int civilizationLevel;
+    
     /**
      * アイテムのデータを表す内部クラス。
      */

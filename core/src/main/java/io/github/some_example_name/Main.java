@@ -253,6 +253,9 @@ public class Main extends ApplicationAdapter {
             // アイテムマネージャーを更新（カメラの視野範囲を渡す）
             itemManager.update(deltaTime, player, camera);
             
+            // 文明レベル進行チェック
+            checkCivilizationLevelProgress();
+            
             // キーボード入力処理
             inputHandler.handleInput();
             
@@ -300,6 +303,21 @@ public class Main extends ApplicationAdapter {
     }
     
     
+    
+    /**
+     * 文明レベルの進行をチェックします。
+     */
+    private void checkCivilizationLevelProgress() {
+        CivilizationLevel civLevel = itemManager.getCivilizationLevel();
+        
+        // レベル1からレベル2への進行条件：アイテムを10個収集
+        if (civLevel.getLevel() == 1 && itemManager.getCollectedCount() >= 10) {
+            if (civLevel.levelUp()) {
+                Gdx.app.log("Civilization", "文明レベルが " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ") に上がりました！");
+            }
+        }
+        // レベル2以降の進行条件は今後追加
+    }
     
     /**
      * ゲームの状態をセーブします。

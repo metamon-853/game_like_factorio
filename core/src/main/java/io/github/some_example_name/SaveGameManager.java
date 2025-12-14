@@ -142,6 +142,7 @@ public class SaveGameManager {
             saveData.masterVolume = masterVolume;
             saveData.isMuted = isMuted;
             saveData.cameraZoom = cameraZoom;
+            saveData.civilizationLevel = itemManager.getCivilizationLevel().getLevel();
             
             Json json = new Json();
             String jsonString = json.prettyPrint(saveData);
@@ -197,6 +198,11 @@ public class SaveGameManager {
             
             Set<String> chunks = new HashSet<>(saveData.generatedChunks);
             itemManager.setGeneratedChunks(chunks);
+            
+            // 文明レベルを復元
+            if (saveData.civilizationLevel > 0) {
+                itemManager.getCivilizationLevel().setLevel(saveData.civilizationLevel);
+            }
             
             LoadResult result = new LoadResult();
             result.showGrid = saveData.showGrid;

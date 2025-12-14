@@ -111,6 +111,12 @@ public class UIRenderer {
         String fpsText = "FPS: " + fps;
         font.draw(batch, fpsText, leftX, topY);
         
+        // 文明レベルを表示（英語表記で文字化けを回避）
+        CivilizationLevel civLevel = itemManager.getCivilizationLevel();
+        String civText = "Civ Level: " + civLevel.getLevel() + " (" + getLevelNameEnglish(civLevel) + ")";
+        GlyphLayout civLayout = new GlyphLayout(font, civText);
+        font.draw(batch, civText, leftX, topY - civLayout.height - 10);
+        
         // アイテム数を表示
         float rightX = screenWidth - padding;
         String itemText = "Items: " + itemManager.getCollectedCount();
@@ -236,5 +242,24 @@ public class UIRenderer {
      */
     public int getScreenHeight() {
         return screenHeight;
+    }
+    
+    /**
+     * 文明レベルの英語名を取得します（フォント互換性のため）。
+     */
+    private String getLevelNameEnglish(CivilizationLevel level) {
+        switch (level.getLevel()) {
+            case 1: return "Primitive";
+            case 2: return "Agricultural";
+            case 3: return "Bronze Age";
+            case 4: return "Iron Age";
+            case 5: return "Medieval";
+            case 6: return "Industrial";
+            case 7: return "Electric";
+            case 8: return "Information";
+            case 9: return "Space";
+            case 10: return "Transcendent";
+            default: return "Unknown";
+        }
     }
 }
