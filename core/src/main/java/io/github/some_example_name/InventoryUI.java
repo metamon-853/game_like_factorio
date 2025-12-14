@@ -154,7 +154,7 @@ public class InventoryUI {
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(2.2f);
         font.setColor(Color.WHITE);
         
         // タイトルを描画
@@ -177,7 +177,7 @@ public class InventoryUI {
         
         if (items.isEmpty()) {
             // 空のインベントリメッセージを表示
-            font.getData().setScale(2.0f);
+            font.getData().setScale(2.2f);
             font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
             String emptyText = "Inventory is empty";
             GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
@@ -245,7 +245,7 @@ public class InventoryUI {
                 batch.setProjectionMatrix(uiCamera.combined);
                 
                 // アイテム名と数量を描画
-                font.getData().setScale(1.2f);
+                font.getData().setScale(1.4f);
                 String displayName = itemData.name.length() > 8 ? itemData.name.substring(0, 8) : itemData.name;
                 GlyphLayout nameLayout = new GlyphLayout(font, displayName);
                 float nameX = slotX + (SLOT_SIZE - nameLayout.width) / 2;
@@ -266,7 +266,7 @@ public class InventoryUI {
         }
         
         // 閉じるヒントを描画
-        font.getData().setScale(1.5f);
+        font.getData().setScale(1.7f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
         String hint = "Click item for details | Press TAB to close";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
@@ -279,7 +279,7 @@ public class InventoryUI {
             renderItemDetail(selectedItemData, selectedItemCount);
         }
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(2.2f);
     }
     
     /**
@@ -317,7 +317,7 @@ public class InventoryUI {
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(2.2f);
         font.setColor(Color.WHITE);
         
         // アイテム名
@@ -333,7 +333,7 @@ public class InventoryUI {
         }
         
         // 説明
-        font.getData().setScale(1.5f);
+        font.getData().setScale(1.7f);
         font.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
         float descY = textY - 50;
         
@@ -367,7 +367,7 @@ public class InventoryUI {
         }
         
         // カテゴリとティア
-        font.getData().setScale(1.2f);
+        font.getData().setScale(1.4f);
         font.setColor(new Color(0.6f, 0.6f, 0.8f, 1f));
         descY -= 40;
         font.draw(batch, "Category: " + itemData.category, detailX + 20, descY);
