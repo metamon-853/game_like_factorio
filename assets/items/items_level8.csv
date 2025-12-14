@@ -1,0 +1,51 @@
+id,name,description
+351,Computer,An electronic device that processes information.
+352,Processor,A chip that executes instructions in a computer.
+353,Memory,Storage for data and programs in a computer.
+354,Hard Drive,A device for storing digital data.
+355,Solid State Drive,A fast storage device using flash memory.
+356,Graphics Card,A component for rendering images and video.
+357,Motherboard,The main circuit board of a computer.
+358,Power Supply,A device that provides electricity to a computer.
+359,Monitor,A display screen for computers.
+360,Keyboard,An input device with keys for typing.
+361,Mouse,An input device for pointing and clicking.
+362,Operating System,Software that manages computer resources.
+363,Software,Programs and applications for computers.
+364,Programming Language,A language for writing computer programs.
+365,Algorithm,A step-by-step procedure for solving problems.
+366,Database,A structured collection of data.
+367,Network,A system for connecting computers.
+368,Internet,A global network of interconnected computers.
+369,Router,A device that directs data in a network.
+370,Modem,A device for connecting to the internet.
+371,Wi-Fi,Wireless technology for network connectivity.
+372,Bluetooth,A wireless technology for short-range communication.
+373,Email,Electronic mail for digital communication.
+374,Web Browser,Software for accessing the internet.
+375,Website,A collection of web pages on the internet.
+376,Search Engine,A tool for finding information on the internet.
+377,Social Media,Platforms for online social interaction.
+378,Cloud Computing,Computing services delivered over the internet.
+379,Server,A computer that provides services to other computers.
+380,Data Center,A facility housing many servers.
+381,Artificial Intelligence,Computer systems that can perform tasks requiring intelligence.
+382,Machine Learning,A method for computers to learn from data.
+383,Neural Network,A computing system inspired by biological neural networks.
+384,Robot,An automated machine capable of performing tasks.
+385,Robotic Arm,A mechanical arm controlled by a computer.
+386,Automation,The use of technology to perform tasks automatically.
+387,Sensor,A device that detects and responds to input.
+388,Actuator,A device that converts signals into motion.
+389,Control System,A system for managing and regulating processes.
+390,Programmable Logic Controller,A computer for controlling industrial processes.
+391,Digital Camera,A camera that captures images digitally.
+392,Digital Video Camera,A camera that captures video digitally.
+393,Smartphone,A mobile device combining phone and computer.
+394,Tablet,A portable computer with a touchscreen.
+395,Laptop,A portable personal computer.
+396,Printer,A device for producing physical copies of digital documents.
+397,Scanner,A device for converting physical documents to digital.
+398,3D Printer,A device for creating three-dimensional objects.
+399,Digital Storage,Methods for storing digital information.
+400,Information Age,The era characterized by the use of information technology.
