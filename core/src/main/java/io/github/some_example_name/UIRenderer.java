@@ -117,17 +117,12 @@ public class UIRenderer {
         GlyphLayout civLayout = new GlyphLayout(font, civText);
         font.draw(batch, civText, leftX, topY - civLayout.height - 10);
         
-        // アイテム数を表示
+        // インベントリ操作の説明を表示
         float rightX = screenWidth - padding;
-        String itemText = "Items: " + itemManager.getCollectedCount();
-        GlyphLayout itemLayout = new GlyphLayout(font, itemText);
-        float itemX = rightX - itemLayout.width;
-        font.draw(batch, itemText, itemX, topY);
-        
-        String currentItemText = "On Map: " + itemManager.getItemCount();
-        GlyphLayout currentLayout = new GlyphLayout(font, currentItemText);
-        float currentX = rightX - currentLayout.width;
-        font.draw(batch, currentItemText, currentX, topY - itemLayout.height - 10);
+        String hintText = "TABでインベントリ";
+        GlyphLayout hintLayout = new GlyphLayout(font, hintText);
+        float hintX = rightX - hintLayout.width;
+        font.draw(batch, hintText, hintX, topY);
         
         font.getData().setScale(2.0f);
         batch.end();
