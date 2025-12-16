@@ -1,5 +1,6 @@
 package io.github.some_example_name.entity;
 
+import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.some_example_name.system.SoundManager;
@@ -42,7 +43,8 @@ public class Player {
     
     // 足音のタイミング管理
     private float footstepTimer = 0f;
-    private static final float FOOTSTEP_INTERVAL = 0.2f; // 足音の間隔（秒）- 移動速度に合わせて調整
+    private static final float FOOTSTEP_INTERVAL = 0.1f; // 足音の間隔（秒）- 移動速度に合わせて調整
+    private boolean footstepPlayedThisMove = false; // この移動で足音を再生したか
     
     public Player(int startTileX, int startTileY) {
         // マップ升座標からプレイヤー升座標に変換（マップ升の中心のプレイヤー升に配置）
@@ -72,9 +74,13 @@ public class Player {
             if (soundManager != null) {
                 footstepTimer += deltaTime;
                 if (footstepTimer >= FOOTSTEP_INTERVAL) {
+                    Gdx.app.log("Player", "Calling playFootstepSound, timer=" + footstepTimer);
                     soundManager.playFootstepSound();
                     footstepTimer = 0f; // タイマーをリセット
+                    footstepPlayedThisMove = true;
                 }
+            } else {
+                Gdx.app.log("Player", "soundManager is null");
             }
             
             if (moveProgress >= 1.0f) {
@@ -86,6 +92,7 @@ public class Player {
                 pixelY = playerTileY * PLAYER_TILE_SIZE;
                 isMoving = false;
                 footstepTimer = 0f; // 移動終了時にタイマーをリセット
+                footstepPlayedThisMove = false; // フラグをリセット
             } else {
                 // 移動中：線形補間でスムーズに移動
                 float startX = playerTileX * PLAYER_TILE_SIZE;
@@ -99,6 +106,7 @@ public class Player {
         } else {
             // 移動していない場合はタイマーをリセット
             footstepTimer = 0f;
+            footstepPlayedThisMove = false;
         }
     }
     
@@ -124,6 +132,14 @@ public class Player {
         // 移動を開始
         isMoving = true;
         moveProgress = 0.0f;
+        footstepTimer = 0f; // タイマーをリセット
+        footstepPlayedThisMove = false; // フラグをリセット
+        
+        // 移動開始時にすぐ足音を再生
+        if (soundManager != null) {
+            soundManager.playFootstepSound();
+            footstepPlayedThisMove = true;
+        }
         
         return true;
     }

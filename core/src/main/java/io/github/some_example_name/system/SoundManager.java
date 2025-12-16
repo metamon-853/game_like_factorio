@@ -248,7 +248,7 @@ public class SoundManager implements Disposable {
      */
     private Sound createFootstepSound() {
         int sampleRate = 44100;
-        float duration = 0.06f; // 60ミリ秒の短い音
+        float duration = 0.1f; // 100ミリ秒の短い音
         int numSamples = (int)(sampleRate * duration);
         
         // WAVファイルのヘッダーサイズ
@@ -285,34 +285,38 @@ public class SoundManager implements Disposable {
         writeString(wavData, offset, "data"); offset += 4;
         writeInt(wavData, offset, dataSize); offset += 4;
         
-        // 音声サンプルを生成（軽い足音の音）
+        // 音声サンプルを生成（リアルな足音の音）
+        java.util.Random random = new java.util.Random(42); // 再現可能なランダム
         for (int i = 0; i < numSamples; i++) {
             double time = i / (double) sampleRate;
             
-            // より軽い、高めの周波数で「パタ」という軽い音
-            double frequency1 = 150.0; // ベース周波数
-            double frequency2 = 300.0; // ハーモニック
-            double frequency3 = 600.0; // 高周波成分（軽い音の質感）
+            // 低めの周波数で「トン」という足音らしい音
+            double frequency1 = 100.0; // ベース周波数（低め）
+            double frequency2 = 200.0; // ハーモニック
+            double frequency3 = 400.0; // 高周波成分（控えめ）
             double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
-            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.15;
-            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.1; // 高周波は小さく
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.2;
+            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.05; // 高周波は非常に小さく
             
-            double sample = (sample1 + sample2 + sample3) / 1.25; // 正規化
+            // ノイズ成分を追加（地面を踏む音らしさを出す）
+            double noise = (random.nextDouble() - 0.5) * 0.1; // 小さなノイズ
             
-            // エンベロープを適用（急激なフェードイン・フェードアウト）
+            double sample = (sample1 + sample2 + sample3 + noise) / 1.35; // 正規化
+            
+            // エンベロープを適用（急激なアタック、ゆっくりしたリリース）
             double envelope;
-            if (i < numSamples * 0.15) {
-                // フェードイン（最初の15%）
-                envelope = i / (numSamples * 0.15);
-            } else if (i > numSamples * 0.4) {
-                // フェードアウト（最後の60%）
-                envelope = (numSamples - i) / (numSamples * 0.6);
+            if (i < numSamples * 0.05) {
+                // 急激なフェードイン（最初の5%）
+                envelope = i / (numSamples * 0.05);
+            } else if (i > numSamples * 0.3) {
+                // ゆっくりしたフェードアウト（最後の70%）
+                envelope = (numSamples - i) / (numSamples * 0.7);
             } else {
                 envelope = 1.0;
             }
             
-            // 音量を調整（0.15でかなり小さめに）
-            sample *= envelope * 0.15;
+            // 音量を調整（0.25で控えめに）
+            sample *= envelope * 0.25;
             
             // 16bit PCMとして書き込み（リトルエンディアン）
             short sampleValue = (short)(sample * Short.MAX_VALUE);
@@ -330,7 +334,13 @@ public class SoundManager implements Disposable {
                 return null;
             }
             
+            Gdx.app.log("SoundManager", "Footstep sound file created: " + tempFile.path() + ", size: " + tempFile.length());
             Sound sound = Gdx.audio.newSound(tempFile);
+            if (sound == null) {
+                Gdx.app.error("SoundManager", "Failed to load footstep sound from file");
+                return null;
+            }
+            Gdx.app.log("SoundManager", "Footstep sound loaded successfully");
             return sound;
         } catch (Exception e) {
             Gdx.app.error("SoundManager", "Failed to create footstep sound", e);
@@ -419,7 +429,16 @@ public class SoundManager implements Disposable {
      * 足音を再生します。
      */
     public void playFootstepSound() {
-        if (!isInitialized || footstepSound == null || soundSettings.isMuted()) {
+        if (!isInitialized) {
+            Gdx.app.log("SoundManager", "playFootstepSound: not initialized");
+            return;
+        }
+        if (footstepSound == null) {
+            Gdx.app.error("SoundManager", "playFootstepSound: footstepSound is null");
+            return;
+        }
+        if (soundSettings.isMuted()) {
+            Gdx.app.log("SoundManager", "playFootstepSound: sound is muted");
             return;
         }
         
@@ -431,8 +450,12 @@ public class SoundManager implements Disposable {
         
         float volume = soundSettings.getMasterVolume();
         if (volume > 0) {
-            footstepSound.play(volume * 0.1f); // 足音はかなり小さめに
+            float finalVolume = volume * 0.25f; // 足音は控えめに
+            footstepSound.play(finalVolume);
             lastFootstepSoundTime = currentTime;
+            Gdx.app.log("SoundManager", "playFootstepSound: played successfully, volume=" + finalVolume + ", masterVolume=" + volume);
+        } else {
+            Gdx.app.log("SoundManager", "playFootstepSound: volume is 0");
         }
     }
     
