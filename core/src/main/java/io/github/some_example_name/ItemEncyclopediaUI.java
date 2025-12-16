@@ -293,13 +293,6 @@ public class ItemEncyclopediaUI {
                 batch.begin();
                 batch.setProjectionMatrix(uiCamera.combined);
                 
-                // アイテム名を描画
-                font.getData().setScale(1.4f);
-                String displayName = itemData.name.length() > 8 ? itemData.name.substring(0, 8) : itemData.name;
-                GlyphLayout nameLayout = new GlyphLayout(font, displayName);
-                float nameX = slotX + (SLOT_SIZE - nameLayout.width) / 2;
-                font.draw(batch, displayName, nameX, slotY - SLOT_SIZE + 15);
-                
                 itemIndex++;
             }
         }
