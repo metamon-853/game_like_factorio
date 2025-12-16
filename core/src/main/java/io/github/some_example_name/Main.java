@@ -140,6 +140,7 @@ public class Main extends ApplicationAdapter {
         // アイテムマネージャーを初期化（無限マップ対応）
         itemManager = new ItemManager();
         itemManager.setInventory(inventory); // インベントリを設定
+        itemManager.setSoundManager(soundManager); // サウンドマネージャーを設定
         
         // 農地マネージャーを初期化
         farmManager = new FarmManager();

@@ -5,6 +5,7 @@ import io.github.some_example_name.entity.ItemData;
 import io.github.some_example_name.entity.Player;
 import io.github.some_example_name.game.CivilizationLevel;
 import io.github.some_example_name.game.Inventory;
+import io.github.some_example_name.system.SoundManager;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -37,6 +38,9 @@ public class ItemManager {
     // インベントリへの参照
     private Inventory inventory;
     
+    // サウンドマネージャーへの参照
+    private SoundManager soundManager;
+    
     public ItemManager() {
         this.items = new Array<>();
         this.spawnTimer = 0f;
@@ -53,6 +57,13 @@ public class ItemManager {
      */
     public void setInventory(Inventory inventory) {
         this.inventory = inventory;
+    }
+    
+    /**
+     * サウンドマネージャーを設定します。
+     */
+    public void setSoundManager(SoundManager soundManager) {
+        this.soundManager = soundManager;
     }
     
     /**
@@ -223,6 +234,12 @@ public class ItemManager {
                 if (inventory != null && item.getItemData() != null) {
                     inventory.addItem(item.getItemData());
                 }
+                
+                // アイテム取得音を再生
+                if (soundManager != null) {
+                    soundManager.playCollectSound();
+                }
+                
                 // ItemDataがない場合はスキップ（後方互換性のためのコードは削除）
             }
         }
