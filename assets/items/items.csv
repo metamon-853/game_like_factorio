@@ -1,105 +1,21 @@
 id,name,description
-1,Hydrogen,The lightest element. One of the most abundant elements in the universe.
-2,Oxygen,An element essential for life. Supports combustion.
-3,Carbon,The foundation of life. Main component of organic compounds.
-4,Iron,A metal with strength and magnetism. Basic material of civilization.
-5,Copper,A metal with excellent conductivity. Ideal for electrical conduction.
-6,Silicon,The main material for semiconductors. Essential for modern technology.
-7,Aluminum,A lightweight and corrosion-resistant metal.
-8,Gold,A beautiful and non-corrosive precious metal.
-9,Water,The source of life. The most basic compound.
-10,Carbon Dioxide,A gas necessary for plant photosynthesis.
-11,Salt,A compound of sodium and chlorine. Important as a seasoning.
-12,Sand,Mainly composed of silicon dioxide. Raw material for glass.
-13,Clay,Soil composed of fine particles. Raw material for pottery.
-14,Wood,Natural material obtained from trees.
-15,Stone,Basic material that forms the earth's crust.
-16,Coal,A fuel rich in carbon. Important as an energy source.
-17,Glass,A transparent material made by melting sand at high temperature.
-18,Ceramic,A hard material made by firing clay.
-19,Iron Ingot,A block of refined iron. Suitable shape for processing.
-20,Copper Ingot,A block of refined copper.
-21,Steel,An alloy of iron and carbon. High strength.
-22,Bronze,An alloy of copper and tin. Used since ancient times.
-23,Brass,An alloy of copper and zinc. Used for decoration.
-24,Plastic,A synthetic material made from petroleum. Versatile.
-25,Rubber,A material rich in elasticity. Used for sealing and cushioning.
-26,Paper,A thin material made from wood. Used for recording.
-27,Fabric,A flexible material made from fibers.
-28,Leather,Material processed from animal skin.
-29,Concrete,A building material made by mixing cement, sand, and gravel.
-30,Brick,A building block made by firing clay.
-31,Wire,A conductor made by covering copper wire with insulation.
-32,Circuit Board,A board for placing electronic circuits.
-33,Motor,A device that converts electricity into motion.
-34,Gear,A mechanical part that transmits rotation.
-35,Spring,A part that stores elastic energy.
-36,Screw,A small part for fixing components.
-37,Bolt,A part for fixing large components.
-38,Pipe,A tube for transporting liquids and gases.
-39,Valve,A valve for controlling flow.
-40,Pump,A device for moving liquids and gases.
-41,Battery,A device that stores electrical energy.
-42,Lens,A transparent part that refracts light.
-43,Mirror,A surface that reflects light.
-44,Magnet,An object that generates a magnetic field.
-45,Sensor,An electronic component that detects the environment.
-46,LED,Light-emitting diode. An efficient light source.
-47,Transistor,A semiconductor that amplifies and switches electronic signals.
-48,Resistor,An electronic component that limits current.
-49,Capacitor,An electronic component that stores electric charge.
-50,Hammer,A tool for hitting things.
-51,Saw,A tool for cutting wood.
-52,Drill,A tool for drilling holes.
-53,Wrench,A tool for turning screws.
-54,Screwdriver,A tool for turning small screws.
-55,Knife,A blade for cutting things.
-56,Axe,A large blade for cutting wood.
-57,Shovel,A tool for digging soil.
-58,Pickaxe,A tool for digging hard ground.
-59,Flashlight,A portable tool that emits light.
-60,Clock,A device that displays time.
-61,Calculator,An electronic device that performs calculations.
-62,Radio,A device that receives radio waves.
-63,Camera,A device that records images.
-64,Phone,A device for long-distance communication.
-65,Computer,An advanced device that processes information.
-66,Robot,A machine that performs tasks automatically.
-67,Car,A vehicle for transporting people and goods.
-68,Truck,A large vehicle for transporting large quantities of goods.
-69,Airplane,A vehicle that flies through the air.
-70,Ship,A large vehicle that travels on the sea.
-71,Rocket,A propulsion device that flies into space.
-72,Book,A medium that records knowledge.
-73,Painting,A record of artistic expression.
-74,Music,The art of sound.
-75,Bread,Basic food.
-76,Cheese,Fermented dairy product.
-77,Wine,Fermented fruit drink.
-78,Chocolate,Sweet confectionery.
-79,Coffee,Stimulating drink.
-80,Fire,A phenomenon of combustion. Generates energy and light.
-81,Electricity,The flow of electric charge. The power source of modern civilization.
-82,Steam,The state when water vaporizes. Can be used as power.
-83,Solar Panel,A device that converts sunlight into electricity.
-84,Wind Turbine,A device that converts wind power into electricity.
-85,Nuclear Reactor,A device that generates energy through nuclear fission.
-86,Tin,A soft metal. Material for bronze.
-87,Zinc,A metal used as material for brass.
-88,Silver,A beautiful and highly conductive precious metal.
-89,Gallium,A metal used in semiconductors.
-90,Uranium,A radioactive element that undergoes nuclear fission.
-91,Cement,The main component of concrete.
-92,Gravel,A collection of small stones.
-93,Acid,A compound that promotes chemical reactions.
-94,Fuel,A substance that burns to generate energy.
-95,Canvas,Cloth for painting.
-96,Paint,Material for adding color.
-97,Flour,Grain ground into powder.
-98,Milk,The raw material for dairy products.
-99,Grape,A fruit. Raw material for wine.
-100,Cocoa,Raw material for chocolate.
-101,Sugar,A sweetener.
-102,Coffee Bean,Raw material for coffee.
-103,Limestone,A rock that is a raw material for cement.
-104,Oil,A liquid fuel and material.
+1,Stone,Basic material that forms the earth's crust. Essential for primitive tools and construction.
+2,Wood,Natural material obtained from trees. Used for fuel and basic construction.
+3,Clay,Soil composed of fine particles. Raw material for pottery and construction.
+4,Fire,A controlled phenomenon of combustion. Generates energy and light. Essential for pottery and smelting.
+5,Seed,Plant seeds for growing crops. Foundation of agriculture.
+6,Crop,Harvested agricultural produce. Essential food source.
+7,Copper Ore,Naturally occurring metal ore. The first metal used by humans.
+8,Furnace,A structure for heating materials at high temperatures. Used for smelting and pottery firing.
+9,Fuel,A substance that burns to generate energy. Used for heating furnaces.
+10,Pottery,A hard container made by firing clay. Used for food storage.
+11,Coal,A fuel rich in carbon. Burns at higher temperatures than wood. Essential for iron smelting.
+12,Iron Ore,Metallic ore found in nature. When refined, stronger than bronze.
+13,Iron Ingot,A block of refined iron. Suitable shape for processing. Essential for iron tools and permanent structures.
+14,Copper Ingot,A block of refined copper. Used for bronze making.
+15,Tin Ore,Soft metal ore. Used for making bronze.
+16,Tin Ingot,A block of refined tin. Used for bronze alloy.
+17,Bronze,An alloy of copper and tin. Harder than pure copper. Used since ancient times.
+18,Storage Container,A structure for storing food and materials. Essential for food stockpiling.
+19,Permanent Structure,A durable building made with iron. Represents advanced civilization.
+20,Agricultural Tool,A tool for farming. Essential for stable food production.
