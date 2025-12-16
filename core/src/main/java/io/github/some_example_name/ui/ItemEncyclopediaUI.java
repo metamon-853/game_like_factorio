@@ -41,6 +41,9 @@ public class ItemEncyclopediaUI {
     // アイテム詳細表示
     private ItemData selectedItemData = null;
     
+    // ホバー中のアイテム（ツールチップ表示用）
+    private ItemData hoveredItemData = null;
+    
     // スロット情報を保持（クリック判定用）
     private List<SlotInfo> slotInfos;
     
@@ -224,6 +227,10 @@ public class ItemEncyclopediaUI {
             font.draw(batch, backText, backTextX, backTextY);
         }
         
+        // マウス位置を取得（ホバー検出用）
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
         // アイテムリストを描画
         float startX = panelX + 20;
         float startY = titleY - 80;
@@ -233,6 +240,9 @@ public class ItemEncyclopediaUI {
         
         // スロット情報をリセット
         slotInfos = new ArrayList<>();
+        
+        // ホバー中のアイテムをリセット
+        hoveredItemData = null;
         
         if (allItems.size == 0) {
             // 空のメッセージを表示
@@ -260,6 +270,14 @@ public class ItemEncyclopediaUI {
                 // スロット情報を保存（クリック判定用）
                 slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemData));
                 
+                // ホバー判定
+                boolean isHovered = mouseX >= slotX && mouseX <= slotX + SLOT_SIZE &&
+                                   mouseY >= slotY - SLOT_SIZE && mouseY <= slotY;
+                
+                if (isHovered) {
+                    hoveredItemData = itemData;
+                }
+                
                 // 選択されているアイテムかどうかで色を変える
                 boolean isSelected = selectedItemData != null && selectedItemData.id == itemData.id;
                 
@@ -268,6 +286,8 @@ public class ItemEncyclopediaUI {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
                 if (isSelected) {
                     shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f); // 選択時は少し明るく
+                } else if (isHovered) {
+                    shapeRenderer.setColor(0.25f, 0.25f, 0.4f, 1f); // ホバー時は少し明るく
                 } else {
                     shapeRenderer.setColor(0.2f, 0.2f, 0.3f, 1f);
                 }
@@ -277,6 +297,8 @@ public class ItemEncyclopediaUI {
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
                 if (isSelected) {
                     shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f); // 選択時は明るい枠線
+                } else if (isHovered) {
+                    shapeRenderer.setColor(0.7f, 0.7f, 0.9f, 1f); // ホバー時は明るい枠線
                 } else {
                     shapeRenderer.setColor(0.5f, 0.5f, 0.7f, 1f);
                 }
@@ -303,7 +325,7 @@ public class ItemEncyclopediaUI {
         // 閉じるヒントを描画
         font.getData().setScale(1.7f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-        String hint = "アイテムをクリックで詳細表示 | ESCで閉じる";
+        String hint = "アイテムにホバーで説明表示 | クリックで詳細表示 | ESCで閉じる";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
         float hintX = panelX + (panelWidth - hintLayout.width) / 2;
         font.draw(batch, hint, hintX, panelY + 20);
@@ -314,7 +336,100 @@ public class ItemEncyclopediaUI {
             renderItemDetail(selectedItemData);
         }
         
+        // ホバー中のアイテムのツールチップを描画
+        if (hoveredItemData != null && selectedItemData == null) {
+            renderTooltip(hoveredItemData, mouseX, mouseY);
+        }
+        
         font.getData().setScale(2.2f);
+    }
+    
+    /**
+     * ホバー時のツールチップを描画します。
+     */
+    private void renderTooltip(ItemData itemData, float mouseX, float mouseY) {
+        batch.end();
+        
+        // ツールチップのサイズと位置を計算
+        float tooltipWidth = 300;
+        float tooltipHeight = 150;
+        
+        // マウス位置に合わせてツールチップを配置（画面外に出ないように調整）
+        float tooltipX = mouseX + 15;
+        float tooltipY = mouseY + 15;
+        
+        // 画面右端を超える場合は左側に表示
+        if (tooltipX + tooltipWidth > screenWidth) {
+            tooltipX = mouseX - tooltipWidth - 15;
+        }
+        
+        // 画面上端を超える場合は下側に表示
+        if (tooltipY + tooltipHeight > screenHeight) {
+            tooltipY = mouseY - tooltipHeight - 15;
+        }
+        
+        // ツールチップの背景
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.15f, 0.15f, 0.2f, 0.95f);
+        shapeRenderer.rect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+        shapeRenderer.end();
+        
+        // ツールチップの枠線
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.7f, 0.7f, 0.9f, 1f);
+        shapeRenderer.rect(tooltipX, tooltipY, tooltipWidth, tooltipHeight);
+        shapeRenderer.end();
+        
+        // アイテムの色で小さな円を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(itemData.getColor());
+        float iconSize = 30;
+        float iconX = tooltipX + 10;
+        float iconY = tooltipY + tooltipHeight - 40;
+        shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
+        shapeRenderer.end();
+        
+        batch.begin();
+        batch.setProjectionMatrix(uiCamera.combined);
+        
+        // アイテム名
+        font.getData().setScale(1.8f);
+        font.setColor(Color.WHITE);
+        float textX = tooltipX + 50;
+        float textY = tooltipY + tooltipHeight - 20;
+        font.draw(batch, itemData.name, textX, textY);
+        
+        // 説明（短縮版）
+        font.getData().setScale(1.4f);
+        font.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
+        float descY = textY - 30;
+        String description = itemData.description;
+        
+        // 説明が長すぎる場合は切り詰める
+        float maxWidth = tooltipWidth - 60;
+        GlyphLayout descLayout = new GlyphLayout(font, description);
+        if (descLayout.width > maxWidth) {
+            // 文字数を制限して「...」を追加
+            String truncated = description;
+            while (true) {
+                GlyphLayout testLayout = new GlyphLayout(font, truncated + "...");
+                if (testLayout.width <= maxWidth || truncated.length() <= 1) {
+                    break;
+                }
+                truncated = truncated.substring(0, truncated.length() - 1);
+            }
+            description = truncated + "...";
+        }
+        
+        font.draw(batch, description, tooltipX + 10, descY);
+        
+        // カテゴリとティア（小さく表示）
+        font.getData().setScale(1.2f);
+        font.setColor(new Color(0.6f, 0.6f, 0.8f, 1f));
+        descY -= 25;
+        font.draw(batch, itemData.category + " | ティア" + itemData.tier, tooltipX + 10, descY);
+        
+        font.setColor(Color.WHITE);
     }
     
     /**
