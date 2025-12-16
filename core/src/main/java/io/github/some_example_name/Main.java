@@ -137,6 +137,18 @@ public class Main extends ApplicationAdapter {
         player = new Player(0, 0);
         // インベントリを初期化
         inventory = new Inventory();
+        
+        // ポーズ状態を初期化
+        isPaused = false;
+        
+        // 分離したクラスのインスタンスを作成
+        uiRenderer = new UIRenderer(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        inventoryUI = new InventoryUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        encyclopediaUI = new ItemEncyclopediaUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        saveGameManager = new SaveGameManager();
+        soundSettings = new SoundSettings();
+        soundManager = new SoundManager(soundSettings); // SoundManagerを先に作成
+        
         // アイテムマネージャーを初期化（無限マップ対応）
         itemManager = new ItemManager();
         itemManager.setInventory(inventory); // インベントリを設定
@@ -150,16 +162,6 @@ public class Main extends ApplicationAdapter {
         livestockManager = new LivestockManager();
         livestockManager.setInventory(inventory); // インベントリを設定
         
-        // ポーズ状態を初期化
-        isPaused = false;
-        
-        // 分離したクラスのインスタンスを作成
-        uiRenderer = new UIRenderer(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
-        inventoryUI = new InventoryUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
-        encyclopediaUI = new ItemEncyclopediaUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
-        saveGameManager = new SaveGameManager();
-        soundSettings = new SoundSettings();
-        soundManager = new SoundManager(soundSettings);
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
         

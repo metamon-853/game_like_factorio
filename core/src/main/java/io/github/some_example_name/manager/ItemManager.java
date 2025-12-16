@@ -235,12 +235,12 @@ public class ItemManager {
                     inventory.addItem(item.getItemData());
                 }
                 
-                // アイテム取得音を再生
+                // アイテム取得音を再生（ItemDataの有無に関わらず）
                 if (soundManager != null) {
                     soundManager.playCollectSound();
+                } else {
+                    com.badlogic.gdx.Gdx.app.log("ItemManager", "SoundManager is null when trying to play collect sound");
                 }
-                
-                // ItemDataがない場合はスキップ（後方互換性のためのコードは削除）
             }
         }
     }

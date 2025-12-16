@@ -36,7 +36,15 @@ public class SoundManager implements Disposable {
         try {
             // プログラムで生成した音声データをWAVファイルとして作成し、Soundオブジェクトとして読み込む
             hoverSound = createHoverSound();
+            if (hoverSound == null) {
+                Gdx.app.error("SoundManager", "Failed to create hover sound");
+            }
             collectSound = createCollectSound();
+            if (collectSound == null) {
+                Gdx.app.error("SoundManager", "Failed to create collect sound");
+            } else {
+                Gdx.app.log("SoundManager", "Collect sound created successfully");
+            }
             isInitialized = true;
         } catch (Exception e) {
             Gdx.app.error("SoundManager", "Failed to initialize audio", e);
@@ -207,12 +215,22 @@ public class SoundManager implements Disposable {
         }
         
         // 一時ファイルとして保存してからSoundオブジェクトとして読み込む
-        FileHandle tempFile = Gdx.files.local(".temp_collect_sound.wav");
-        tempFile.writeBytes(wavData, false);
-        
-        Sound sound = Gdx.audio.newSound(tempFile);
-        
-        return sound;
+        try {
+            FileHandle tempFile = Gdx.files.local(".temp_collect_sound.wav");
+            tempFile.writeBytes(wavData, false);
+            
+            if (!tempFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create collect sound file");
+                return null;
+            }
+            
+            Sound sound = Gdx.audio.newSound(tempFile);
+            Gdx.app.log("SoundManager", "Collect sound file created: " + tempFile.path());
+            return sound;
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create collect sound", e);
+            return null;
+        }
     }
     
     /**
@@ -266,7 +284,15 @@ public class SoundManager implements Disposable {
      * アイテム取得音を再生します。
      */
     public void playCollectSound() {
-        if (!isInitialized || collectSound == null || soundSettings.isMuted()) {
+        if (!isInitialized) {
+            Gdx.app.log("SoundManager", "playCollectSound: not initialized");
+            return;
+        }
+        if (collectSound == null) {
+            Gdx.app.error("SoundManager", "playCollectSound: collectSound is null");
+            return;
+        }
+        if (soundSettings.isMuted()) {
             return;
         }
         
@@ -280,6 +306,7 @@ public class SoundManager implements Disposable {
         if (volume > 0) {
             collectSound.play(volume * 0.5f); // 取得音は少し大きめに
             lastCollectSoundTime = currentTime;
+            Gdx.app.log("SoundManager", "playCollectSound: played successfully");
         }
     }
     
