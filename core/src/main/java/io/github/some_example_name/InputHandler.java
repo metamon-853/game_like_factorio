@@ -8,15 +8,23 @@ import com.badlogic.gdx.Input;
  */
 public class InputHandler {
     private Player player;
+    private FarmManager farmManager;
     
-    public InputHandler(Player player) {
+    public InputHandler(Player player, FarmManager farmManager) {
         this.player = player;
+        this.farmManager = farmManager;
     }
     
     /**
      * キーボード入力を処理します。
      */
     public void handleInput() {
+        // Fキーで種を植える/収穫する（移動中でも可能）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
+            handleFarmAction();
+            return; // 農業アクション時は移動しない
+        }
+        
         // 移動中は新しい入力を無視
         if (player.isMoving()) {
             return;
@@ -53,6 +61,32 @@ public class InputHandler {
         } else if (right) {
             // 右
             player.move(1, 0);
+        }
+    }
+    
+    /**
+     * 農業アクション（種を植える/収穫する）を処理します。
+     */
+    private void handleFarmAction() {
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int tileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int tileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        
+        // まず収穫可能かチェック
+        if (farmManager.harvest(tileX, tileY)) {
+            Gdx.app.log("Farm", "作物を収穫しました！");
+            return;
+        }
+        
+        // 収穫できない場合は種を植える
+        if (farmManager.plantSeed(tileX, tileY)) {
+            Gdx.app.log("Farm", "種を植えました！");
+        } else {
+            Gdx.app.log("Farm", "種がありません、または既に種が植えられています。");
         }
     }
 }
