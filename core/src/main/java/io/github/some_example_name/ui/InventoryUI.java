@@ -336,15 +336,6 @@ public class InventoryUI {
         }
         lastHoveredItem = selectedItemData;
         
-        // 閉じるヒントを描画
-        font.getData().setScale(0.6375f);
-        font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-        String hint = "Hover item for details | Press E to close";
-        GlyphLayout hintLayout = new GlyphLayout(font, hint);
-        float hintX = panelX + (panelWidth - hintLayout.width) / 2;
-        font.draw(batch, hint, hintX, panelY + 30);
-        font.setColor(Color.WHITE);
-        
         // アイテム詳細パネルを描画
         if (selectedItemData != null) {
             renderItemDetail(selectedItemData, selectedItemCount);
