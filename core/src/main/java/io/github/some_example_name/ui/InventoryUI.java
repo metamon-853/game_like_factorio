@@ -273,12 +273,8 @@ public class InventoryUI {
         // タブボタンを描画
         renderTabs();
         
-        // タイトルを描画
-        String title = currentTab == Tab.INVENTORY ? "Inventory" : "Crafting";
-        GlyphLayout titleLayout = new GlyphLayout(font, title);
-        float titleX = panelX + (panelWidth - titleLayout.width) / 2;
+        // タイトル位置を計算（タイトルは表示しないが、レイアウト用に使用）
         float titleY = panelY + panelHeight - 45;
-        font.draw(batch, title, titleX, titleY);
         
         // アイテム図鑑ボタンを描画
         if (encyclopediaButton != null) {

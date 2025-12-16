@@ -162,6 +162,11 @@ public class Main extends ApplicationAdapter {
         itemManager.setInventory(inventory); // インベントリを設定
         itemManager.setSoundManager(soundManager); // サウンドマネージャーを設定
         
+        // ゲーム開始時に全種類のアイテムを100個ずつ追加
+        for (ItemData itemData : itemManager.getItemDataLoader().getAllItems()) {
+            inventory.addItem(itemData.id, 100);
+        }
+        
         // 農地マネージャーを初期化
         farmManager = new FarmManager();
         farmManager.setInventory(inventory); // インベントリを設定
