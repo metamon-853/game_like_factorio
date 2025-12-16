@@ -99,16 +99,12 @@ public class InventoryUI {
     }
     
     /**
-     * マウスクリックを処理します。
+     * マウスクリックを処理します（アイテム図鑑ボタンのクリック判定のみ）。
      * @param screenX スクリーンX座標
      * @param screenY スクリーンY座標
-     * @return クリックされたアイテムデータ（クリックされなかった場合はnull）、アイテム図鑑ボタンがクリックされた場合は特殊値としてItemData.id="ENCYCLOPEDIA"を返す
+     * @return アイテム図鑑ボタンがクリックされた場合は特殊値としてItemData.id=-1を返す、それ以外はnull
      */
     public ItemData handleClick(int screenX, int screenY) {
-        if (slotInfos == null) {
-            return null;
-        }
-        
         // スクリーン座標をUI座標に変換（LibGDXはY座標が下から上）
         float uiY = screenHeight - screenY;
         
@@ -120,29 +116,47 @@ public class InventoryUI {
             return encyclopediaMarker;
         }
         
+        return null;
+    }
+    
+    /**
+     * マウスホバーを処理して、ホバー中のアイテムを検出します。
+     */
+    private void handleHover() {
+        if (slotInfos == null) {
+            selectedItemData = null;
+            return;
+        }
+        
+        // マウスの位置を取得
+        int mouseX = Gdx.input.getX();
+        int mouseY = Gdx.input.getY();
+        float uiY = screenHeight - mouseY;
+        
+        // 詳細パネルの上にマウスがある場合は、ホバーを無視
+        float detailX = panelX + panelWidth + 20;
+        float detailY = panelY;
+        float detailWidth = 400;
+        float detailHeight = 300;
+        
+        if (mouseX >= detailX && mouseX <= detailX + detailWidth &&
+            uiY >= detailY && uiY <= detailY + detailHeight) {
+            // 詳細パネルの上にある場合は、現在の選択を維持
+            return;
+        }
+        
+        // アイテムスロットの上にマウスがあるかチェック
+        selectedItemData = null;
+        selectedItemCount = 0;
+        
         for (SlotInfo slot : slotInfos) {
-            if (screenX >= slot.x && screenX <= slot.x + SLOT_SIZE &&
+            if (mouseX >= slot.x && mouseX <= slot.x + SLOT_SIZE &&
                 uiY >= slot.y && uiY <= slot.y + SLOT_SIZE) {
                 selectedItemData = slot.itemData;
                 selectedItemCount = slot.count;
-                return slot.itemData;
+                break;
             }
         }
-        
-        // 詳細パネルの外側をクリックした場合は詳細を閉じる
-        if (selectedItemData != null) {
-            float detailX = panelX + panelWidth + 20;
-            float detailY = panelY;
-            float detailWidth = 400;
-            float detailHeight = 300;
-            
-            if (!(screenX >= detailX && screenX <= detailX + detailWidth &&
-                  uiY >= detailY && uiY <= detailY + detailHeight)) {
-                selectedItemData = null;
-            }
-        }
-        
-        return null;
     }
     
     /**
@@ -262,14 +276,14 @@ public class InventoryUI {
                 // スロット情報を保存（クリック判定用）
                 slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemId, itemData, count));
                 
-                // 選択されているアイテムかどうかで色を変える
-                boolean isSelected = selectedItemData != null && selectedItemData.id == itemId;
+                // ホバー中のアイテムかどうかで色を変える
+                boolean isHovered = selectedItemData != null && selectedItemData.id == itemId;
                 
                 // スロットの背景を描画
                 batch.end();
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-                if (isSelected) {
-                    shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f); // 選択時は少し明るく
+                if (isHovered) {
+                    shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f); // ホバー時は少し明るく
                 } else {
                     shapeRenderer.setColor(0.2f, 0.2f, 0.3f, 1f);
                 }
@@ -277,8 +291,8 @@ public class InventoryUI {
                 shapeRenderer.end();
                 
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                if (isSelected) {
-                    shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f); // 選択時は明るい枠線
+                if (isHovered) {
+                    shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f); // ホバー時は明るい枠線
                 } else {
                     shapeRenderer.setColor(0.5f, 0.5f, 0.7f, 1f);
                 }
@@ -319,10 +333,13 @@ public class InventoryUI {
             }
         }
         
+        // マウスホバーを処理
+        handleHover();
+        
         // 閉じるヒントを描画
         font.getData().setScale(1.7f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-        String hint = "Click item for details | Press E to close";
+        String hint = "Hover item for details | Press E to close";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
         float hintX = panelX + (panelWidth - hintLayout.width) / 2;
         font.draw(batch, hint, hintX, panelY + 20);
