@@ -28,7 +28,6 @@ import io.github.some_example_name.system.SoundManager;
 import io.github.some_example_name.system.TextInputHandler;
 import io.github.some_example_name.system.InputHandler;
 import io.github.some_example_name.game.Inventory;
-import io.github.some_example_name.game.CivilizationLevel;
 import io.github.some_example_name.game.CraftingSystem;
 import io.github.some_example_name.entity.ItemData;
 
@@ -320,7 +319,7 @@ public class Main extends ApplicationAdapter {
             if (clickedItem != null && clickedItem.id == -2) {
                 // クラフト成功（音を再生するなど）
                 if (soundManager != null) {
-                    soundManager.playHoverSound(); // 簡易的にホバー音を再生
+                    soundManager.playCraftSound();
                 }
             }
         }

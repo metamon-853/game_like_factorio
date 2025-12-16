@@ -12,6 +12,7 @@ public class SoundManager implements Disposable {
     private Sound hoverSound;
     private Sound collectSound;
     private Sound footstepSound;
+    private Sound craftSound;
     private SoundSettings soundSettings;
     private boolean isInitialized = false;
     
@@ -19,9 +20,11 @@ public class SoundManager implements Disposable {
     private long lastHoverSoundTime = 0;
     private long lastCollectSoundTime = 0;
     private long lastFootstepSoundTime = 0;
+    private long lastCraftSoundTime = 0;
     private static final long HOVER_SOUND_COOLDOWN_MS = 50; // 50ミリ秒のクールダウン
     private static final long COLLECT_SOUND_COOLDOWN_MS = 100; // 100ミリ秒のクールダウン
     private static final long FOOTSTEP_SOUND_COOLDOWN_MS = 150; // 150ミリ秒のクールダウン（足音の間隔）
+    private static final long CRAFT_SOUND_COOLDOWN_MS = 120; // 120ミリ秒のクールダウン
     
     /**
      * SoundManagerを初期化します。
@@ -53,6 +56,12 @@ public class SoundManager implements Disposable {
                 Gdx.app.error("SoundManager", "Failed to create footstep sound");
             } else {
                 Gdx.app.log("SoundManager", "Footstep sound created successfully");
+            }
+            craftSound = createCraftSound();
+            if (craftSound == null) {
+                Gdx.app.error("SoundManager", "Failed to create craft sound");
+            } else {
+                Gdx.app.log("SoundManager", "Craft sound created successfully");
             }
             isInitialized = true;
         } catch (Exception e) {
@@ -344,6 +353,85 @@ public class SoundManager implements Disposable {
             return null;
         }
     }
+
+    /**
+     * クラフト成功音をプログラムで生成してSoundオブジェクトとして返します。
+     * 少し「キラッ」とする上昇音（短いアルペジオ風）を生成します。
+     */
+    private Sound createCraftSound() {
+        int sampleRate = 44100;
+        float duration = 0.18f; // 180ms
+        int numSamples = (int)(sampleRate * duration);
+
+        int dataSize = numSamples * 2;
+        int fileSize = 36 + dataSize;
+
+        byte[] wavData = new byte[44 + dataSize];
+        int offset = 0;
+
+        // RIFFヘッダー
+        writeString(wavData, offset, "RIFF"); offset += 4;
+        writeInt(wavData, offset, fileSize); offset += 4;
+        writeString(wavData, offset, "WAVE"); offset += 4;
+
+        // fmtチャンク
+        writeString(wavData, offset, "fmt "); offset += 4;
+        writeInt(wavData, offset, 16); offset += 4;
+        writeShort(wavData, offset, (short)1); offset += 2; // PCM
+        writeShort(wavData, offset, (short)1); offset += 2; // mono
+        writeInt(wavData, offset, sampleRate); offset += 4;
+        writeInt(wavData, offset, sampleRate * 2); offset += 4;
+        writeShort(wavData, offset, (short)2); offset += 2;
+        writeShort(wavData, offset, (short)16); offset += 2;
+
+        // dataチャンク
+        writeString(wavData, offset, "data"); offset += 4;
+        writeInt(wavData, offset, dataSize); offset += 4;
+
+        // 3段階の上昇（C-E-G相当の比率）を短く鳴らす
+        double baseFreq = 660.0; // 少し高めで「クラフト感」
+        double[] ratios = new double[] { 1.0, 1.2599, 1.4983 };
+        for (int i = 0; i < numSamples; i++) {
+            double t = i / (double) sampleRate;
+
+            // セグメント（0..1）
+            double p = i / (double) numSamples;
+            int seg = (p < 0.35) ? 0 : (p < 0.7 ? 1 : 2);
+            double freq = baseFreq * ratios[seg];
+
+            double sample = Math.sin(2 * Math.PI * freq * t);
+            // うっすら倍音
+            sample += Math.sin(2 * Math.PI * freq * 2.0 * t) * 0.12;
+            sample /= 1.12;
+
+            // エンベロープ（急アタック＋短いリリース）
+            double env;
+            if (p < 0.08) env = p / 0.08;
+            else if (p > 0.75) env = Math.max(0.0, (1.0 - p) / 0.25);
+            else env = 1.0;
+
+            // 少しキラっとさせるため後半をわずかに強調
+            double sparkle = 0.9 + 0.2 * p;
+            sample *= env * sparkle * 0.35;
+
+            short v = (short)(sample * Short.MAX_VALUE);
+            wavData[offset++] = (byte)(v & 0xFF);
+            wavData[offset++] = (byte)((v >> 8) & 0xFF);
+        }
+
+        try {
+            FileHandle soundFile = Gdx.files.local("sounds/craft_sound.wav");
+            soundFile.writeBytes(wavData, false);
+            if (!soundFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create craft sound file");
+                return null;
+            }
+            return Gdx.audio.newSound(soundFile);
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create craft sound", e);
+            return null;
+        }
+    }
     
     /**
      * バイト配列に文字列を書き込みます。
@@ -442,6 +530,27 @@ public class SoundManager implements Disposable {
             lastFootstepSoundTime = currentTime;
         }
     }
+
+    /**
+     * クラフト成功音を再生します。
+     */
+    public void playCraftSound() {
+        if (!isInitialized || craftSound == null || soundSettings.isMuted()) {
+            return;
+        }
+
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastCraftSoundTime < CRAFT_SOUND_COOLDOWN_MS) {
+            return;
+        }
+
+        float volume = soundSettings.getMasterVolume();
+        if (volume > 0) {
+            // 少し目立たせたいので取得音よりちょい強め
+            craftSound.play(volume * 0.55f);
+            lastCraftSoundTime = currentTime;
+        }
+    }
     
     /**
      * リソースを解放します。
@@ -459,6 +568,10 @@ public class SoundManager implements Disposable {
         if (footstepSound != null) {
             footstepSound.dispose();
             footstepSound = null;
+        }
+        if (craftSound != null) {
+            craftSound.dispose();
+            craftSound = null;
         }
         isInitialized = false;
     }
