@@ -20,8 +20,7 @@ public class ItemDataLoader {
     // 文明レベル1のアイテムID（定義から）
     private static final int[] LEVEL_1_ITEM_IDS = {
         14,      // wood (木材)
-        15,      // stone (石)
-        105     // raw_meat (生肉) - 仮のID、CSVにない場合は追加する必要がある
+        15       // stone (石)
     };
     
     public ItemDataLoader() {
@@ -37,8 +36,6 @@ public class ItemDataLoader {
         FileHandle file = Gdx.files.internal("items/items.csv");
         if (!file.exists()) {
             Gdx.app.error("ItemDataLoader", "items.csv not found at: items/items.csv");
-            // フォールバック：生肉のみを追加
-            addRawMeatItem();
             return;
         }
         
@@ -50,7 +47,6 @@ public class ItemDataLoader {
             
             if (lines.length < 2) {
                 Gdx.app.error("ItemDataLoader", "items.csv has no data rows");
-                addRawMeatItem();
                 return;
             }
             
@@ -99,32 +95,10 @@ public class ItemDataLoader {
             e.printStackTrace();
         }
         
-        // 生肉がCSVにない場合は追加（ID 105を使用）
-        if (!itemDataMap.containsKey(105)) {
-            addRawMeatItem();
-        }
-        
         // レベル1のアイテム（stone, wood）が存在することを確認
         ensureLevel1Items();
         
         Gdx.app.log("ItemDataLoader", "Loaded " + itemDataMap.size() + " items");
-    }
-    
-    /**
-     * 生肉アイテムを追加します。
-     */
-    private void addRawMeatItem() {
-        ItemData rawMeat = new ItemData();
-        rawMeat.id = 105;
-        rawMeat.name = "Raw Meat";
-        rawMeat.description = "Raw meat obtained from hunting. Can be eaten after cooking.";
-        rawMeat.setCivilizationLevel(1);
-        rawMeat.tier = 1;
-        rawMeat.category = determineCategory(105);
-        rawMeat.setColor(new Color(0.8f, 0.4f, 0.3f, 1.0f)); // 赤みがかった色
-        
-        itemDataMap.put(105, rawMeat);
-        itemDataList.add(rawMeat);
     }
     
     /**
@@ -224,8 +198,6 @@ public class ItemDataLoader {
             return new Color(0.5f, 0.5f, 0.5f, 1.0f); // グレー
         } else if (itemId == 14) { // wood
             return new Color(0.6f, 0.4f, 0.2f, 1.0f); // 茶色
-        } else if (itemId == 105) { // raw_meat
-            return new Color(0.8f, 0.4f, 0.3f, 1.0f); // 赤みがかった色
         }
         
         // ID範囲に基づいて色を決定（簡易版）
