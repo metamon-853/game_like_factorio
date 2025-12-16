@@ -414,6 +414,27 @@ public class SoundManager implements Disposable {
     }
     
     /**
+     * 足音を再生します。
+     */
+    public void playFootstepSound() {
+        if (!isInitialized || footstepSound == null || soundSettings.isMuted()) {
+            return;
+        }
+        
+        // クールダウンをチェック（連続再生を防ぐ）
+        long currentTime = System.currentTimeMillis();
+        if (currentTime - lastFootstepSoundTime < FOOTSTEP_SOUND_COOLDOWN_MS) {
+            return;
+        }
+        
+        float volume = soundSettings.getMasterVolume();
+        if (volume > 0) {
+            footstepSound.play(volume * 0.3f); // 足音は少し小さめに
+            lastFootstepSoundTime = currentTime;
+        }
+    }
+    
+    /**
      * リソースを解放します。
      */
     @Override
