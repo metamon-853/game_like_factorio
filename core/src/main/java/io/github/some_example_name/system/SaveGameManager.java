@@ -1,4 +1,8 @@
-package io.github.some_example_name;
+package io.github.some_example_name.system;
+
+import io.github.some_example_name.entity.Player;
+import io.github.some_example_name.entity.Item;
+import io.github.some_example_name.manager.ItemManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;

@@ -1,4 +1,4 @@
-package io.github.some_example_name;
+package io.github.some_example_name.system;
 
 /**
  * サウンド設定を管理するクラス。

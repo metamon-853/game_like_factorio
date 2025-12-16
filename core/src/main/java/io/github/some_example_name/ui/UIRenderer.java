@@ -1,4 +1,8 @@
-package io.github.some_example_name;
+package io.github.some_example_name.ui;
+
+import io.github.some_example_name.entity.Player;
+import io.github.some_example_name.manager.ItemManager;
+import io.github.some_example_name.game.CivilizationLevel;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;

@@ -1,4 +1,4 @@
-package io.github.some_example_name;
+package io.github.some_example_name.system;
 
 import java.util.ArrayList;
 import java.util.List;

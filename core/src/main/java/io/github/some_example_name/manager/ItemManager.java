@@ -1,4 +1,10 @@
-package io.github.some_example_name;
+package io.github.some_example_name.manager;
+
+import io.github.some_example_name.entity.Item;
+import io.github.some_example_name.entity.ItemData;
+import io.github.some_example_name.entity.Player;
+import io.github.some_example_name.game.CivilizationLevel;
+import io.github.some_example_name.game.Inventory;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;

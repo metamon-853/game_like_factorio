@@ -1,4 +1,4 @@
-package io.github.some_example_name;
+package io.github.some_example_name.system;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;

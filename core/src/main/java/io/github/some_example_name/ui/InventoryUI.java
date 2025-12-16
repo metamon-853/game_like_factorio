@@ -1,4 +1,8 @@
-package io.github.some_example_name;
+package io.github.some_example_name.ui;
+
+import io.github.some_example_name.entity.ItemData;
+import io.github.some_example_name.manager.ItemDataLoader;
+import io.github.some_example_name.game.Inventory;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;

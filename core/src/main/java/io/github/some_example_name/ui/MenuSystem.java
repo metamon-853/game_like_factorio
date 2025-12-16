@@ -1,4 +1,8 @@
-package io.github.some_example_name;
+package io.github.some_example_name.ui;
+
+import io.github.some_example_name.system.SaveGameManager;
+import io.github.some_example_name.system.SoundSettings;
+import io.github.some_example_name.system.TextInputHandler;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;

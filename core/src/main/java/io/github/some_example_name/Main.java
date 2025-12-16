@@ -13,6 +13,23 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.StretchViewport;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
+import io.github.some_example_name.entity.Player;
+import io.github.some_example_name.manager.ItemManager;
+import io.github.some_example_name.manager.FarmManager;
+import io.github.some_example_name.manager.LivestockManager;
+import io.github.some_example_name.ui.UIRenderer;
+import io.github.some_example_name.ui.InventoryUI;
+import io.github.some_example_name.ui.ItemEncyclopediaUI;
+import io.github.some_example_name.ui.MenuSystem;
+import io.github.some_example_name.ui.FontManager;
+import io.github.some_example_name.system.SaveGameManager;
+import io.github.some_example_name.system.SoundSettings;
+import io.github.some_example_name.system.TextInputHandler;
+import io.github.some_example_name.system.InputHandler;
+import io.github.some_example_name.game.Inventory;
+import io.github.some_example_name.game.CivilizationLevel;
+import io.github.some_example_name.entity.ItemData;
+
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
 public class Main extends ApplicationAdapter {
     private ShapeRenderer shapeRenderer;
@@ -401,7 +418,7 @@ public class Main extends ApplicationAdapter {
      * 文明レベルの進行をチェックします。
      */
     private void checkCivilizationLevelProgress() {
-        CivilizationLevel civLevel = itemManager.getCivilizationLevel();
+        io.github.some_example_name.game.CivilizationLevel civLevel = itemManager.getCivilizationLevel();
         
         // レベル1からレベル2への進行条件：アイテムを10個収集
         if (civLevel.getLevel() == 1 && itemManager.getCollectedCount() >= 10) {
