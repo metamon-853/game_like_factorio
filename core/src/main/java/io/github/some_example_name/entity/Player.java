@@ -1,6 +1,5 @@
 package io.github.some_example_name.entity;
 
-import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.some_example_name.system.SoundManager;
@@ -74,13 +73,10 @@ public class Player {
             if (soundManager != null) {
                 footstepTimer += deltaTime;
                 if (footstepTimer >= FOOTSTEP_INTERVAL) {
-                    Gdx.app.log("Player", "Calling playFootstepSound, timer=" + footstepTimer);
                     soundManager.playFootstepSound();
                     footstepTimer = 0f; // タイマーをリセット
                     footstepPlayedThisMove = true;
                 }
-            } else {
-                Gdx.app.log("Player", "soundManager is null");
             }
             
             if (moveProgress >= 1.0f) {

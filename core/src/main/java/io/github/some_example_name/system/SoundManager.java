@@ -429,16 +429,7 @@ public class SoundManager implements Disposable {
      * 足音を再生します。
      */
     public void playFootstepSound() {
-        if (!isInitialized) {
-            Gdx.app.log("SoundManager", "playFootstepSound: not initialized");
-            return;
-        }
-        if (footstepSound == null) {
-            Gdx.app.error("SoundManager", "playFootstepSound: footstepSound is null");
-            return;
-        }
-        if (soundSettings.isMuted()) {
-            Gdx.app.log("SoundManager", "playFootstepSound: sound is muted");
+        if (!isInitialized || footstepSound == null || soundSettings.isMuted()) {
             return;
         }
         
@@ -450,12 +441,8 @@ public class SoundManager implements Disposable {
         
         float volume = soundSettings.getMasterVolume();
         if (volume > 0) {
-            float finalVolume = volume * 0.25f; // 足音は控えめに
-            footstepSound.play(finalVolume);
+            footstepSound.play(volume * 0.25f); // 足音は控えめに
             lastFootstepSoundTime = currentTime;
-            Gdx.app.log("SoundManager", "playFootstepSound: played successfully, volume=" + finalVolume + ", masterVolume=" + volume);
-        } else {
-            Gdx.app.log("SoundManager", "playFootstepSound: volume is 0");
         }
     }
     
