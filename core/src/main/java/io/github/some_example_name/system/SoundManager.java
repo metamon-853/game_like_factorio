@@ -132,19 +132,22 @@ public class SoundManager implements Disposable {
             wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
         }
         
-        // メモリ内のFileHandleを作成（一時ファイルを作成しない）
-        // 注意: LibGDXのSoundクラスはFileHandleを必要とするため、
-        // メモリ内のデータを扱うには、一時ファイルを作成する必要があります。
-        // ただし、初期化時に一度だけ作成されるため、実行時のパフォーマンスには影響しません。
-        FileHandle tempFile = Gdx.files.local(".temp_hover_sound.wav");
-        tempFile.writeBytes(wavData, false);
-        
-        Sound sound = Gdx.audio.newSound(tempFile);
-        
-        // Soundオブジェクトは非同期で再生されるため、パフォーマンスが良いです
-        // 一時ファイルは残しておきます（Soundオブジェクトが参照している可能性があるため）
-        
-        return sound;
+        // 音源ファイルをsoundsディレクトリに保存
+        try {
+            FileHandle soundFile = Gdx.files.local("sounds/hover_sound.wav");
+            soundFile.writeBytes(wavData, false);
+            
+            if (!soundFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create hover sound file");
+                return null;
+            }
+            
+            Sound sound = Gdx.audio.newSound(soundFile);
+            return sound;
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create hover sound", e);
+            return null;
+        }
     }
     
     /**
@@ -223,18 +226,18 @@ public class SoundManager implements Disposable {
             wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
         }
         
-        // 一時ファイルとして保存してからSoundオブジェクトとして読み込む
+        // 音源ファイルをsoundsディレクトリに保存
         try {
-            FileHandle tempFile = Gdx.files.local(".temp_collect_sound.wav");
-            tempFile.writeBytes(wavData, false);
+            FileHandle soundFile = Gdx.files.local("sounds/collect_sound.wav");
+            soundFile.writeBytes(wavData, false);
             
-            if (!tempFile.exists()) {
+            if (!soundFile.exists()) {
                 Gdx.app.error("SoundManager", "Failed to create collect sound file");
                 return null;
             }
             
-            Sound sound = Gdx.audio.newSound(tempFile);
-            Gdx.app.log("SoundManager", "Collect sound file created: " + tempFile.path());
+            Sound sound = Gdx.audio.newSound(soundFile);
+            Gdx.app.log("SoundManager", "Collect sound file created: " + soundFile.path());
             return sound;
         } catch (Exception e) {
             Gdx.app.error("SoundManager", "Failed to create collect sound", e);
@@ -324,23 +327,17 @@ public class SoundManager implements Disposable {
             wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
         }
         
-        // 一時ファイルとして保存してからSoundオブジェクトとして読み込む
+        // 音源ファイルをsoundsディレクトリに保存
         try {
-            FileHandle tempFile = Gdx.files.local(".temp_footstep_sound.wav");
-            tempFile.writeBytes(wavData, false);
+            FileHandle soundFile = Gdx.files.local("sounds/footstep_sound.wav");
+            soundFile.writeBytes(wavData, false);
             
-            if (!tempFile.exists()) {
+            if (!soundFile.exists()) {
                 Gdx.app.error("SoundManager", "Failed to create footstep sound file");
                 return null;
             }
             
-            Gdx.app.log("SoundManager", "Footstep sound file created: " + tempFile.path() + ", size: " + tempFile.length());
-            Sound sound = Gdx.audio.newSound(tempFile);
-            if (sound == null) {
-                Gdx.app.error("SoundManager", "Failed to load footstep sound from file");
-                return null;
-            }
-            Gdx.app.log("SoundManager", "Footstep sound loaded successfully");
+            Sound sound = Gdx.audio.newSound(soundFile);
             return sound;
         } catch (Exception e) {
             Gdx.app.error("SoundManager", "Failed to create footstep sound", e);
