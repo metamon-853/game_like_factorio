@@ -42,7 +42,7 @@ public class Player {
     
     // 足音のタイミング管理
     private float footstepTimer = 0f;
-    private static final float FOOTSTEP_INTERVAL = 0.15f; // 足音の間隔（秒）- 移動速度に合わせて調整
+    private static final float FOOTSTEP_INTERVAL = 0.2f; // 足音の間隔（秒）- 移動速度に合わせて調整
     
     public Player(int startTileX, int startTileY) {
         // マップ升座標からプレイヤー升座標に変換（マップ升の中心のプレイヤー升に配置）
