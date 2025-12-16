@@ -3,6 +3,7 @@ package io.github.some_example_name.ui;
 import io.github.some_example_name.entity.ItemData;
 import io.github.some_example_name.manager.ItemDataLoader;
 import io.github.some_example_name.game.Inventory;
+import io.github.some_example_name.system.SoundManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -49,6 +50,13 @@ public class InventoryUI {
     // アイテム図鑑ボタン
     private Button encyclopediaButton;
     
+    // サウンドマネージャー
+    private SoundManager soundManager;
+    
+    // 前回のホバー状態を記録（音の重複再生を防ぐため）
+    private boolean lastEncyclopediaButtonHovered = false;
+    private ItemData lastHoveredItem = null;
+    
     /**
      * スロット情報を保持する内部クラス
      */
@@ -76,6 +84,13 @@ public class InventoryUI {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         updatePanelPosition();
+    }
+    
+    /**
+     * サウンドマネージャーを設定します。
+     */
+    public void setSoundManager(SoundManager soundManager) {
+        this.soundManager = soundManager;
     }
     
     /**
@@ -206,6 +221,12 @@ public class InventoryUI {
             float mouseY = screenHeight - Gdx.input.getY();
             boolean isHovered = encyclopediaButton.contains(mouseX, mouseY);
             
+            // ホバー状態が変わったときに音を再生
+            if (isHovered && !lastEncyclopediaButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastEncyclopediaButtonHovered = isHovered;
+            
             batch.end();
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             if (isHovered) {
@@ -332,6 +353,12 @@ public class InventoryUI {
         
         // マウスホバーを処理
         handleHover();
+        
+        // アイテムホバー音を再生
+        if (selectedItemData != null && selectedItemData != lastHoveredItem && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        lastHoveredItem = selectedItemData;
         
         // 閉じるヒントを描画
         font.getData().setScale(0.6375f);

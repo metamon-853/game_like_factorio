@@ -2,6 +2,7 @@ package io.github.some_example_name.ui;
 
 import io.github.some_example_name.entity.ItemData;
 import io.github.some_example_name.manager.ItemDataLoader;
+import io.github.some_example_name.system.SoundManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -51,6 +52,13 @@ public class ItemEncyclopediaUI {
     private float scrollOffset = 0;
     private static final float SCROLL_SPEED = 20f;
     
+    // サウンドマネージャー
+    private SoundManager soundManager;
+    
+    // 前回のホバー状態を記録（音の重複再生を防ぐため）
+    private boolean lastBackButtonHovered = false;
+    private ItemData lastHoveredItem = null;
+    
     /**
      * スロット情報を保持する内部クラス
      */
@@ -74,6 +82,13 @@ public class ItemEncyclopediaUI {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         updatePanelPosition();
+    }
+    
+    /**
+     * サウンドマネージャーを設定します。
+     */
+    public void setSoundManager(SoundManager soundManager) {
+        this.soundManager = soundManager;
     }
     
     /**
@@ -235,6 +250,12 @@ public class ItemEncyclopediaUI {
             float mouseY = screenHeight - Gdx.input.getY();
             boolean isHovered = backButton.contains(mouseX, mouseY);
             
+            // ホバー状態が変わったときに音を再生
+            if (isHovered && !lastBackButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastBackButtonHovered = isHovered;
+            
             batch.end();
             shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             if (isHovered) {
@@ -342,6 +363,12 @@ public class ItemEncyclopediaUI {
         
         // ホバー処理を実行（slotInfosが設定された後）
         handleHover();
+        
+        // アイテムホバー音を再生
+        if (selectedItemData != null && selectedItemData != lastHoveredItem && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        lastHoveredItem = selectedItemData;
         
         // 閉じるヒントを描画
         font.getData().setScale(0.6375f);

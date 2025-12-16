@@ -2,6 +2,7 @@ package io.github.some_example_name.ui;
 
 import io.github.some_example_name.system.SaveGameManager;
 import io.github.some_example_name.system.SoundSettings;
+import io.github.some_example_name.system.SoundManager;
 import io.github.some_example_name.system.TextInputHandler;
 
 import com.badlogic.gdx.Gdx;
@@ -45,6 +46,7 @@ public class MenuSystem {
     private UIRenderer uiRenderer;
     private SaveGameManager saveGameManager;
     private SoundSettings soundSettings;
+    private SoundManager soundManager;
     private TextInputHandler textInputHandler;
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
@@ -54,14 +56,20 @@ public class MenuSystem {
     private int screenHeight;
     private MenuCallbacks callbacks;
     
+    // 前回のホバー状態を記録（音の重複再生を防ぐため）
+    private boolean lastHoveredState = false;
+    private MenuState lastMenuState = null;
+    
     public MenuSystem(UIRenderer uiRenderer, SaveGameManager saveGameManager, 
-                     SoundSettings soundSettings, TextInputHandler textInputHandler,
+                     SoundSettings soundSettings, SoundManager soundManager,
+                     TextInputHandler textInputHandler,
                      ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
                      OrthographicCamera uiCamera, int screenWidth, int screenHeight,
                      MenuCallbacks callbacks) {
         this.uiRenderer = uiRenderer;
         this.saveGameManager = saveGameManager;
         this.soundSettings = soundSettings;
+        this.soundManager = soundManager;
         this.textInputHandler = textInputHandler;
         this.shapeRenderer = shapeRenderer;
         this.batch = batch;
@@ -137,6 +145,12 @@ public class MenuSystem {
      * メニューを描画します。
      */
     public void render() {
+        // メニュー状態が変わったときにホバー状態をリセット
+        if (lastMenuState != currentMenuState) {
+            lastHoveredState = false;
+            lastMenuState = currentMenuState;
+        }
+        
         if (currentMenuState == MenuState.MAIN_MENU) {
             drawPauseMenu();
         } else if (currentMenuState == MenuState.SOUND_MENU) {
@@ -209,30 +223,49 @@ public class MenuSystem {
         float centerY = screenHeight / 2;
         float buttonSpacing = 80;
         
+        // どのボタンがホバーされているかチェック
+        boolean isAnyButtonHovered = false;
+        
         float gridButtonY = centerY + buttonSpacing - 20;
         Button gridButton = new Button(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean gridHovered = gridButton.contains(mouseX, mouseY);
+        isAnyButtonHovered = isAnyButtonHovered || gridHovered;
         uiRenderer.drawButton(centerX - buttonWidth / 2, gridButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Grid: " + (callbacks.isGridVisible() ? "ON" : "OFF"), gridButton.contains(mouseX, mouseY));
+                   "Grid: " + (callbacks.isGridVisible() ? "ON" : "OFF"), gridHovered);
         
         float saveButtonY = centerY - 20;
         Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean saveHovered = saveButton.contains(mouseX, mouseY);
+        isAnyButtonHovered = isAnyButtonHovered || saveHovered;
         uiRenderer.drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Save Game", saveButton.contains(mouseX, mouseY));
+                   "Save Game", saveHovered);
         
         float loadButtonY = centerY - buttonSpacing - 20;
         Button loadButton = new Button(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean loadHovered = loadButton.contains(mouseX, mouseY);
+        isAnyButtonHovered = isAnyButtonHovered || loadHovered;
         uiRenderer.drawButton(centerX - buttonWidth / 2, loadButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Load Game", loadButton.contains(mouseX, mouseY));
+                   "Load Game", loadHovered);
         
         float soundButtonY = centerY - buttonSpacing * 2 - 20;
         Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean soundHovered = soundButton.contains(mouseX, mouseY);
+        isAnyButtonHovered = isAnyButtonHovered || soundHovered;
         uiRenderer.drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Sound", soundButton.contains(mouseX, mouseY));
+                   "Sound", soundHovered);
         
         float quitButtonY = centerY - buttonSpacing * 3 - 20;
         Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean quitHovered = quitButton.contains(mouseX, mouseY);
+        isAnyButtonHovered = isAnyButtonHovered || quitHovered;
         uiRenderer.drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Quit Game", quitButton.contains(mouseX, mouseY));
+                   "Quit Game", quitHovered);
+        
+        // ホバー状態が変わったときに音を再生
+        if (isAnyButtonHovered && !lastHoveredState && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        lastHoveredState = isAnyButtonHovered;
         
         font.getData().setScale(0.5f);
         batch.end();
@@ -336,8 +369,15 @@ public class MenuSystem {
         
         float backButtonY = centerY - 200;
         Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean backHovered = backButton.contains(mouseX, mouseY);
         uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Back", backButton.contains(mouseX, mouseY));
+                   "Back", backHovered);
+        
+        // ホバー状態が変わったときに音を再生
+        if (backHovered && !lastHoveredState && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        lastHoveredState = backHovered;
         
         font.getData().setScale(0.5f);
         batch.end();
@@ -521,15 +561,24 @@ public class MenuSystem {
         
         float saveButtonY = centerY - 100;
         Button saveButton = new Button(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean saveHovered = saveButton.contains(mouseX, mouseY) && inputText.length() > 0;
         String saveButtonText = textInputHandler.isTextInputActive() ? "Press Enter to Save" : 
                                (inputText.length() > 0 ? "Save Game" : "Enter Name First");
         uiRenderer.drawButton(centerX - buttonWidth / 2, saveButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   saveButtonText, saveButton.contains(mouseX, mouseY) && inputText.length() > 0);
+                   saveButtonText, saveHovered);
         
         float backButtonY = centerY - buttonSpacing - 100;
         Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean backHovered = backButton.contains(mouseX, mouseY);
         uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Back", backButton.contains(mouseX, mouseY));
+                   "Back", backHovered);
+        
+        // ホバー状態が変わったときに音を再生
+        boolean isAnyButtonHovered = saveHovered || backHovered;
+        if (isAnyButtonHovered && !lastHoveredState && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        lastHoveredState = isAnyButtonHovered;
         
         List<String> saveList = saveGameManager.getSaveFileList();
         if (!saveList.isEmpty() && saveList.size() <= 5) {
@@ -581,19 +630,30 @@ public class MenuSystem {
             float noSaveY = screenHeight / 2;
             font.draw(batch, noSaveText, noSaveX, noSaveY);
         } else {
+            boolean isAnySaveHovered = false;
             for (int i = 0; i < saveList.size() && i < 10; i++) {
                 float buttonY = startY - i * buttonSpacing;
                 String saveName = saveList.get(i);
                 Button saveButton = new Button(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight);
+                boolean saveHovered = saveButton.contains(mouseX, mouseY);
+                isAnySaveHovered = isAnySaveHovered || saveHovered;
                 uiRenderer.drawButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                          saveName, saveButton.contains(mouseX, mouseY));
+                          saveName, saveHovered);
             }
+            
+            float backButtonY = screenHeight / 2 - 200;
+            Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            boolean backHovered = backButton.contains(mouseX, mouseY);
+            uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                       "Back", backHovered);
+            
+            // ホバー状態が変わったときに音を再生
+            boolean isAnyButtonHovered = isAnySaveHovered || backHovered;
+            if (isAnyButtonHovered && !lastHoveredState && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastHoveredState = isAnyButtonHovered;
         }
-        
-        float backButtonY = screenHeight / 2 - 200;
-        Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Back", backButton.contains(mouseX, mouseY));
         
         font.getData().setScale(0.5f);
         batch.end();
@@ -671,14 +731,23 @@ public class MenuSystem {
         float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
         float yesButtonY = centerY - buttonHeight / 2;
         Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
+        boolean yesHovered = yesButton.contains(mouseX, mouseY);
         uiRenderer.drawButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, 
-                   "Yes", yesButton.contains(mouseX, mouseY));
+                   "Yes", yesHovered);
         
         float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
         float noButtonY = centerY - buttonHeight / 2;
         Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
+        boolean noHovered = noButton.contains(mouseX, mouseY);
         uiRenderer.drawButton(noButtonX, noButtonY, buttonWidth, buttonHeight, 
-                   "No", noButton.contains(mouseX, mouseY));
+                   "No", noHovered);
+        
+        // ホバー状態が変わったときに音を再生
+        boolean isAnyButtonHovered = yesHovered || noHovered;
+        if (isAnyButtonHovered && !lastHoveredState && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        lastHoveredState = isAnyButtonHovered;
         
         font.getData().setScale(0.5f);
         batch.end();

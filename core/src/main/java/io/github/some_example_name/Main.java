@@ -24,6 +24,7 @@ import io.github.some_example_name.ui.MenuSystem;
 import io.github.some_example_name.ui.FontManager;
 import io.github.some_example_name.system.SaveGameManager;
 import io.github.some_example_name.system.SoundSettings;
+import io.github.some_example_name.system.SoundManager;
 import io.github.some_example_name.system.TextInputHandler;
 import io.github.some_example_name.system.InputHandler;
 import io.github.some_example_name.game.Inventory;
@@ -51,6 +52,7 @@ public class Main extends ApplicationAdapter {
     private UIRenderer uiRenderer;
     private SaveGameManager saveGameManager;
     private SoundSettings soundSettings;
+    private SoundManager soundManager;
     private TextInputHandler textInputHandler;
     private MenuSystem menuSystem;
     private InputHandler inputHandler;
@@ -156,8 +158,13 @@ public class Main extends ApplicationAdapter {
         encyclopediaUI = new ItemEncyclopediaUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         saveGameManager = new SaveGameManager();
         soundSettings = new SoundSettings();
+        soundManager = new SoundManager(soundSettings);
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
+        
+        // UIコンポーネントにSoundManagerを設定
+        inventoryUI.setSoundManager(soundManager);
+        encyclopediaUI.setSoundManager(soundManager);
         
         // MenuSystemのコールバック実装
         MenuSystem.MenuCallbacks menuCallbacks = new MenuSystem.MenuCallbacks() {
@@ -207,7 +214,7 @@ public class Main extends ApplicationAdapter {
             }
         };
         
-        menuSystem = new MenuSystem(uiRenderer, saveGameManager, soundSettings, textInputHandler,
+        menuSystem = new MenuSystem(uiRenderer, saveGameManager, soundSettings, soundManager, textInputHandler,
                 shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight, menuCallbacks);
         
         // カメラをプレイヤーの初期位置に設定
@@ -505,6 +512,9 @@ public class Main extends ApplicationAdapter {
         batch.dispose();
         if (fontManager != null) {
             fontManager.dispose();
+        }
+        if (soundManager != null) {
+            soundManager.dispose();
         }
     }
 }
