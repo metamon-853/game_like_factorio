@@ -190,7 +190,7 @@ public class InventoryUI {
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(3.3f);
+        font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
         
         // タイトルを描画
@@ -226,14 +226,14 @@ public class InventoryUI {
             shapeRenderer.end();
             
             batch.begin();
-            font.getData().setScale(2.7f);
+            font.getData().setScale(0.675f);
             font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
             String buttonText = "アイテム図鑑";
             GlyphLayout buttonLayout = new GlyphLayout(font, buttonText);
             float buttonTextX = encyclopediaButton.x + (encyclopediaButton.width - buttonLayout.width) / 2;
             float buttonTextY = encyclopediaButton.y + encyclopediaButton.height / 2 + buttonLayout.height / 2;
             font.draw(batch, buttonText, buttonTextX, buttonTextY);
-            font.getData().setScale(3.3f);
+            font.getData().setScale(0.825f);
         }
         
         // アイテムリストを描画
@@ -249,7 +249,7 @@ public class InventoryUI {
         
         if (items.isEmpty()) {
             // 空のインベントリメッセージを表示
-            font.getData().setScale(3.3f);
+            font.getData().setScale(0.825f);
             font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
             String emptyText = "Inventory is empty";
             GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
@@ -334,7 +334,7 @@ public class InventoryUI {
         handleHover();
         
         // 閉じるヒントを描画
-        font.getData().setScale(2.55f);
+        font.getData().setScale(0.6375f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
         String hint = "Hover item for details | Press E to close";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
@@ -347,7 +347,7 @@ public class InventoryUI {
             renderItemDetail(selectedItemData, selectedItemCount);
         }
         
-        font.getData().setScale(3.3f);
+        font.getData().setScale(0.825f);
     }
     
     /**
@@ -385,7 +385,7 @@ public class InventoryUI {
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(3.3f);
+        font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
         
         // アイテム名
@@ -401,7 +401,7 @@ public class InventoryUI {
         }
         
         // 説明
-        font.getData().setScale(2.55f);
+        font.getData().setScale(0.6375f);
         font.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
         float descY = textY - 75;
         

@@ -20,7 +20,7 @@ public class FontManager {
     public void initialize() {
         // デフォルトフォント（フォールバック用）
         defaultFont = new BitmapFont();
-        defaultFont.getData().setScale(2.0f);
+        defaultFont.getData().setScale(0.5f);
         defaultFont.setColor(Color.WHITE);
         
         // 日本語フォントを生成
@@ -79,8 +79,8 @@ public class FontManager {
             FreeTypeFontGenerator generator = new FreeTypeFontGenerator(fontFile);
             FreeTypeFontParameter parameter = new FreeTypeFontParameter();
             
-            // フォントサイズを設定（元のデフォルトフォントと同じサイズ）
-            parameter.size = 12;
+            // フォントサイズを設定（大きめに生成して拡大時のにじみを防ぐ）
+            parameter.size = 48;
             parameter.color = Color.WHITE;
             
             // 日本語文字を含む範囲を設定

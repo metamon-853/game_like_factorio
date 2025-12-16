@@ -219,7 +219,7 @@ public class ItemEncyclopediaUI {
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(3.3f);
+        font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
         
         // タイトルを描画
@@ -255,7 +255,7 @@ public class ItemEncyclopediaUI {
             shapeRenderer.end();
             
             batch.begin();
-            font.getData().setScale(2.7f);
+            font.getData().setScale(0.675f);
             font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
             String backText = "インベントリに戻る";
             GlyphLayout backLayout = new GlyphLayout(font, backText);
@@ -276,7 +276,7 @@ public class ItemEncyclopediaUI {
         
         if (allItems.size == 0) {
             // 空のメッセージを表示
-            font.getData().setScale(3.3f);
+            font.getData().setScale(0.825f);
             font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
             String emptyText = "アイテムがありません";
             GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
@@ -344,7 +344,7 @@ public class ItemEncyclopediaUI {
         handleHover();
         
         // 閉じるヒントを描画
-        font.getData().setScale(2.55f);
+        font.getData().setScale(0.6375f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
         String hint = "Hover item for details | Press E to close";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
@@ -357,7 +357,7 @@ public class ItemEncyclopediaUI {
             renderItemDetail(selectedItemData);
         }
         
-        font.getData().setScale(3.3f);
+        font.getData().setScale(0.825f);
     }
     
     /**
@@ -395,7 +395,7 @@ public class ItemEncyclopediaUI {
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(3.3f);
+        font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
         
         // アイテム名
@@ -404,7 +404,7 @@ public class ItemEncyclopediaUI {
         font.draw(batch, itemData.name, textX, textY);
         
         // 説明
-        font.getData().setScale(2.55f);
+        font.getData().setScale(0.6375f);
         font.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
         float descY = textY - 75;
         

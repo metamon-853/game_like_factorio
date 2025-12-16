@@ -234,7 +234,7 @@ public class MenuSystem {
         uiRenderer.drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Quit Game", quitButton.contains(mouseX, mouseY));
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         batch.end();
     }
     
@@ -326,7 +326,7 @@ public class MenuSystem {
         
         uiRenderer.drawVolumeSlider(centerX, centerY, soundSettings.getMasterVolume(), soundSettings.isMuted());
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         font.setColor(soundSettings.isMuted() ? Color.RED : Color.WHITE);
         String volumeText = "Volume: " + (int)(soundSettings.getMasterVolume() * 100) + "%" + (soundSettings.isMuted() ? " (MUTED)" : "");
         GlyphLayout volumeLayout = new GlyphLayout(font, volumeText);
@@ -339,7 +339,7 @@ public class MenuSystem {
         uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Back", backButton.contains(mouseX, mouseY));
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         batch.end();
     }
     
@@ -481,7 +481,7 @@ public class MenuSystem {
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
-        font.getData().setScale(3.5f);
+        font.getData().setScale(0.875f);
         font.setColor(Color.WHITE);
         String titleText = "SAVE GAME";
         GlyphLayout titleLayout = new GlyphLayout(font, titleText);
@@ -489,7 +489,7 @@ public class MenuSystem {
         float titleY = dialogY + dialogHeight - 50;
         font.draw(batch, titleText, titleX, titleY);
         
-        font.getData().setScale(2.2f);
+        font.getData().setScale(0.55f);
         font.setColor(Color.WHITE);
         String inputLabel = "Save Name:";
         GlyphLayout labelLayout = new GlyphLayout(font, inputLabel);
@@ -497,7 +497,7 @@ public class MenuSystem {
         float labelY = inputFieldY + inputFieldHeight + 20;
         font.draw(batch, inputLabel, labelX, labelY);
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         String inputText = textInputHandler.getInputText();
         String displayText = textInputHandler.isTextInputActive() ? inputText + "_" : 
                             (inputText.length() > 0 ? inputText : "Enter save name...");
@@ -507,7 +507,7 @@ public class MenuSystem {
         float textY = inputFieldY + inputFieldHeight / 2 + textLayout.height / 2;
         font.draw(batch, displayText, textX, textY);
         
-        font.getData().setScale(1.5f);
+        font.getData().setScale(0.375f);
         font.setColor(Color.LIGHT_GRAY);
         String charCountText = inputText.length() + " / " + textInputHandler.getMaxInputLength();
         GlyphLayout charCountLayout = new GlyphLayout(font, charCountText);
@@ -533,7 +533,7 @@ public class MenuSystem {
         
         List<String> saveList = saveGameManager.getSaveFileList();
         if (!saveList.isEmpty() && saveList.size() <= 5) {
-            font.getData().setScale(1.3f);
+            font.getData().setScale(0.325f);
             font.setColor(Color.LIGHT_GRAY);
             String existingText = "Existing saves: " + saveList.size();
             GlyphLayout existingLayout = new GlyphLayout(font, existingText);
@@ -542,7 +542,7 @@ public class MenuSystem {
             font.draw(batch, existingText, existingX, existingY);
         }
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         batch.end();
     }
     
@@ -572,7 +572,7 @@ public class MenuSystem {
         
         List<String> saveList = saveGameManager.getSaveFileList();
         
-        font.getData().setScale(1.5f);
+        font.getData().setScale(0.375f);
         font.setColor(Color.WHITE);
         if (saveList.isEmpty()) {
             String noSaveText = "No save files found";
@@ -595,7 +595,7 @@ public class MenuSystem {
         uiRenderer.drawButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Back", backButton.contains(mouseX, mouseY));
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         batch.end();
     }
     
@@ -654,7 +654,7 @@ public class MenuSystem {
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
-        font.getData().setScale(2.5f);
+        font.getData().setScale(0.625f);
         font.setColor(Color.WHITE);
         String messageText = "Quit Game?";
         GlyphLayout messageLayout = new GlyphLayout(font, messageText);
@@ -680,7 +680,7 @@ public class MenuSystem {
         uiRenderer.drawButton(noButtonX, noButtonY, buttonWidth, buttonHeight, 
                    "No", noButton.contains(mouseX, mouseY));
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         batch.end();
     }
 }

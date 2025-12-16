@@ -103,7 +103,7 @@ public class UIRenderer {
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
-        font.getData().setScale(2.5f);
+        font.getData().setScale(0.625f);
         font.setColor(Color.WHITE);
         
         float padding = 20;
@@ -128,7 +128,7 @@ public class UIRenderer {
         float hintX = rightX - hintLayout.width;
         font.draw(batch, hintText, hintX, topY);
         
-        font.getData().setScale(2.0f);
+        font.getData().setScale(0.5f);
         batch.end();
     }
     
@@ -166,7 +166,7 @@ public class UIRenderer {
         shapeRenderer.end();
         
         batch.begin();
-        font.getData().setScale(1.8f);
+        font.getData().setScale(0.45f);
         font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
         GlyphLayout layout = new GlyphLayout(font, text);
         float textX = x + (width - layout.width) / 2;
