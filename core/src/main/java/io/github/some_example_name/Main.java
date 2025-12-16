@@ -21,6 +21,7 @@ public class Main extends ApplicationAdapter {
     private Player player;
     private ItemManager itemManager;
     private FarmManager farmManager;
+    private LivestockManager livestockManager;
     
     // カメラとビューポート
     private OrthographicCamera camera;
@@ -125,6 +126,10 @@ public class Main extends ApplicationAdapter {
         farmManager = new FarmManager();
         farmManager.setInventory(inventory); // インベントリを設定
         
+        // 畜産マネージャーを初期化
+        livestockManager = new LivestockManager();
+        livestockManager.setInventory(inventory); // インベントリを設定
+        
         // ポーズ状態を初期化
         isPaused = false;
         
@@ -135,7 +140,7 @@ public class Main extends ApplicationAdapter {
         saveGameManager = new SaveGameManager();
         soundSettings = new SoundSettings();
         textInputHandler = new TextInputHandler();
-        inputHandler = new InputHandler(player, farmManager);
+        inputHandler = new InputHandler(player, farmManager, livestockManager);
         
         // MenuSystemのコールバック実装
         MenuSystem.MenuCallbacks menuCallbacks = new MenuSystem.MenuCallbacks() {
@@ -317,6 +322,9 @@ public class Main extends ApplicationAdapter {
             // 農地マネージャーを更新
             farmManager.update(deltaTime);
             
+            // 畜産マネージャーを更新
+            livestockManager.update(deltaTime);
+            
             // 文明レベル進行チェック
             checkCivilizationLevelProgress();
             
@@ -351,6 +359,9 @@ public class Main extends ApplicationAdapter {
         
         // 農地を描画（アイテムより下に描画）
         farmManager.render(shapeRenderer);
+        
+        // 畜産タイルを描画（農地の上に描画）
+        livestockManager.render(shapeRenderer);
         
         // アイテムを描画
         itemManager.render(shapeRenderer);

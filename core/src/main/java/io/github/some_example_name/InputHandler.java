@@ -9,10 +9,12 @@ import com.badlogic.gdx.Input;
 public class InputHandler {
     private Player player;
     private FarmManager farmManager;
+    private LivestockManager livestockManager;
     
-    public InputHandler(Player player, FarmManager farmManager) {
+    public InputHandler(Player player, FarmManager farmManager, LivestockManager livestockManager) {
         this.player = player;
         this.farmManager = farmManager;
+        this.livestockManager = livestockManager;
     }
     
     /**
@@ -23,6 +25,12 @@ public class InputHandler {
         if (Gdx.input.isKeyJustPressed(Input.Keys.F)) {
             handleFarmAction();
             return; // 農業アクション時は移動しない
+        }
+        
+        // Lキーで動物を配置/製品を収穫する（移動中でも可能）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.L)) {
+            handleLivestockAction();
+            return; // 畜産アクション時は移動しない
         }
         
         // 移動中は新しい入力を無視
@@ -87,6 +95,32 @@ public class InputHandler {
             Gdx.app.log("Farm", "種を植えました！");
         } else {
             Gdx.app.log("Farm", "種がありません、または既に種が植えられています。");
+        }
+    }
+    
+    /**
+     * 畜産アクション（動物を配置/製品を収穫する）を処理します。
+     */
+    private void handleLivestockAction() {
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int tileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int tileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        
+        // まず収穫可能かチェック
+        if (livestockManager.harvest(tileX, tileY)) {
+            Gdx.app.log("Livestock", "製品を収穫しました！");
+            return;
+        }
+        
+        // 収穫できない場合は動物を配置
+        if (livestockManager.placeAnimal(tileX, tileY)) {
+            Gdx.app.log("Livestock", "動物を配置しました！");
+        } else {
+            Gdx.app.log("Livestock", "餌がありません、または既に動物が配置されています。");
         }
     }
 }
