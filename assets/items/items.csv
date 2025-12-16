@@ -1,21 +1,21 @@
 id,name,description
-1,Stone,Basic material that forms the earth's crust. Essential for primitive tools and construction.
-2,Wood,Natural material obtained from trees. Used for fuel and basic construction.
-3,Clay,Soil composed of fine particles. Raw material for pottery and construction.
-4,Fire,A controlled phenomenon of combustion. Generates energy and light. Essential for pottery and smelting.
-5,Seed,Plant seeds for growing crops. Foundation of agriculture.
-6,Crop,Harvested agricultural produce. Essential food source.
-7,Copper Ore,Naturally occurring metal ore. The first metal used by humans.
-8,Furnace,A structure for heating materials at high temperatures. Used for smelting and pottery firing.
-9,Fuel,A substance that burns to generate energy. Used for heating furnaces.
-10,Pottery,A hard container made by firing clay. Used for food storage.
-11,Coal,A fuel rich in carbon. Burns at higher temperatures than wood. Essential for iron smelting.
-12,Iron Ore,Metallic ore found in nature. When refined, stronger than bronze.
-13,Iron Ingot,A block of refined iron. Suitable shape for processing. Essential for iron tools and permanent structures.
-14,Copper Ingot,A block of refined copper. Used for bronze making.
-15,Tin Ore,Soft metal ore. Used for making bronze.
-16,Tin Ingot,A block of refined tin. Used for bronze alloy.
-17,Bronze,An alloy of copper and tin. Harder than pure copper. Used since ancient times.
-18,Storage Container,A structure for storing food and materials. Essential for food stockpiling.
-19,Permanent Structure,A durable building made with iron. Represents advanced civilization.
-20,Agricultural Tool,A tool for farming. Essential for stable food production.
+1,石,Basic material that forms the earth's crust. Essential for primitive tools and construction.
+2,木材,Natural material obtained from trees. Used for fuel and basic construction.
+3,粘土,Soil composed of fine particles. Raw material for pottery and construction.
+4,火,A controlled phenomenon of combustion. Generates energy and light. Essential for pottery and smelting.
+5,種,Plant seeds for growing crops. Foundation of agriculture.
+6,作物,Harvested agricultural produce. Essential food source.
+7,銅鉱石,Naturally occurring metal ore. The first metal used by humans.
+8,炉,A structure for heating materials at high temperatures. Used for smelting and pottery firing.
+9,燃料,A substance that burns to generate energy. Used for heating furnaces.
+10,土器,A hard container made by firing clay. Used for food storage.
+11,石炭,A fuel rich in carbon. Burns at higher temperatures than wood. Essential for iron smelting.
+12,鉄鉱石,Metallic ore found in nature. When refined, stronger than bronze.
+13,鉄インゴット,A block of refined iron. Suitable shape for processing. Essential for iron tools and permanent structures.
+14,銅インゴット,A block of refined copper. Used for bronze making.
+15,錫鉱石,Soft metal ore. Used for making bronze.
+16,錫インゴット,A block of refined tin. Used for bronze alloy.
+17,青銅,An alloy of copper and tin. Harder than pure copper. Used since ancient times.
+18,貯蔵容器,A structure for storing food and materials. Essential for food stockpiling.
+19,恒久建築物,A durable building made with iron. Represents advanced civilization.
+20,農具,A tool for farming. Essential for stable food production.
