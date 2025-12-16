@@ -119,7 +119,7 @@ public class UIRenderer {
         
         // インベントリ操作の説明を表示
         float rightX = screenWidth - padding;
-        String hintText = "TABでインベントリ";
+        String hintText = "Eでインベントリ";
         GlyphLayout hintLayout = new GlyphLayout(font, hintText);
         float hintX = rightX - hintLayout.width;
         font.draw(batch, hintText, hintX, topY);

@@ -322,7 +322,7 @@ public class InventoryUI {
         // 閉じるヒントを描画
         font.getData().setScale(1.7f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-        String hint = "Click item for details | Press TAB to close";
+        String hint = "Click item for details | Press E to close";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
         float hintX = panelX + (panelWidth - hintLayout.width) / 2;
         font.draw(batch, hint, hintX, panelY + 20);

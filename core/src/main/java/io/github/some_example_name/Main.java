@@ -250,8 +250,8 @@ public class Main extends ApplicationAdapter {
             }
         }
         
-        // Tabキーでインベントリを開閉（ポーズ中でない場合のみ）
-        if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.TAB)) {
+        // Eキーでインベントリを開閉（ポーズ中でない場合のみ）
+        if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             inventoryOpen = !inventoryOpen;
             showEncyclopedia = false; // インベントリを開くときは図鑑を閉じる
         }
