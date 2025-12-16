@@ -2,17 +2,26 @@ package io.github.some_example_name.game;
 
 /**
  * 文明レベルを管理するクラス。
+ * 
+ * 文明レベルの進行条件（assets/civilization/civilization_jouken.md参照）:
+ * - レベル1 (旧石器時代): ゲーム開始時
+ * - レベル2 (新石器時代): 定住拠点を設立する、土器を1つ作成する、作物を1回収穫する
+ * - レベル3 (青銅器時代): 銅を精錬できる環境を整える、食料を一定量貯蔵する
+ * - レベル4 (鉄器時代): 高温炉を建設する、鉄鉱石を入手する
+ * - レベル5 (古代文明時代): 鉄製の恒久建築物を1つ完成させる、食料生産を安定させる
  */
 public class CivilizationLevel {
     private int level;
     
     // 文明レベルの最大値
-    public static final int MAX_LEVEL = 10;
+    public static final int MAX_LEVEL = 5;
     
-    // 文明レベル1の名前
-    public static final String LEVEL_1_NAME = "原始文明";
-    // 文明レベル2の名前
-    public static final String LEVEL_2_NAME = "農耕文明";
+    // 文明レベル名の定数
+    public static final String LEVEL_1_NAME = "旧石器時代";
+    public static final String LEVEL_2_NAME = "新石器時代";
+    public static final String LEVEL_3_NAME = "青銅器時代";
+    public static final String LEVEL_4_NAME = "鉄器時代";
+    public static final String LEVEL_5_NAME = "古代文明時代";
     
     public CivilizationLevel() {
         this.level = 1; // ゲーム開始時はレベル1
@@ -55,14 +64,9 @@ public class CivilizationLevel {
         switch (level) {
             case 1: return LEVEL_1_NAME;
             case 2: return LEVEL_2_NAME;
-            case 3: return "青銅器文明";
-            case 4: return "鉄器文明";
-            case 5: return "中世文明";
-            case 6: return "産業革命文明";
-            case 7: return "電気・化学文明";
-            case 8: return "情報文明";
-            case 9: return "宇宙文明";
-            case 10: return "超文明";
+            case 3: return LEVEL_3_NAME;
+            case 4: return LEVEL_4_NAME;
+            case 5: return LEVEL_5_NAME;
             default: return "未知の文明";
         }
     }
