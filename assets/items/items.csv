@@ -1,21 +1,21 @@
 id,name,description
-1,石,Basic material that forms the earth's crust. Essential for primitive tools and construction.
-2,木材,Natural material obtained from trees. Used for fuel and basic construction.
-3,粘土,Soil composed of fine particles. Raw material for pottery and construction.
-4,火,A controlled phenomenon of combustion. Generates energy and light. Essential for pottery and smelting.
-5,種,Plant seeds for growing crops. Foundation of agriculture.
-6,作物,Harvested agricultural produce. Essential food source.
-7,銅鉱石,Naturally occurring metal ore. The first metal used by humans.
-8,炉,A structure for heating materials at high temperatures. Used for smelting and pottery firing.
-9,燃料,A substance that burns to generate energy. Used for heating furnaces.
-10,土器,A hard container made by firing clay. Used for food storage.
-11,石炭,A fuel rich in carbon. Burns at higher temperatures than wood. Essential for iron smelting.
-12,鉄鉱石,Metallic ore found in nature. When refined, stronger than bronze.
-13,鉄インゴット,A block of refined iron. Suitable shape for processing. Essential for iron tools and permanent structures.
-14,銅インゴット,A block of refined copper. Used for bronze making.
-15,錫鉱石,Soft metal ore. Used for making bronze.
-16,錫インゴット,A block of refined tin. Used for bronze alloy.
-17,青銅,An alloy of copper and tin. Harder than pure copper. Used since ancient times.
-18,貯蔵容器,A structure for storing food and materials. Essential for food stockpiling.
-19,恒久建築物,A durable building made with iron. Represents advanced civilization.
-20,農具,A tool for farming. Essential for stable food production.
+1,石,地殻を形成する基本的な材料。原始的な道具と建築に不可欠。
+2,木材,木から得られる天然材料。燃料や基本的な建築に使用。
+3,粘土,細かい粒子で構成された土。土器と建築の原料。
+4,火,制御された燃焼現象。エネルギーと光を生成。土器作成と精錬に不可欠。
+5,種,作物を育てるための植物の種。農業の基盤。
+6,作物,収穫された農産物。重要な食料源。
+7,銅鉱石,自然界で見つかる金属鉱石。人類が最初に使用した金属。
+8,炉,高温で材料を加熱する構造物。精錬と土器の焼成に使用。
+9,燃料,燃焼してエネルギーを生成する物質。炉の加熱に使用。
+10,土器,粘土を焼いて作られた硬い容器。食料の保存に使用。
+11,石炭,炭素が豊富な燃料。木よりも高温で燃える。鉄の精錬に不可欠。
+12,鉄鉱石,自然界で見つかる金属鉱石。精製すると青銅より強い。
+13,鉄インゴット,精製された鉄の塊。加工に適した形状。鉄製工具と恒久建築物に不可欠。
+14,銅インゴット,精製された銅の塊。青銅作りに使用。
+15,錫鉱石,柔らかい金属鉱石。青銅を作るために使用。
+16,錫インゴット,精製された錫の塊。青銅合金に使用。
+17,青銅,銅と錫の合金。純銅よりも硬い。古代から使用されている。
+18,貯蔵容器,食料と材料を保存する構造物。食料の備蓄に不可欠。
+19,恒久建築物,鉄で作られた耐久性のある建物。高度な文明を表す。
+20,農具,農業のための道具。安定した食料生産に不可欠。
