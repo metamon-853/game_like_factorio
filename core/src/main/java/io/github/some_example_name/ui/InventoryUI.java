@@ -96,6 +96,8 @@ public class InventoryUI {
         this.shapeRenderer = shapeRenderer;
         this.batch = batch;
         this.font = font;
+        // にじみ対策：描画座標を整数にスナップ
+        this.font.setUseIntegerPositions(true);
         this.uiCamera = uiCamera;
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
@@ -501,11 +503,17 @@ public class InventoryUI {
                 // 数量を描画
                 if (count > 1) {
                     String countText = "x" + count;
+                    // 所持数は小さめにして、スロット内で隠れないようにする
+                    float prevScaleX = font.getData().scaleX;
+                    float prevScaleY = font.getData().scaleY;
+                    font.getData().setScale(0.55f);
                     GlyphLayout countLayout = new GlyphLayout(font, countText);
-                    float countX = slotX + SLOT_SIZE - countLayout.width - 5;
+                    float countX = slotX + SLOT_SIZE - countLayout.width - 8;
                     font.setColor(Color.YELLOW);
-                    font.draw(batch, countText, countX, slotY - SLOT_SIZE + 5);
+                    // にじみ防止のため整数座標で描画（下端ギリギリを避ける）
+                    font.draw(batch, countText, Math.round(countX), Math.round(slotY - SLOT_SIZE + 22));
                     font.setColor(Color.WHITE);
+                    font.getData().setScale(prevScaleX, prevScaleY);
                 }
                 
                 itemIndex++;
