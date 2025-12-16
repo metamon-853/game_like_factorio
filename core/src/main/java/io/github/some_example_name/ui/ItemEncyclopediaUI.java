@@ -154,6 +154,46 @@ public class ItemEncyclopediaUI {
     }
     
     /**
+     * ホバー処理を行います。
+     */
+    private void handleHover() {
+        if (slotInfos == null) {
+            selectedItemData = null;
+            return;
+        }
+        
+        // マウスの位置を取得
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
+        // 詳細パネルの上にマウスがある場合は、ホバーを無視
+        float detailX = panelX + panelWidth + 20;
+        float detailY = panelY;
+        float detailWidth = 400;
+        float detailHeight = 300;
+        
+        boolean mouseOnDetailPanel = mouseX >= detailX && mouseX <= detailX + detailWidth &&
+                                    mouseY >= detailY && mouseY <= detailY + detailHeight;
+        
+        // 詳細パネルの上にマウスがある場合は何もしない
+        if (mouseOnDetailPanel) {
+            return;
+        }
+        
+        // ホバー中のアイテムをリセット
+        selectedItemData = null;
+        
+        // スロット情報をチェックしてホバー中のアイテムを検出
+        for (SlotInfo slot : slotInfos) {
+            if (mouseX >= slot.x && mouseX <= slot.x + SLOT_SIZE &&
+                mouseY >= slot.y && mouseY <= slot.y + SLOT_SIZE) {
+                selectedItemData = slot.itemData;
+                break;
+            }
+        }
+    }
+    
+    /**
      * アイテム図鑑UIを描画します。
      * @param itemDataLoader アイテムデータローダー
      */
@@ -224,19 +264,6 @@ public class ItemEncyclopediaUI {
             font.draw(batch, backText, backTextX, backTextY);
         }
         
-        // マウス位置を取得（ホバー検出用）
-        float mouseX = Gdx.input.getX();
-        float mouseY = screenHeight - Gdx.input.getY();
-        
-        // 詳細パネルの上にマウスがある場合は、ホバーを無視
-        float detailX = panelX + panelWidth + 20;
-        float detailY = panelY;
-        float detailWidth = 400;
-        float detailHeight = 300;
-        
-        boolean mouseOnDetailPanel = mouseX >= detailX && mouseX <= detailX + detailWidth &&
-                                    mouseY >= detailY && mouseY <= detailY + detailHeight;
-        
         // アイテムリストを描画
         float startX = panelX + 20;
         float startY = titleY - 80;
@@ -273,28 +300,14 @@ public class ItemEncyclopediaUI {
                 // スロット情報を保存（クリック判定用）
                 slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemData));
                 
-                // ホバー判定
-                boolean isHovered = !mouseOnDetailPanel && 
-                                   mouseX >= slotX && mouseX <= slotX + SLOT_SIZE &&
-                                   mouseY >= slotY - SLOT_SIZE && mouseY <= slotY;
-                
-                if (isHovered) {
-                    // ホバー時に詳細を表示（クリックで選択されたアイテムがない場合）
-                    if (selectedItemData == null) {
-                        selectedItemData = itemData;
-                    }
-                }
-                
-                // 選択されているアイテムかどうかで色を変える
-                boolean isSelected = selectedItemData != null && selectedItemData.id == itemData.id;
+                // ホバー中のアイテムかどうかで色を変える
+                boolean isHovered = selectedItemData != null && selectedItemData.id == itemData.id;
                 
                 // スロットの背景を描画
                 batch.end();
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-                if (isSelected) {
-                    shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f); // 選択時は少し明るく
-                } else if (isHovered) {
-                    shapeRenderer.setColor(0.25f, 0.25f, 0.4f, 1f); // ホバー時は少し明るく
+                if (isHovered) {
+                    shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f); // ホバー時は少し明るく
                 } else {
                     shapeRenderer.setColor(0.2f, 0.2f, 0.3f, 1f);
                 }
@@ -302,10 +315,8 @@ public class ItemEncyclopediaUI {
                 shapeRenderer.end();
                 
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-                if (isSelected) {
-                    shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f); // 選択時は明るい枠線
-                } else if (isHovered) {
-                    shapeRenderer.setColor(0.7f, 0.7f, 0.9f, 1f); // ホバー時は明るい枠線
+                if (isHovered) {
+                    shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f); // ホバー時は明るい枠線
                 } else {
                     shapeRenderer.setColor(0.5f, 0.5f, 0.7f, 1f);
                 }
@@ -328,6 +339,9 @@ public class ItemEncyclopediaUI {
                 itemIndex++;
             }
         }
+        
+        // ホバー処理を実行（slotInfosが設定された後）
+        handleHover();
         
         // 閉じるヒントを描画
         font.getData().setScale(1.7f);
@@ -422,12 +436,6 @@ public class ItemEncyclopediaUI {
         } else {
             font.draw(batch, description, detailX + 20, descY);
         }
-        
-        // 文明レベル
-        font.getData().setScale(1.4f);
-        font.setColor(new Color(0.6f, 0.6f, 0.8f, 1f));
-        descY -= 40;
-        font.draw(batch, "Civ Level: " + itemData.getCivilizationLevel(), detailX + 20, descY);
         
         font.setColor(Color.WHITE);
     }

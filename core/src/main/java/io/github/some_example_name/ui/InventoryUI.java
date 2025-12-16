@@ -434,12 +434,6 @@ public class InventoryUI {
             font.draw(batch, description, detailX + 20, descY);
         }
         
-        // 文明レベル
-        font.getData().setScale(1.4f);
-        font.setColor(new Color(0.6f, 0.6f, 0.8f, 1f));
-        descY -= 40;
-        font.draw(batch, "Civ Level: " + itemData.getCivilizationLevel(), detailX + 20, descY);
-        
         font.setColor(Color.WHITE);
     }
 }
