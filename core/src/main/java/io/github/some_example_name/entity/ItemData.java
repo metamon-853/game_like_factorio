@@ -2,6 +2,9 @@ package io.github.some_example_name.entity;
 
 import com.badlogic.gdx.graphics.Color;
 
+import java.util.HashMap;
+import java.util.Map;
+
 /**
  * アイテムのデータを保持するクラス。
  */
@@ -22,11 +25,15 @@ public class ItemData {
     // アイテムの色（描画用）
     private Color color;
     
+    // クラフトに必要な素材（キー: アイテムID、値: 必要数）
+    private Map<Integer, Integer> materials;
+    
     public ItemData() {
         this.civilizationLevel = 1; // デフォルトはレベル1
         this.color = Color.WHITE;
         this.category = "その他";
         this.tier = 1;
+        this.materials = new HashMap<>();
     }
     
     /**
@@ -55,5 +62,29 @@ public class ItemData {
      */
     public Color getColor() {
         return color;
+    }
+    
+    /**
+     * クラフトに必要な素材を設定します。
+     * @param materials 素材マップ（キー: アイテムID、値: 必要数）
+     */
+    public void setMaterials(Map<Integer, Integer> materials) {
+        this.materials = materials != null ? new HashMap<>(materials) : new HashMap<>();
+    }
+    
+    /**
+     * クラフトに必要な素材を取得します。
+     * @return 素材マップ（キー: アイテムID、値: 必要数）
+     */
+    public Map<Integer, Integer> getMaterials() {
+        return new HashMap<>(materials);
+    }
+    
+    /**
+     * このアイテムがクラフト可能かどうかを返します（素材が必要な場合のみクラフト可能）。
+     * @return クラフト可能な場合true
+     */
+    public boolean isCraftable() {
+        return materials != null && !materials.isEmpty();
     }
 }

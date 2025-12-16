@@ -29,6 +29,7 @@ import io.github.some_example_name.system.TextInputHandler;
 import io.github.some_example_name.system.InputHandler;
 import io.github.some_example_name.game.Inventory;
 import io.github.some_example_name.game.CivilizationLevel;
+import io.github.some_example_name.game.CraftingSystem;
 import io.github.some_example_name.entity.ItemData;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -59,6 +60,7 @@ public class Main extends ApplicationAdapter {
     
     // インベントリシステム
     private Inventory inventory;
+    private CraftingSystem craftingSystem;
     private InventoryUI inventoryUI;
     private ItemEncyclopediaUI encyclopediaUI;
     private boolean inventoryOpen = false;
@@ -138,6 +140,9 @@ public class Main extends ApplicationAdapter {
         // インベントリを初期化
         inventory = new Inventory();
         
+        // クラフトシステムを初期化
+        craftingSystem = new CraftingSystem(inventory);
+        
         // ポーズ状態を初期化
         isPaused = false;
         
@@ -171,6 +176,10 @@ public class Main extends ApplicationAdapter {
         // UIコンポーネントにSoundManagerを設定
         inventoryUI.setSoundManager(soundManager);
         encyclopediaUI.setSoundManager(soundManager);
+        
+        // InventoryUIにクラフトシステムとItemDataLoaderを設定
+        inventoryUI.setCraftingSystem(craftingSystem);
+        inventoryUI.setItemDataLoader(itemManager.getItemDataLoader());
         
         // MenuSystemのコールバック実装
         MenuSystem.MenuCallbacks menuCallbacks = new MenuSystem.MenuCallbacks() {
@@ -301,6 +310,13 @@ public class Main extends ApplicationAdapter {
             // アイテム図鑑ボタンがクリックされた場合（特殊値-1を使用）
             if (clickedItem != null && clickedItem.id == -1) {
                 showEncyclopedia = true; // アイテム図鑑を表示
+            }
+            // クラフトが実行された場合（特殊値-2を使用）
+            if (clickedItem != null && clickedItem.id == -2) {
+                // クラフト成功（音を再生するなど）
+                if (soundManager != null) {
+                    soundManager.playHoverSound(); // 簡易的にホバー音を再生
+                }
             }
         }
         
