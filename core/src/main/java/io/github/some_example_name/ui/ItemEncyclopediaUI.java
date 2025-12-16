@@ -27,16 +27,16 @@ public class ItemEncyclopediaUI {
     private int screenHeight;
     
     // UIのサイズと位置
-    private float panelWidth = 800;
-    private float panelHeight = 600;
+    private float panelWidth = 1200;
+    private float panelHeight = 900;
     private float panelX;
     private float panelY;
     
     // アイテムスロットの設定
     private static final int SLOTS_PER_ROW = 8;
     private static final int MAX_ROWS = 10;
-    private static final float SLOT_SIZE = 70;
-    private static final float SLOT_PADDING = 10;
+    private static final float SLOT_SIZE = 105;
+    private static final float SLOT_PADDING = 15;
     
     // アイテム詳細表示
     private ItemData selectedItemData = null;
@@ -93,8 +93,8 @@ public class ItemEncyclopediaUI {
         panelY = (screenHeight - panelHeight) / 2;
         
         // インベントリに戻るボタンの位置を設定
-        float buttonWidth = 200;
-        float buttonHeight = 50;
+        float buttonWidth = 300;
+        float buttonHeight = 75;
         float buttonX = panelX + 20;
         float buttonY = panelY + panelHeight - buttonHeight - 20;
         backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
@@ -130,10 +130,10 @@ public class ItemEncyclopediaUI {
         
         // 詳細パネルの外側をクリックした場合は詳細を閉じる
         if (selectedItemData != null) {
-            float detailX = panelX + panelWidth + 20;
+            float detailX = panelX + panelWidth + 30;
             float detailY = panelY;
-            float detailWidth = 400;
-            float detailHeight = 300;
+            float detailWidth = 600;
+            float detailHeight = 450;
             
             if (!(screenX >= detailX && screenX <= detailX + detailWidth &&
                   uiY >= detailY && uiY <= detailY + detailHeight)) {
@@ -167,10 +167,10 @@ public class ItemEncyclopediaUI {
         float mouseY = screenHeight - Gdx.input.getY();
         
         // 詳細パネルの上にマウスがある場合は、ホバーを無視
-        float detailX = panelX + panelWidth + 20;
+        float detailX = panelX + panelWidth + 30;
         float detailY = panelY;
-        float detailWidth = 400;
-        float detailHeight = 300;
+        float detailWidth = 600;
+        float detailHeight = 450;
         
         boolean mouseOnDetailPanel = mouseX >= detailX && mouseX <= detailX + detailWidth &&
                                     mouseY >= detailY && mouseY <= detailY + detailHeight;
@@ -219,14 +219,14 @@ public class ItemEncyclopediaUI {
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(2.2f);
+        font.getData().setScale(3.3f);
         font.setColor(Color.WHITE);
         
         // タイトルを描画
         String title = "アイテム図鑑";
         GlyphLayout titleLayout = new GlyphLayout(font, title);
         float titleX = panelX + (panelWidth - titleLayout.width) / 2;
-        float titleY = panelY + panelHeight - 30;
+        float titleY = panelY + panelHeight - 45;
         font.draw(batch, title, titleX, titleY);
         
         // 戻るボタンを描画
@@ -255,7 +255,7 @@ public class ItemEncyclopediaUI {
             shapeRenderer.end();
             
             batch.begin();
-            font.getData().setScale(1.8f);
+            font.getData().setScale(2.7f);
             font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
             String backText = "インベントリに戻る";
             GlyphLayout backLayout = new GlyphLayout(font, backText);
@@ -265,8 +265,8 @@ public class ItemEncyclopediaUI {
         }
         
         // アイテムリストを描画
-        float startX = panelX + 20;
-        float startY = titleY - 80;
+        float startX = panelX + 30;
+        float startY = titleY - 120;
         float currentY = startY - scrollOffset;
         
         Array<ItemData> allItems = itemDataLoader.getAllItems();
@@ -276,7 +276,7 @@ public class ItemEncyclopediaUI {
         
         if (allItems.size == 0) {
             // 空のメッセージを表示
-            font.getData().setScale(2.2f);
+            font.getData().setScale(3.3f);
             font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
             String emptyText = "アイテムがありません";
             GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
@@ -344,12 +344,12 @@ public class ItemEncyclopediaUI {
         handleHover();
         
         // 閉じるヒントを描画
-        font.getData().setScale(1.7f);
+        font.getData().setScale(2.55f);
         font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
         String hint = "Hover item for details | Press E to close";
         GlyphLayout hintLayout = new GlyphLayout(font, hint);
         float hintX = panelX + (panelWidth - hintLayout.width) / 2;
-        font.draw(batch, hint, hintX, panelY + 20);
+        font.draw(batch, hint, hintX, panelY + 30);
         font.setColor(Color.WHITE);
         
         // アイテム詳細パネルを描画（ホバーまたはクリックで選択されたアイテム）
@@ -357,17 +357,17 @@ public class ItemEncyclopediaUI {
             renderItemDetail(selectedItemData);
         }
         
-        font.getData().setScale(2.2f);
+        font.getData().setScale(3.3f);
     }
     
     /**
      * アイテム詳細パネルを描画します。
      */
     private void renderItemDetail(ItemData itemData) {
-        float detailX = panelX + panelWidth + 20;
+        float detailX = panelX + panelWidth + 30;
         float detailY = panelY;
-        float detailWidth = 400;
-        float detailHeight = 300;
+        float detailWidth = 600;
+        float detailHeight = 450;
         
         batch.end();
         
@@ -386,45 +386,45 @@ public class ItemEncyclopediaUI {
         // アイテムの色で円を描画
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(itemData.getColor());
-        float iconSize = 60;
-        float iconX = detailX + 20;
-        float iconY = detailY + detailHeight - 80;
+        float iconSize = 90;
+        float iconX = detailX + 30;
+        float iconY = detailY + detailHeight - 120;
         shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
         shapeRenderer.end();
         
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
-        font.getData().setScale(2.2f);
+        font.getData().setScale(3.3f);
         font.setColor(Color.WHITE);
         
         // アイテム名
-        float textX = detailX + 100;
-        float textY = detailY + detailHeight - 40;
+        float textX = detailX + 150;
+        float textY = detailY + detailHeight - 60;
         font.draw(batch, itemData.name, textX, textY);
         
         // 説明
-        font.getData().setScale(1.7f);
+        font.getData().setScale(2.55f);
         font.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
-        float descY = textY - 50;
+        float descY = textY - 75;
         
         // 説明文を複数行に分割（長すぎる場合）
         String description = itemData.description;
-        float maxWidth = detailWidth - 40;
+        float maxWidth = detailWidth - 60;
         GlyphLayout descLayout = new GlyphLayout(font, description);
         
         if (descLayout.width > maxWidth) {
             // 説明文が長い場合は折り返し処理（簡易版）
             String[] words = description.split("");
             StringBuilder line = new StringBuilder();
-            float currentX = detailX + 20;
+            float currentX = detailX + 30;
             
             for (String word : words) {
                 String testLine = line.toString() + word;
                 GlyphLayout testLayout = new GlyphLayout(font, testLine);
                 if (testLayout.width > maxWidth && line.length() > 0) {
                     font.draw(batch, line.toString(), currentX, descY);
-                    descY -= 25;
+                    descY -= 37.5f;
                     line = new StringBuilder(word);
                 } else {
                     line.append(word);
@@ -434,7 +434,7 @@ public class ItemEncyclopediaUI {
                 font.draw(batch, line.toString(), currentX, descY);
             }
         } else {
-            font.draw(batch, description, detailX + 20, descY);
+            font.draw(batch, description, detailX + 30, descY);
         }
         
         font.setColor(Color.WHITE);
