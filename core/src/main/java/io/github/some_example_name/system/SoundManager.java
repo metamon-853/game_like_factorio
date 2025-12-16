@@ -11,14 +11,17 @@ import com.badlogic.gdx.utils.Disposable;
 public class SoundManager implements Disposable {
     private Sound hoverSound;
     private Sound collectSound;
+    private Sound footstepSound;
     private SoundSettings soundSettings;
     private boolean isInitialized = false;
     
     // 音の再生クールダウン（連続再生を防ぐ）
     private long lastHoverSoundTime = 0;
     private long lastCollectSoundTime = 0;
+    private long lastFootstepSoundTime = 0;
     private static final long HOVER_SOUND_COOLDOWN_MS = 50; // 50ミリ秒のクールダウン
     private static final long COLLECT_SOUND_COOLDOWN_MS = 100; // 100ミリ秒のクールダウン
+    private static final long FOOTSTEP_SOUND_COOLDOWN_MS = 80; // 80ミリ秒のクールダウン（足音の間隔）
     
     /**
      * SoundManagerを初期化します。
@@ -44,6 +47,12 @@ public class SoundManager implements Disposable {
                 Gdx.app.error("SoundManager", "Failed to create collect sound");
             } else {
                 Gdx.app.log("SoundManager", "Collect sound created successfully");
+            }
+            footstepSound = createFootstepSound();
+            if (footstepSound == null) {
+                Gdx.app.error("SoundManager", "Failed to create footstep sound");
+            } else {
+                Gdx.app.log("SoundManager", "Footstep sound created successfully");
             }
             isInitialized = true;
         } catch (Exception e) {
@@ -234,6 +243,100 @@ public class SoundManager implements Disposable {
     }
     
     /**
+     * 足音をプログラムで生成してSoundオブジェクトとして返します。
+     * 「トン」という短い音を生成します。
+     */
+    private Sound createFootstepSound() {
+        int sampleRate = 44100;
+        float duration = 0.06f; // 60ミリ秒の短い音
+        int numSamples = (int)(sampleRate * duration);
+        
+        // WAVファイルのヘッダーサイズ
+        int dataSize = numSamples * 2; // 16bit = 2 bytes per sample
+        int fileSize = 36 + dataSize;
+        
+        // WAVファイルのバイト配列を作成
+        byte[] wavData = new byte[44 + dataSize];
+        int offset = 0;
+        
+        // RIFFヘッダー
+        writeString(wavData, offset, "RIFF"); offset += 4;
+        writeInt(wavData, offset, fileSize); offset += 4;
+        writeString(wavData, offset, "WAVE"); offset += 4;
+        
+        // fmtチャンク
+        writeString(wavData, offset, "fmt "); offset += 4;
+        writeInt(wavData, offset, 16); // fmtチャンクサイズ
+        offset += 4;
+        writeShort(wavData, offset, (short)1); // オーディオフォーマット（PCM）
+        offset += 2;
+        writeShort(wavData, offset, (short)1); // チャンネル数（モノラル）
+        offset += 2;
+        writeInt(wavData, offset, sampleRate); // サンプルレート
+        offset += 4;
+        writeInt(wavData, offset, sampleRate * 2); // バイトレート
+        offset += 4;
+        writeShort(wavData, offset, (short)2); // ブロックアライメント
+        offset += 2;
+        writeShort(wavData, offset, (short)16); // ビット深度
+        offset += 2;
+        
+        // dataチャンク
+        writeString(wavData, offset, "data"); offset += 4;
+        writeInt(wavData, offset, dataSize); offset += 4;
+        
+        // 音声サンプルを生成（低めの周波数で「トン」という音）
+        for (int i = 0; i < numSamples; i++) {
+            double time = i / (double) sampleRate;
+            
+            // 低めの周波数（200Hz）と少し高い周波数（400Hz）を組み合わせ
+            double frequency1 = 200.0;
+            double frequency2 = 400.0;
+            double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.2; // ハーモニックは小さく
+            
+            double sample = (sample1 + sample2) / 1.2; // 正規化
+            
+            // エンベロープを適用（急激なフェードイン・フェードアウト）
+            double envelope;
+            if (i < numSamples * 0.1) {
+                // フェードイン（最初の10%）
+                envelope = i / (numSamples * 0.1);
+            } else if (i > numSamples * 0.5) {
+                // フェードアウト（最後の50%）
+                envelope = (numSamples - i) / (numSamples * 0.5);
+            } else {
+                envelope = 1.0;
+            }
+            
+            // 音量を調整（0.25で少し小さめに）
+            sample *= envelope * 0.25;
+            
+            // 16bit PCMとして書き込み（リトルエンディアン）
+            short sampleValue = (short)(sample * Short.MAX_VALUE);
+            wavData[offset++] = (byte)(sampleValue & 0xFF);
+            wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
+        }
+        
+        // 一時ファイルとして保存してからSoundオブジェクトとして読み込む
+        try {
+            FileHandle tempFile = Gdx.files.local(".temp_footstep_sound.wav");
+            tempFile.writeBytes(wavData, false);
+            
+            if (!tempFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create footstep sound file");
+                return null;
+            }
+            
+            Sound sound = Gdx.audio.newSound(tempFile);
+            return sound;
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create footstep sound", e);
+            return null;
+        }
+    }
+    
+    /**
      * バイト配列に文字列を書き込みます。
      */
     private void writeString(byte[] data, int offset, String str) {
@@ -322,6 +425,10 @@ public class SoundManager implements Disposable {
         if (collectSound != null) {
             collectSound.dispose();
             collectSound = null;
+        }
+        if (footstepSound != null) {
+            footstepSound.dispose();
+            footstepSound = null;
         }
         isInitialized = false;
     }

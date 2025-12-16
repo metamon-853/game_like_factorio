@@ -149,6 +149,9 @@ public class Main extends ApplicationAdapter {
         soundSettings = new SoundSettings();
         soundManager = new SoundManager(soundSettings); // SoundManagerを先に作成
         
+        // プレイヤーにSoundManagerを設定
+        player.setSoundManager(soundManager);
+        
         // アイテムマネージャーを初期化（無限マップ対応）
         itemManager = new ItemManager();
         itemManager.setInventory(inventory); // インベントリを設定

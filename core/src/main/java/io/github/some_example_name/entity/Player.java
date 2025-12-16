@@ -2,6 +2,7 @@ package io.github.some_example_name.entity;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import io.github.some_example_name.system.SoundManager;
 
 /**
  * プレイヤーを表すクラス。タイルベースの移動を管理します。
@@ -36,6 +37,13 @@ public class Player {
     private int targetPlayerTileX;
     private int targetPlayerTileY;
     
+    // サウンドマネージャーへの参照
+    private SoundManager soundManager;
+    
+    // 足音のタイミング管理
+    private float footstepTimer = 0f;
+    private static final float FOOTSTEP_INTERVAL = 0.15f; // 足音の間隔（秒）- 移動速度に合わせて調整
+    
     public Player(int startTileX, int startTileY) {
         // マップ升座標からプレイヤー升座標に変換（マップ升の中心のプレイヤー升に配置）
         this.playerTileX = startTileX * SUBDIVISIONS + SUBDIVISIONS / 2;
@@ -46,12 +54,28 @@ public class Player {
     }
     
     /**
+     * サウンドマネージャーを設定します。
+     */
+    public void setSoundManager(SoundManager soundManager) {
+        this.soundManager = soundManager;
+    }
+    
+    /**
      * プレイヤーを更新します。
      * @param deltaTime 前フレームからの経過時間（秒）
      */
     public void update(float deltaTime) {
         if (isMoving) {
             moveProgress += deltaTime / moveSpeed;
+            
+            // 足音を再生（移動中のみ）
+            if (soundManager != null) {
+                footstepTimer += deltaTime;
+                if (footstepTimer >= FOOTSTEP_INTERVAL) {
+                    soundManager.playFootstepSound();
+                    footstepTimer = 0f; // タイマーをリセット
+                }
+            }
             
             if (moveProgress >= 1.0f) {
                 // 移動完了
@@ -61,6 +85,7 @@ public class Player {
                 pixelX = playerTileX * PLAYER_TILE_SIZE;
                 pixelY = playerTileY * PLAYER_TILE_SIZE;
                 isMoving = false;
+                footstepTimer = 0f; // 移動終了時にタイマーをリセット
             } else {
                 // 移動中：線形補間でスムーズに移動
                 float startX = playerTileX * PLAYER_TILE_SIZE;
@@ -71,6 +96,9 @@ public class Player {
                 pixelX = startX + (endX - startX) * moveProgress;
                 pixelY = startY + (endY - startY) * moveProgress;
             }
+        } else {
+            // 移動していない場合はタイマーをリセット
+            footstepTimer = 0f;
         }
     }
     
