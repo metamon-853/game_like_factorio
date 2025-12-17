@@ -181,6 +181,7 @@ public class Main extends ApplicationAdapter {
         
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
+        inputHandler.setTerrainManager(terrainManager); // 地形マネージャーを設定
         
         // UIコンポーネントにSoundManagerを設定
         inventoryUI.setSoundManager(soundManager);

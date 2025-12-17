@@ -20,13 +20,9 @@ public class TerrainManager {
     // 生成済みのチャンクを記録（無限マップ用）
     private java.util.Set<String> generatedChunks;
     
-    // ランダムジェネレーター（チャンクごとにシードを使用）
-    private Random random;
-    
     public TerrainManager() {
         this.terrainTiles = new HashMap<>();
         this.generatedChunks = new java.util.HashSet<>();
-        this.random = new Random();
     }
     
     /**
@@ -97,8 +93,8 @@ public class TerrainManager {
                     continue;
                 }
                 
-                // 地形タイプを決定（ランダムだが、チャンクごとに一貫性がある）
-                TerrainTile.TerrainType terrainType = determineTerrainType(tileX, tileY, chunkRandom);
+                // 地形タイプを決定（エリアベースで連続した地形を生成）
+                TerrainTile.TerrainType terrainType = determineTerrainType(tileX, tileY, null);
                 
                 terrainTiles.put(tileKey, new TerrainTile(tileX, tileY, terrainType));
             }
@@ -107,61 +103,115 @@ public class TerrainManager {
     
     /**
      * タイル位置に基づいて地形タイプを決定します。
+     * エリアベースの生成で、連続した地形エリアを作成します。
      * @param tileX タイルX座標
      * @param tileY タイルY座標
-     * @param random ランダムジェネレーター
+     * @param random ランダムジェネレーター（使用しないが互換性のため残す）
      * @return 地形タイプ
      */
     private TerrainTile.TerrainType determineTerrainType(int tileX, int tileY, Random random) {
-        // ノイズ関数を使用して地形を生成（簡易版）
-        double noise = simpleNoise(tileX, tileY);
+        // 高度ノイズ（地形の高低を決定）- 複数オクターブで滑らかに
+        double heightNoise = multiOctaveNoise(tileX, tileY, 0.05);
         
-        // 水（低地）
-        if (noise < 0.2) {
+        // 湿度ノイズ（水や森の分布を決定）- 異なるスケールで
+        double moistureNoise = multiOctaveNoise(tileX, tileY, 0.08);
+        
+        // 地形タイプノイズ（特殊地形の分布を決定）- さらに異なるスケールで
+        double terrainNoise = multiOctaveNoise(tileX, tileY, 0.03);
+        
+        // 高度に基づいて基本地形を決定
+        if (heightNoise < 0.25) {
+            // 低地：水エリア
             return TerrainTile.TerrainType.WATER;
-        }
-        // 砂（水の近く）
-        else if (noise < 0.3) {
+        } else if (heightNoise < 0.35) {
+            // 低地：砂浜エリア（水の近く）
             return TerrainTile.TerrainType.SAND;
-        }
-        // 森（中程度の高さ）
-        else if (noise > 0.7 && random.nextDouble() < 0.3) {
-            return TerrainTile.TerrainType.FOREST;
-        }
-        // 岩（高い場所）
-        else if (noise > 0.8) {
+        } else if (heightNoise > 0.75) {
+            // 高地：岩エリア
             return TerrainTile.TerrainType.STONE;
-        }
-        // 土（ランダム）
-        else if (random.nextDouble() < 0.2) {
-            return TerrainTile.TerrainType.DIRT;
-        }
-        // デフォルトは草
-        else {
-            return TerrainTile.TerrainType.GRASS;
+        } else {
+            // 中地帯：湿度と地形ノイズに基づいて決定
+            if (moistureNoise > 0.65 && terrainNoise > 0.4) {
+                // 高湿度＋適度な地形ノイズ：森林エリア
+                return TerrainTile.TerrainType.FOREST;
+            } else if (moistureNoise < 0.35 || terrainNoise < 0.3) {
+                // 低湿度または低地形ノイズ：土エリア
+                return TerrainTile.TerrainType.DIRT;
+            } else {
+                // その他：草原エリア
+                return TerrainTile.TerrainType.GRASS;
+            }
         }
     }
     
     /**
-     * 簡易ノイズ関数（パーリンノイズの簡易版）。
+     * 滑らかなノイズ関数（パーリンノイズ風）。
+     * 連続したエリアを生成するために、周囲のタイルの値を補間します。
      * @param x X座標
      * @param y Y座標
+     * @param scale スケール（小さいほど大きなエリア）
      * @return 0.0から1.0の間の値
      */
-    private double simpleNoise(int x, int y) {
-        // シンプルなハッシュベースのノイズ
+    private double smoothNoise(int x, int y, double scale) {
+        // グリッドポイントのノイズ値を取得
+        double fx = x * scale;
+        double fy = y * scale;
+        
+        int x0 = (int)Math.floor(fx);
+        int x1 = x0 + 1;
+        int y0 = (int)Math.floor(fy);
+        int y1 = y0 + 1;
+        
+        // 各グリッドポイントのノイズ値を計算
+        double n00 = gridNoise(x0, y0);
+        double n10 = gridNoise(x1, y0);
+        double n01 = gridNoise(x0, y1);
+        double n11 = gridNoise(x1, y1);
+        
+        // 補間のための重み
+        double sx = fx - x0;
+        double sy = fy - y0;
+        
+        // スムーズステップ関数で補間
+        sx = sx * sx * (3.0 - 2.0 * sx);
+        sy = sy * sy * (3.0 - 2.0 * sy);
+        
+        // 双線形補間
+        double nx0 = n00 * (1.0 - sx) + n10 * sx;
+        double nx1 = n01 * (1.0 - sx) + n11 * sx;
+        double result = nx0 * (1.0 - sy) + nx1 * sy;
+        
+        return result;
+    }
+    
+    /**
+     * グリッドポイントでのノイズ値を計算します。
+     * @param x グリッドX座標
+     * @param y グリッドY座標
+     * @return 0.0から1.0の間の値
+     */
+    private double gridNoise(int x, int y) {
         long seed = (long)x * 73856093L ^ (long)y * 19349663L;
         Random noiseRandom = new Random(seed);
-        
-        // 複数のオクターブを合成
+        return noiseRandom.nextDouble();
+    }
+    
+    /**
+     * 複数オクターブのノイズを合成して、より自然な地形を生成します。
+     * @param x X座標
+     * @param y Y座標
+     * @param scale 基本スケール
+     * @return 0.0から1.0の間の値
+     */
+    private double multiOctaveNoise(int x, int y, double scale) {
         double value = 0.0;
         double amplitude = 1.0;
-        double frequency = 0.1;
+        double frequency = scale;
         double maxValue = 0.0;
         
+        // 3つのオクターブを合成
         for (int i = 0; i < 3; i++) {
-            double sample = noiseRandom.nextDouble() * amplitude;
-            value += sample;
+            value += smoothNoise(x, y, frequency) * amplitude;
             maxValue += amplitude;
             amplitude *= 0.5;
             frequency *= 2.0;
@@ -201,6 +251,17 @@ public class TerrainManager {
                 }
             }
         }
+    }
+    
+    /**
+     * 指定されたマップ升座標の地形タイルを取得します。
+     * @param tileX マップ升X座標
+     * @param tileY マップ升Y座標
+     * @return 地形タイル（存在しない場合はnull）
+     */
+    public TerrainTile getTerrainTile(int tileX, int tileY) {
+        String tileKey = tileX + "," + tileY;
+        return terrainTiles.get(tileKey);
     }
     
     /**

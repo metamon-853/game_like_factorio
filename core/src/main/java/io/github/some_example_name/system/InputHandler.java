@@ -1,8 +1,10 @@
 package io.github.some_example_name.system;
 
 import io.github.some_example_name.entity.Player;
+import io.github.some_example_name.entity.TerrainTile;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.LivestockManager;
+import io.github.some_example_name.manager.TerrainManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -14,11 +16,20 @@ public class InputHandler {
     private Player player;
     private FarmManager farmManager;
     private LivestockManager livestockManager;
+    private TerrainManager terrainManager;
     
     public InputHandler(Player player, FarmManager farmManager, LivestockManager livestockManager) {
         this.player = player;
         this.farmManager = farmManager;
         this.livestockManager = livestockManager;
+        this.terrainManager = null; // 後で設定される
+    }
+    
+    /**
+     * 地形マネージャーを設定します。
+     */
+    public void setTerrainManager(TerrainManager terrainManager) {
+        this.terrainManager = terrainManager;
     }
     
     /**
@@ -51,28 +62,44 @@ public class InputHandler {
         // 斜め移動を優先的にチェック
         if (up && right) {
             // 右上
-            player.move(1, 1);
+            if (canMoveTo(1, 1)) {
+                player.move(1, 1);
+            }
         } else if (up && left) {
             // 左上
-            player.move(-1, 1);
+            if (canMoveTo(-1, 1)) {
+                player.move(-1, 1);
+            }
         } else if (down && right) {
             // 右下
-            player.move(1, -1);
+            if (canMoveTo(1, -1)) {
+                player.move(1, -1);
+            }
         } else if (down && left) {
             // 左下
-            player.move(-1, -1);
+            if (canMoveTo(-1, -1)) {
+                player.move(-1, -1);
+            }
         } else if (up) {
             // 上
-            player.move(0, 1);
+            if (canMoveTo(0, 1)) {
+                player.move(0, 1);
+            }
         } else if (down) {
             // 下
-            player.move(0, -1);
+            if (canMoveTo(0, -1)) {
+                player.move(0, -1);
+            }
         } else if (left) {
             // 左
-            player.move(-1, 0);
+            if (canMoveTo(-1, 0)) {
+                player.move(-1, 0);
+            }
         } else if (right) {
             // 右
-            player.move(1, 0);
+            if (canMoveTo(1, 0)) {
+                player.move(1, 0);
+            }
         }
     }
     
@@ -126,5 +153,56 @@ public class InputHandler {
         } else {
             Gdx.app.log("Livestock", "餌がありません、または既に動物が配置されています。");
         }
+    }
+    
+    /**
+     * 指定された方向に移動できるかチェックします。
+     * プレイヤーが4マップ升サイズなので、移動先の範囲内に水タイルがないかチェックします。
+     * @param dx X方向の移動量（プレイヤー升単位）
+     * @param dy Y方向の移動量（プレイヤー升単位）
+     * @return 移動可能な場合true
+     */
+    private boolean canMoveTo(int dx, int dy) {
+        if (terrainManager == null) {
+            return true; // 地形マネージャーが設定されていない場合は移動可能
+        }
+        
+        // 現在のプレイヤー升座標
+        int currentPlayerTileX = player.getPlayerTileX();
+        int currentPlayerTileY = player.getPlayerTileY();
+        
+        // 移動先のプレイヤー升座標
+        int newPlayerTileX = currentPlayerTileX + dx;
+        int newPlayerTileY = currentPlayerTileY + dy;
+        
+        // プレイヤーの中心座標（移動後）
+        float playerCenterX = newPlayerTileX * Player.PLAYER_TILE_SIZE + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = newPlayerTileY * Player.PLAYER_TILE_SIZE + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーのサイズは4マップ升
+        float playerSize = Player.TILE_SIZE * 4.0f;
+        float playerLeft = playerCenterX - playerSize / 2;
+        float playerRight = playerCenterX + playerSize / 2;
+        float playerBottom = playerCenterY - playerSize / 2;
+        float playerTop = playerCenterY + playerSize / 2;
+        
+        // プレイヤーの範囲内のマップ升をチェック
+        int startTileX = (int)Math.floor(playerLeft / Player.TILE_SIZE);
+        int endTileX = (int)Math.ceil(playerRight / Player.TILE_SIZE);
+        int startTileY = (int)Math.floor(playerBottom / Player.TILE_SIZE);
+        int endTileY = (int)Math.ceil(playerTop / Player.TILE_SIZE);
+        
+        // 範囲内のすべてのマップ升をチェック
+        for (int tileX = startTileX; tileX <= endTileX; tileX++) {
+            for (int tileY = startTileY; tileY <= endTileY; tileY++) {
+                TerrainTile tile = terrainManager.getTerrainTile(tileX, tileY);
+                if (tile != null && tile.getTerrainType() == TerrainTile.TerrainType.WATER) {
+                    // 水タイルがある場合は移動不可
+                    return false;
+                }
+            }
+        }
+        
+        return true; // 水タイルがなければ移動可能
     }
 }
