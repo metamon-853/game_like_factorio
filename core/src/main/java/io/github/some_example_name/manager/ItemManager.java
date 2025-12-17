@@ -210,7 +210,7 @@ public class ItemManager {
     
     /**
      * プレイヤーとアイテムの衝突判定を行います。
-     * プレイヤーの中心がアイテムのマップ升内にある場合、アイテムを取得します。
+     * プレイヤーが4マップ升サイズなので、プレイヤーの範囲内にアイテムがある場合、アイテムを取得します。
      * 移動中も判定を行うため、より正確に衝突を検出できます。
      * @param player プレイヤー
      */
@@ -219,14 +219,25 @@ public class ItemManager {
         float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
         float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
         
-        // プレイヤーの中心がどのマップ升内にあるかを計算
-        int playerMapTileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
-        int playerMapTileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        // プレイヤーのサイズは4マップ升（TILE_SIZE * 4）
+        float playerSize = Player.TILE_SIZE * 4.0f;
+        float playerLeft = playerCenterX - playerSize / 2;
+        float playerRight = playerCenterX + playerSize / 2;
+        float playerBottom = playerCenterY - playerSize / 2;
+        float playerTop = playerCenterY + playerSize / 2;
         
         for (Item item : items) {
-            if (!item.isCollected() && 
-                item.getTileX() == playerMapTileX && 
-                item.getTileY() == playerMapTileY) {
+            if (item.isCollected()) {
+                continue;
+            }
+            
+            // アイテムの位置（マップ升の中心）
+            float itemX = item.getTileX() * Player.TILE_SIZE + Player.TILE_SIZE / 2;
+            float itemY = item.getTileY() * Player.TILE_SIZE + Player.TILE_SIZE / 2;
+            
+            // アイテムがプレイヤーの範囲内にあるかチェック
+            if (itemX >= playerLeft && itemX <= playerRight &&
+                itemY >= playerBottom && itemY <= playerTop) {
                 item.collect();
                 collectedCount++;
                 
