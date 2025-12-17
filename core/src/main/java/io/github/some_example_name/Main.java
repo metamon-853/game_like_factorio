@@ -17,6 +17,7 @@ import io.github.some_example_name.entity.Player;
 import io.github.some_example_name.manager.ItemManager;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.LivestockManager;
+import io.github.some_example_name.manager.TerrainManager;
 import io.github.some_example_name.ui.UIRenderer;
 import io.github.some_example_name.ui.InventoryUI;
 import io.github.some_example_name.ui.ItemEncyclopediaUI;
@@ -40,6 +41,7 @@ public class Main extends ApplicationAdapter {
     private ItemManager itemManager;
     private FarmManager farmManager;
     private LivestockManager livestockManager;
+    private TerrainManager terrainManager;
     
     // カメラとビューポート
     private OrthographicCamera camera;
@@ -174,6 +176,9 @@ public class Main extends ApplicationAdapter {
         livestockManager = new LivestockManager();
         livestockManager.setInventory(inventory); // インベントリを設定
         
+        // 地形マネージャーを初期化
+        terrainManager = new TerrainManager();
+        
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
         
@@ -277,8 +282,8 @@ public class Main extends ApplicationAdapter {
         // ビューポートを適用
         viewport.apply();
         
-        // 画面をクリア
-        ScreenUtils.clear(0.1f, 0.1f, 0.15f, 1f);
+        // 画面をクリア（地形が描画されるので、より明るい背景色に）
+        ScreenUtils.clear(0.2f, 0.25f, 0.3f, 1f);
         
         // ESCキーでポーズ/再開を切り替え、またはメニューから戻る
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
@@ -366,6 +371,9 @@ public class Main extends ApplicationAdapter {
             float deltaTime = Gdx.graphics.getDeltaTime();
             player.update(deltaTime);
             
+            // 地形マネージャーを更新（カメラの視野範囲を渡す）
+            terrainManager.update(camera);
+            
             // アイテムマネージャーを更新（カメラの視野範囲を渡す）
             itemManager.update(deltaTime, player, camera);
             
@@ -406,6 +414,9 @@ public class Main extends ApplicationAdapter {
         
         // その他の描画（Filledモード）
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        
+        // 地形を描画（最下層）
+        terrainManager.render(shapeRenderer, camera);
         
         // 農地を描画（アイテムより下に描画）
         farmManager.render(shapeRenderer);
