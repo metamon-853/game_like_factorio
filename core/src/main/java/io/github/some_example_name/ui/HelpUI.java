@@ -31,14 +31,23 @@ public class HelpUI {
     private float panelX;
     private float panelY;
     
-    // コンテンツエリア（タイトルとボタンの下）
+    // コンテンツエリア（タイトルとフッターの間）
     private float contentAreaY;
     private float contentAreaHeight;
+    
+    // フッターエリア（戻るボタン用）
+    private float footerY;
+    private float footerHeight;
     
     // スクロール位置
     private float scrollOffset = 0;
     private static final float SCROLL_SPEED = 30f;
     private float maxScrollOffset = 0;
+    private float totalContentHeight = 0; // 実際のコンテンツの高さ
+
+    // スクロールバーのドラッグ状態
+    private boolean isDraggingScrollThumb = false;
+    private float scrollThumbGrabOffsetY = 0f; // つまみ内で掴んだ位置（Y）
     
     // 戻るボタン
     private Button backButton;
@@ -71,7 +80,14 @@ public class HelpUI {
      * スクロール位置をリセットします。
      */
     public void resetScroll() {
-        scrollOffset = 0;
+        scrollOffset = 0; // 最上部から開始
+    }
+    
+    /**
+     * ヘルプ画面が開かれたときに呼び出されます。
+     */
+    public void onOpen() {
+        resetScroll();
     }
     
     /**
@@ -90,24 +106,36 @@ public class HelpUI {
         panelX = (screenWidth - panelWidth) / 2;
         panelY = (screenHeight - panelHeight) / 2;
         
-        // コンテンツエリアの設定
+        // コンテンツエリアとフッターエリアの設定
         float titleHeight = 60;
         float buttonHeight = 75;
         float padding = 20;
-        contentAreaY = panelY + padding;
-        contentAreaHeight = panelHeight - titleHeight - buttonHeight - padding * 3;
+        float footerPadding = 20;
         
-        // 戻るボタンの位置を設定（下部に配置）
+        // フッターエリアの設定（ウィンドウ下端に接地）
+        // LibGDXではY=0が下部、Y=screenHeightが上部なので、
+        // panelYが下部、panelY + panelHeightが上部
+        footerHeight = buttonHeight + footerPadding * 2;
+        footerY = panelY; // フッター下辺 = ウィンドウ下辺
+        
+        // コンテンツエリアの設定（タイトルとフッターの間）
+        // タイトルは上部（panelY + panelHeight - titleHeight付近）
+        // コンテンツエリアはタイトルの下からフッターの上まで
+        float titleBottomY = panelY + panelHeight - titleHeight - padding;
+        contentAreaY = footerY + footerHeight + padding;
+        contentAreaHeight = titleBottomY - contentAreaY;
+        
+        // 戻るボタンの位置を設定（フッターエリア内に配置、下部）
         float buttonWidth = 300;
         float buttonX = panelX + 20;
-        float buttonY = panelY + 20;
+        float buttonY = footerY + footerPadding;
         backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
     }
     
     /**
      * マウスクリックを処理します。
-     * @param screenX スクリーンX座標
-     * @param screenY スクリーンY座標
+     * @param screenX スクリーンX座標（LibGDXの座標系、左上が原点）
+     * @param screenY スクリーンY座標（LibGDXの座標系、左上が原点）
      * @return 戻るボタンがクリックされた場合true
      */
     public boolean handleClick(int screenX, int screenY) {
@@ -115,7 +143,7 @@ public class HelpUI {
         float uiY = screenHeight - screenY;
         
         // 戻るボタンのクリック判定
-        if (backButton != null && backButton.contains(screenX, uiY)) {
+        if (backButton != null && backButton.contains((float)screenX, uiY)) {
             return true; // 戻るボタンがクリックされた
         }
         
@@ -124,11 +152,93 @@ public class HelpUI {
     
     /**
      * スクロール処理を行います。
+     * @param amountY スクロール量（LibGDXでは amountY > 0 が上スクロール、amountY < 0 が下スクロール）
      */
     public void handleScroll(float amountY) {
+        // amountY > 0 のとき（上スクロール）は scrollOffset を増やす（コンテンツを上にスクロール、下のコンテンツが見える）
+        // amountY < 0 のとき（下スクロール）は scrollOffset を減らす（コンテンツを下にスクロール、上のコンテンツが見える）
         scrollOffset += amountY * SCROLL_SPEED;
         // スクロール範囲を制限
         scrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset));
+    }
+
+    /**
+     * スクロールバー（つまみ）のドラッグ入力を処理します。
+     * MenuSystem側の毎フレーム入力処理から呼び出してください。
+     */
+    public void handleScrollBarDragInput() {
+        if (maxScrollOffset <= 0) {
+            isDraggingScrollThumb = false;
+            return;
+        }
+
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY(); // UI座標（下が0）
+
+        ScrollBarMetrics m = computeScrollBarMetrics();
+
+        // 押した瞬間に、つまみを掴んだか判定
+        if (Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+            if (mouseX >= m.thumbX && mouseX <= m.thumbX + m.thumbWidth &&
+                mouseY >= m.thumbY && mouseY <= m.thumbY + m.thumbHeight) {
+                isDraggingScrollThumb = true;
+                scrollThumbGrabOffsetY = mouseY - m.thumbY;
+            } else {
+                isDraggingScrollThumb = false;
+            }
+        }
+
+        // ドラッグ中：つまみ位置からscrollOffsetへ反映
+        if (isDraggingScrollThumb) {
+            if (!Gdx.input.isButtonPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+                isDraggingScrollThumb = false;
+                return;
+            }
+
+            float trackYMin = m.scrollBarY;
+            float trackYMax = m.scrollBarY + m.scrollBarHeight - m.thumbHeight;
+            float newThumbY = mouseY - scrollThumbGrabOffsetY;
+            newThumbY = Math.max(trackYMin, Math.min(trackYMax, newThumbY));
+
+            float trackRange = Math.max(1f, (m.scrollBarHeight - m.thumbHeight));
+            // drawScrollBar() と同じマッピング：
+            // thumbY = scrollBarY + (scrollBarHeight - thumbHeight) * (1 - scrollRatio)
+            // => scrollRatio = 1 - (thumbY - scrollBarY) / trackRange
+            float scrollRatio = 1f - ((newThumbY - m.scrollBarY) / trackRange);
+            scrollOffset = scrollRatio * maxScrollOffset;
+            scrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset));
+        }
+    }
+
+    private static final class ScrollBarMetrics {
+        float scrollBarX;
+        float scrollBarY;
+        float scrollBarWidth;
+        float scrollBarHeight;
+        float thumbX;
+        float thumbY;
+        float thumbWidth;
+        float thumbHeight;
+    }
+
+    private ScrollBarMetrics computeScrollBarMetrics() {
+        ScrollBarMetrics m = new ScrollBarMetrics();
+
+        m.scrollBarWidth = 10f;
+        m.scrollBarX = panelX + panelWidth - m.scrollBarWidth - 8f;
+        m.scrollBarHeight = contentAreaHeight;
+        m.scrollBarY = contentAreaY;
+
+        float safeTotalContentHeight = Math.max(1f, totalContentHeight);
+        m.thumbHeight = Math.max(30f, contentAreaHeight * (contentAreaHeight / safeTotalContentHeight));
+
+        float scrollRatio = maxScrollOffset > 0 ? scrollOffset / maxScrollOffset : 0f;
+        m.thumbY = m.scrollBarY + (m.scrollBarHeight - m.thumbHeight) * (1.0f - scrollRatio);
+
+        m.thumbX = m.scrollBarX + 1f;
+        m.thumbWidth = m.scrollBarWidth - 2f;
+
+        return m;
     }
     
     /**
@@ -164,8 +274,12 @@ public class HelpUI {
         // その他の機能セクション
         totalHeight += lineSpacing * 4;
         
+        // 実際のコンテンツの高さを保存
+        totalContentHeight = totalHeight;
+        
         // 最大スクロールオフセットを計算
-        maxScrollOffset = Math.max(0, totalHeight - contentAreaHeight);
+        // コンテンツが表示エリアより大きい場合、その差分だけスクロール可能
+        maxScrollOffset = Math.max(0, totalHeight - contentAreaHeight + 40); // パディング分も考慮
     }
     
     /**
@@ -182,10 +296,16 @@ public class HelpUI {
         shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
         shapeRenderer.end();
         
-        // パネルの枠線を描画
+        // パネルの枠線を描画（下端を除く）
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
+        // 上端
+        shapeRenderer.line(panelX, panelY + panelHeight, panelX + panelWidth, panelY + panelHeight);
+        // 左端
+        shapeRenderer.line(panelX, panelY + panelHeight, panelX, panelY);
+        // 右端
+        shapeRenderer.line(panelX + panelWidth, panelY + panelHeight, panelX + panelWidth, panelY);
+        // 下端は描画しない（戻るボタンの下の線を消すため）
         shapeRenderer.end();
         
         // batchを開始
@@ -202,7 +322,9 @@ public class HelpUI {
         float titleY = panelY + panelHeight - 45;
         font.draw(batch, title, titleX, titleY);
         
-        // 戻るボタンを描画
+        // フッター区切り線（ボタン下の横線）は描かない
+        
+        // 戻るボタンを描画（フッターエリア内、下部に配置）
         if (backButton != null) {
             float mouseX = Gdx.input.getX();
             float mouseY = screenHeight - Gdx.input.getY();
@@ -230,6 +352,7 @@ public class HelpUI {
             } else {
                 shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
             }
+            // ボタン枠は通常どおり描画（下辺も含む）
             shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
             shapeRenderer.end();
             
@@ -243,13 +366,6 @@ public class HelpUI {
             font.draw(batch, backText, backTextX, backTextY);
         }
         
-        // スクロール可能な場合、スクロールバーを描画
-        if (maxScrollOffset > 0) {
-            batch.end();
-            drawScrollBar();
-            batch.begin();
-        }
-        
         // クリッピング領域を設定（コンテンツエリアのみ描画）
         batch.flush();
         Rectangle scissors = new Rectangle();
@@ -261,7 +377,10 @@ public class HelpUI {
         
         // コンテンツを描画
         float startX = panelX + 40;
-        float startY = contentAreaY + contentAreaHeight - 20 - scrollOffset;
+        // コンテンツは上から下に描画される（LibGDXではY座標が大きいほど上）
+        // scrollOffset = 0 のときは最上部から開始（startYは最大値）
+        // scrollOffset が増えると startY が増え、コンテンツが上に移動（下のコンテンツが見える）
+        float startY = contentAreaY + contentAreaHeight - 20 + scrollOffset;
         float currentY = startY;
         float lineSpacing = 35f;
         float sectionSpacing = 50f;
@@ -317,9 +436,11 @@ public class HelpUI {
         currentY -= lineSpacing * 0.8f;
         drawTextLine(batch, "・成熟した家畜は一定時間ごとに製品（卵、ミルク、羊毛など）を生産します", startX + 20, currentY);
         currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・製品が生産されたらLキーで収穫できます", startX + 20, currentY);
+            drawTextLine(batch, "・製品が生産されたらLキーで収穫できます", startX + 20, currentY);
         currentY -= lineSpacing;
         
+        font.getData().setScale(0.6f);
+        font.setColor(Color.WHITE);
         drawTextLine(batch, "Kキー: 家畜を殺して肉を取得", startX, currentY);
         currentY -= lineSpacing;
         drawTextLine(batch, "・家畜がいる場所でKキーを押すと家畜を殺して肉を取得できます", startX + 20, currentY);
@@ -375,7 +496,15 @@ public class HelpUI {
         batch.flush();
         ScissorStack.popScissors();
         
-        batch.end();
+        // スクロール可能な場合、スクロールバーを描画（クリッピング領域の外）
+        if (maxScrollOffset > 0) {
+            batch.end();
+            drawScrollBar();
+            batch.begin();
+            batch.end();
+        } else {
+            batch.end();
+        }
     }
     
     /**
@@ -386,31 +515,23 @@ public class HelpUI {
         
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         
-        float scrollBarWidth = 10;
-        float scrollBarX = panelX + panelWidth - scrollBarWidth - 8;
-        float scrollBarHeight = contentAreaHeight;
-        float scrollBarY = contentAreaY;
+        ScrollBarMetrics m = computeScrollBarMetrics();
         
         // スクロールバーの背景
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.9f);
-        shapeRenderer.rect(scrollBarX, scrollBarY, scrollBarWidth, scrollBarHeight);
+        shapeRenderer.rect(m.scrollBarX, m.scrollBarY, m.scrollBarWidth, m.scrollBarHeight);
         shapeRenderer.end();
         
         // スクロールバーのつまみ
-        float totalContentHeight = contentAreaHeight + maxScrollOffset;
-        float thumbHeight = Math.max(30, contentAreaHeight * (contentAreaHeight / totalContentHeight));
-        float scrollRatio = maxScrollOffset > 0 ? scrollOffset / maxScrollOffset : 0;
-        float thumbY = scrollBarY + (scrollBarHeight - thumbHeight) * scrollRatio;
-        
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.5f, 0.5f, 0.7f, 0.95f);
-        shapeRenderer.rect(scrollBarX + 1, thumbY, scrollBarWidth - 2, thumbHeight);
+        shapeRenderer.rect(m.thumbX, m.thumbY, m.thumbWidth, m.thumbHeight);
         shapeRenderer.end();
         
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0.7f, 0.7f, 0.9f, 1f);
-        shapeRenderer.rect(scrollBarX + 1, thumbY, scrollBarWidth - 2, thumbHeight);
+        shapeRenderer.rect(m.thumbX, m.thumbY, m.thumbWidth, m.thumbHeight);
         shapeRenderer.end();
     }
     

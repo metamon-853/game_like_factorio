@@ -104,6 +104,10 @@ public class MenuSystem {
      */
     public void setCurrentMenuState(MenuState state) {
         this.currentMenuState = state;
+        // ヘルプメニューが開かれたときにスクロールをリセット
+        if (state == MenuState.HELP_MENU && helpUI != null) {
+            helpUI.onOpen();
+        }
     }
     
     /**
@@ -145,6 +149,10 @@ public class MenuSystem {
             handleQuitConfirmClick();
         } else if (currentMenuState == MenuState.HELP_MENU) {
             handleHelpMenuClick();
+            // スクロールバー（つまみ）ドラッグ
+            if (helpUI != null) {
+                helpUI.handleScrollBarDragInput();
+            }
         }
     }
     
@@ -778,11 +786,15 @@ public class MenuSystem {
      * ヘルプメニューのマウスクリックを処理します。
      */
     private void handleHelpMenuClick() {
-        if (helpUI != null) {
-            float mouseX = Gdx.input.getX();
-            float mouseY = screenHeight - Gdx.input.getY();
-            if (helpUI.handleClick((int)mouseX, (int)mouseY)) {
-                currentMenuState = MenuState.MAIN_MENU;
+        // クリック時のみ処理（ホバーでは処理しない）
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            if (helpUI != null) {
+                // HelpUI.handleClick()は生のスクリーン座標を期待しているので変換しない
+                int mouseX = Gdx.input.getX();
+                int mouseY = Gdx.input.getY();
+                if (helpUI.handleClick(mouseX, mouseY)) {
+                    currentMenuState = MenuState.MAIN_MENU;
+                }
             }
         }
     }
