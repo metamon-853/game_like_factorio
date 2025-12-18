@@ -373,7 +373,8 @@ public class HelpUI {
             panelX, contentAreaY, panelWidth, contentAreaHeight
         );
         ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
-        ScissorStack.pushScissors(scissors);
+        // pushに失敗するケースがある（その場合popすると落ちる）ので成否を保持
+        boolean scissorsPushed = ScissorStack.pushScissors(scissors);
         
         // コンテンツを描画
         float startX = panelX + 40;
@@ -494,16 +495,16 @@ public class HelpUI {
         
         // クリッピングを解除
         batch.flush();
-        ScissorStack.popScissors();
-        
-        // スクロール可能な場合、スクロールバーを描画（クリッピング領域の外）
+        if (scissorsPushed) {
+            ScissorStack.popScissors();
+        }
+
+        // ここでSpriteBatchを確実に閉じる
+        batch.end();
+
+        // スクロール可能な場合、スクロールバーを描画（ShapeRendererなのでbatch外）
         if (maxScrollOffset > 0) {
-            batch.end();
             drawScrollBar();
-            batch.begin();
-            batch.end();
-        } else {
-            batch.end();
         }
     }
     
