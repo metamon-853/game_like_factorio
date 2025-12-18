@@ -10,7 +10,9 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
+import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
 
 /**
  * ヘルプ/ガイドUIを描画するクラス。
@@ -29,9 +31,14 @@ public class HelpUI {
     private float panelX;
     private float panelY;
     
+    // コンテンツエリア（タイトルとボタンの下）
+    private float contentAreaY;
+    private float contentAreaHeight;
+    
     // スクロール位置
     private float scrollOffset = 0;
-    private static final float SCROLL_SPEED = 20f;
+    private static final float SCROLL_SPEED = 30f;
+    private float maxScrollOffset = 0;
     
     // 戻るボタン
     private Button backButton;
@@ -61,6 +68,13 @@ public class HelpUI {
     }
     
     /**
+     * スクロール位置をリセットします。
+     */
+    public void resetScroll() {
+        scrollOffset = 0;
+    }
+    
+    /**
      * 画面サイズを更新します。
      */
     public void updateScreenSize(int width, int height) {
@@ -76,11 +90,17 @@ public class HelpUI {
         panelX = (screenWidth - panelWidth) / 2;
         panelY = (screenHeight - panelHeight) / 2;
         
-        // 戻るボタンの位置を設定
-        float buttonWidth = 300;
+        // コンテンツエリアの設定
+        float titleHeight = 60;
         float buttonHeight = 75;
+        float padding = 20;
+        contentAreaY = panelY + padding;
+        contentAreaHeight = panelHeight - titleHeight - buttonHeight - padding * 3;
+        
+        // 戻るボタンの位置を設定（下部に配置）
+        float buttonWidth = 300;
         float buttonX = panelX + 20;
-        float buttonY = panelY + panelHeight - buttonHeight - 20;
+        float buttonY = panelY + 20;
         backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
     }
     
@@ -107,14 +127,54 @@ public class HelpUI {
      */
     public void handleScroll(float amountY) {
         scrollOffset += amountY * SCROLL_SPEED;
-        // スクロール範囲を制限（必要に応じて調整）
-        scrollOffset = Math.max(0, scrollOffset);
+        // スクロール範囲を制限
+        scrollOffset = Math.max(0, Math.min(maxScrollOffset, scrollOffset));
+    }
+    
+    /**
+     * コンテンツの高さを計算してスクロール範囲を設定します。
+     */
+    private void calculateContentHeight(LivestockDataLoader livestockDataLoader) {
+        float lineSpacing = 35f;
+        float sectionSpacing = 50f;
+        float totalHeight = 0;
+        
+        // 操作方法セクション
+        totalHeight += lineSpacing * 4 + sectionSpacing;
+        
+        // 農業セクション
+        totalHeight += lineSpacing * 4 + sectionSpacing;
+        
+        // 家畜セクション
+        totalHeight += lineSpacing * 5 + sectionSpacing;
+        
+        // 家畜の種類セクション
+        if (livestockDataLoader != null) {
+            Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
+            totalHeight += lineSpacing; // タイトル
+            for (LivestockData livestock : allLivestock) {
+                totalHeight += lineSpacing * 0.8f; // 基本情報
+                if (livestock.description != null && !livestock.description.isEmpty()) {
+                    totalHeight += lineSpacing * 0.8f; // 説明
+                }
+            }
+            totalHeight += sectionSpacing * 0.5f;
+        }
+        
+        // その他の機能セクション
+        totalHeight += lineSpacing * 4;
+        
+        // 最大スクロールオフセットを計算
+        maxScrollOffset = Math.max(0, totalHeight - contentAreaHeight);
     }
     
     /**
      * ヘルプUIを描画します。
      */
     public void render(LivestockDataLoader livestockDataLoader) {
+        // コンテンツの高さを計算
+        calculateContentHeight(livestockDataLoader);
+        
         // パネルの背景を描画
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -183,9 +243,25 @@ public class HelpUI {
             font.draw(batch, backText, backTextX, backTextY);
         }
         
+        // スクロール可能な場合、スクロールバーを描画
+        if (maxScrollOffset > 0) {
+            batch.end();
+            drawScrollBar();
+            batch.begin();
+        }
+        
+        // クリッピング領域を設定（コンテンツエリアのみ描画）
+        batch.flush();
+        Rectangle scissors = new Rectangle();
+        Rectangle clipBounds = new Rectangle(
+            panelX, contentAreaY, panelWidth, contentAreaHeight
+        );
+        ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
+        ScissorStack.pushScissors(scissors);
+        
         // コンテンツを描画
         float startX = panelX + 40;
-        float startY = titleY - 80 - scrollOffset;
+        float startY = contentAreaY + contentAreaHeight - 20 - scrollOffset;
         float currentY = startY;
         float lineSpacing = 35f;
         float sectionSpacing = 50f;
@@ -294,7 +370,48 @@ public class HelpUI {
         
         font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
+        
+        // クリッピングを解除
+        batch.flush();
+        ScissorStack.popScissors();
+        
         batch.end();
+    }
+    
+    /**
+     * スクロールバーを描画します。
+     */
+    private void drawScrollBar() {
+        if (maxScrollOffset <= 0) return;
+        
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        
+        float scrollBarWidth = 10;
+        float scrollBarX = panelX + panelWidth - scrollBarWidth - 8;
+        float scrollBarHeight = contentAreaHeight;
+        float scrollBarY = contentAreaY;
+        
+        // スクロールバーの背景
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.9f);
+        shapeRenderer.rect(scrollBarX, scrollBarY, scrollBarWidth, scrollBarHeight);
+        shapeRenderer.end();
+        
+        // スクロールバーのつまみ
+        float totalContentHeight = contentAreaHeight + maxScrollOffset;
+        float thumbHeight = Math.max(30, contentAreaHeight * (contentAreaHeight / totalContentHeight));
+        float scrollRatio = maxScrollOffset > 0 ? scrollOffset / maxScrollOffset : 0;
+        float thumbY = scrollBarY + (scrollBarHeight - thumbHeight) * scrollRatio;
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.5f, 0.5f, 0.7f, 0.95f);
+        shapeRenderer.rect(scrollBarX + 1, thumbY, scrollBarWidth - 2, thumbHeight);
+        shapeRenderer.end();
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.7f, 0.7f, 0.9f, 1f);
+        shapeRenderer.rect(scrollBarX + 1, thumbY, scrollBarWidth - 2, thumbHeight);
+        shapeRenderer.end();
     }
     
     /**

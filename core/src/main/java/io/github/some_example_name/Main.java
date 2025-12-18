@@ -260,7 +260,16 @@ public class Main extends ApplicationAdapter {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean scrolled(float amountX, float amountY) {
-                // スクロール量に応じてズームを変更
+                // ヘルプメニューが開いている場合はHelpUIにスクロール入力を渡す
+                if (isPaused && menuSystem != null && 
+                    menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
+                    if (helpUI != null) {
+                        helpUI.handleScroll(amountY);
+                        return true;
+                    }
+                }
+                
+                // 通常時はカメラズームを変更
                 // amountY > 0 は上スクロール（縮小）、amountY < 0 は下スクロール（拡大）
                 float zoomChange = amountY * ZOOM_SPEED;
                 cameraZoom += zoomChange;
