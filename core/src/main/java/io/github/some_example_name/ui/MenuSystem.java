@@ -26,7 +26,8 @@ public class MenuSystem {
         SOUND_MENU,
         SAVE_MENU,
         LOAD_MENU,
-        QUIT_CONFIRM
+        QUIT_CONFIRM,
+        HELP_MENU
     }
     
     // コールバックインターフェース
@@ -55,6 +56,8 @@ public class MenuSystem {
     private int screenWidth;
     private int screenHeight;
     private MenuCallbacks callbacks;
+    private HelpUI helpUI;
+    private io.github.some_example_name.manager.LivestockDataLoader livestockDataLoader;
     
     // 前回のホバー状態を記録（音の重複再生を防ぐため）
     private boolean lastHoveredState = false;
@@ -113,7 +116,8 @@ public class MenuSystem {
         } else if (currentMenuState == MenuState.SOUND_MENU || 
                   currentMenuState == MenuState.SAVE_MENU || 
                   currentMenuState == MenuState.LOAD_MENU ||
-                  currentMenuState == MenuState.QUIT_CONFIRM) {
+                  currentMenuState == MenuState.QUIT_CONFIRM ||
+                  currentMenuState == MenuState.HELP_MENU) {
             currentMenuState = MenuState.MAIN_MENU;
             return false;
         } else {
@@ -138,6 +142,8 @@ public class MenuSystem {
             handleLoadMenuClick();
         } else if (currentMenuState == MenuState.QUIT_CONFIRM) {
             handleQuitConfirmClick();
+        } else if (currentMenuState == MenuState.HELP_MENU) {
+            handleHelpMenuClick();
         }
     }
     
@@ -161,6 +167,10 @@ public class MenuSystem {
             drawLoadMenu();
         } else if (currentMenuState == MenuState.QUIT_CONFIRM) {
             drawQuitConfirmDialog();
+        } else if (currentMenuState == MenuState.HELP_MENU) {
+            drawHelpMenu();
+        } else if (currentMenuState == MenuState.HELP_MENU) {
+            drawHelpMenu();
         }
     }
     
@@ -190,7 +200,10 @@ public class MenuSystem {
             float soundButtonY = centerY - buttonSpacing * 2 - 20;
             Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
-            float quitButtonY = centerY - buttonSpacing * 3 - 20;
+            float helpButtonY = centerY - buttonSpacing * 3 - 20;
+            Button helpButton = new Button(centerX - buttonWidth / 2, helpButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            float quitButtonY = centerY - buttonSpacing * 4 - 20;
             Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
             if (gridButton.contains(mouseX, mouseY)) {
@@ -201,6 +214,8 @@ public class MenuSystem {
                 currentMenuState = MenuState.LOAD_MENU;
             } else if (soundButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.SOUND_MENU;
+            } else if (helpButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.HELP_MENU;
             } else if (quitButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.QUIT_CONFIRM;
             }
@@ -254,7 +269,14 @@ public class MenuSystem {
         uiRenderer.drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Sound", soundHovered);
         
-        float quitButtonY = centerY - buttonSpacing * 3 - 20;
+        float helpButtonY = centerY - buttonSpacing * 3 - 20;
+        Button helpButton = new Button(centerX - buttonWidth / 2, helpButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean helpHovered = helpButton.contains(mouseX, mouseY);
+        isAnyButtonHovered = isAnyButtonHovered || helpHovered;
+        uiRenderer.drawButton(centerX - buttonWidth / 2, helpButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "Help / ヘルプ", helpHovered);
+        
+        float quitButtonY = centerY - buttonSpacing * 4 - 20;
         Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         boolean quitHovered = quitButton.contains(mouseX, mouseY);
         isAnyButtonHovered = isAnyButtonHovered || quitHovered;
@@ -751,5 +773,55 @@ public class MenuSystem {
         
         font.getData().setScale(0.5f);
         batch.end();
+    }
+    
+    /**
+     * ヘルプメニューのマウスクリックを処理します。
+     */
+    private void handleHelpMenuClick() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            
+            float buttonWidth = 320;
+            float buttonHeight = 65;
+            float centerX = screenWidth / 2;
+            float backButtonY = screenHeight / 2 - 250;
+            
+            Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            if (backButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.MAIN_MENU;
+            }
+        }
+    }
+    
+    /**
+     * ヘルプメニューのマウスクリックを処理します。
+     */
+    private void handleHelpMenuClick() {
+        if (helpUI != null) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            if (helpUI.handleClick((int)mouseX, (int)mouseY)) {
+                currentMenuState = MenuState.MAIN_MENU;
+            }
+        }
+    }
+    
+    /**
+     * ヘルプメニューを描画します。
+     */
+    private void drawHelpMenu() {
+        if (helpUI != null) {
+            helpUI.render(livestockDataLoader);
+        }
+    }
+    
+    /**
+     * LivestockDataLoaderを設定します（HelpUIで使用）。
+     */
+    public void setLivestockDataLoader(io.github.some_example_name.manager.LivestockDataLoader loader) {
+        this.livestockDataLoader = loader;
     }
 }

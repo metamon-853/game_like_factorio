@@ -151,6 +151,7 @@ public class Main extends ApplicationAdapter {
         uiRenderer = new UIRenderer(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         inventoryUI = new InventoryUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         encyclopediaUI = new ItemEncyclopediaUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        HelpUI helpUI = new HelpUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         saveGameManager = new SaveGameManager();
         soundSettings = new SoundSettings();
         soundManager = new SoundManager(soundSettings); // SoundManagerを先に作成
@@ -186,6 +187,7 @@ public class Main extends ApplicationAdapter {
         // UIコンポーネントにSoundManagerを設定
         inventoryUI.setSoundManager(soundManager);
         encyclopediaUI.setSoundManager(soundManager);
+        helpUI.setSoundManager(soundManager);
         
         // InventoryUIにクラフトシステムとItemDataLoaderを設定
         inventoryUI.setCraftingSystem(craftingSystem);
@@ -240,7 +242,10 @@ public class Main extends ApplicationAdapter {
         };
         
         menuSystem = new MenuSystem(uiRenderer, saveGameManager, soundSettings, soundManager, textInputHandler,
-                shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight, menuCallbacks);
+                shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight, menuCallbacks, helpUI);
+        
+        // MenuSystemにLivestockDataLoaderを設定
+        menuSystem.setLivestockDataLoader(livestockManager.getLivestockDataLoader());
         
         // カメラをプレイヤーの初期位置に設定
         float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
@@ -299,6 +304,19 @@ public class Main extends ApplicationAdapter {
             }
         }
         
+        // Hキーでヘルプを開閉
+        if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
+            if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
+                // ヘルプが開いている場合は閉じる
+                menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+                isPaused = false;
+            } else {
+                // ヘルプを開く
+                isPaused = true;
+                menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
+            }
+        }
+        
         // Eキーでインベントリを開閉（ポーズ中でない場合のみ）
         if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.E)) {
             inventoryOpen = !inventoryOpen;
@@ -309,6 +327,12 @@ public class Main extends ApplicationAdapter {
         if ((inventoryOpen || showEncyclopedia) && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             inventoryOpen = false;
             showEncyclopedia = false;
+        }
+        
+        // ヘルプが開いているときはESCで閉じる
+        if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+            isPaused = false;
         }
         
         // インベントリが開いているときのマウスクリック処理
