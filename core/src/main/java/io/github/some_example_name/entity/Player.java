@@ -31,7 +31,7 @@ public class Player {
     // 移動状態
     private boolean isMoving;
     private float moveProgress; // 0.0 から 1.0 まで
-    private float moveSpeed = 0.15f; // 移動速度（1プレイヤー升移動するのにかかる時間）
+    private float moveSpeed = 0.03f; // 移動速度（1プレイヤー升移動するのにかかる時間）- 5倍速
     
     // 移動方向
     private int targetPlayerTileX;

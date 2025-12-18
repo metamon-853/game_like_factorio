@@ -1,9 +1,11 @@
 package io.github.some_example_name.manager;
 
+import io.github.some_example_name.entity.LivestockData;
 import io.github.some_example_name.entity.LivestockTile;
 import io.github.some_example_name.game.Inventory;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.utils.Array;
 import java.util.HashMap;
 import java.util.Map;
 
@@ -17,15 +19,16 @@ public class LivestockManager {
     // インベントリへの参照
     private Inventory inventory;
     
-    // 餌のアイテムID（仮の値、実際のアイテムIDに合わせて調整可能）
-    private static final int FEED_ITEM_ID = 3; // 仮のID
+    // 家畜データローダー
+    private LivestockDataLoader livestockDataLoader;
     
-    // 畜産製品のアイテムID（収穫時に獲得）
-    private static final int PRODUCT_ITEM_ID = 4; // 仮のID（肉やミルクなど）
+    // 餌のアイテムID（作物を使用）
+    private static final int FEED_ITEM_ID = 6; // 作物
     
     public LivestockManager() {
         this.livestockTiles = new HashMap<>();
         this.inventory = null;
+        this.livestockDataLoader = new LivestockDataLoader();
     }
     
     /**
@@ -49,9 +52,10 @@ public class LivestockManager {
      * 指定されたタイル位置に動物を配置します。
      * @param tileX タイルX座標（マップ升単位）
      * @param tileY タイルY座標（マップ升単位）
+     * @param livestockData 家畜のデータ（nullの場合はランダム）
      * @return 動物を配置できた場合true
      */
-    public boolean placeAnimal(int tileX, int tileY) {
+    public boolean placeAnimal(int tileX, int tileY, LivestockData livestockData) {
         // インベントリに餌があるかチェック
         if (inventory == null || inventory.getItemCount(FEED_ITEM_ID) <= 0) {
             return false; // 餌がない
@@ -67,13 +71,34 @@ public class LivestockManager {
         }
         
         // 動物を配置
-        if (livestockTile.placeAnimal()) {
+        LivestockData dataToPlace = livestockData;
+        if (dataToPlace == null) {
+            // ランダムに種類を選択
+            Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
+            if (allLivestock.size > 0) {
+                dataToPlace = allLivestock.random();
+            } else {
+                return false; // 家畜データが読み込まれていない
+            }
+        }
+        
+        if (livestockTile.placeAnimal(dataToPlace)) {
             // インベントリから餌を1個消費
             inventory.removeItem(FEED_ITEM_ID, 1);
             return true;
         }
         
         return false;
+    }
+    
+    /**
+     * 指定されたタイル位置に動物を配置します（ランダムな種類）。
+     * @param tileX タイルX座標（マップ升単位）
+     * @param tileY タイルY座標（マップ升単位）
+     * @return 動物を配置できた場合true
+     */
+    public boolean placeAnimal(int tileX, int tileY) {
+        return placeAnimal(tileX, tileY, null);
     }
     
     /**
@@ -90,11 +115,44 @@ public class LivestockManager {
             return false;
         }
         
+        // 家畜のデータを取得
+        LivestockData data = livestockTile.getLivestockData();
+        if (data == null || !data.hasProduct()) {
+            return false;
+        }
+        
         // 収穫
         if (livestockTile.harvestProduct()) {
-            // インベントリに製品を追加
+            // インベントリに製品を追加（種類ごとの製品ID）
             if (inventory != null) {
-                inventory.addItem(PRODUCT_ITEM_ID, 1);
+                inventory.addItem(data.productItemId, 1);
+            }
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 指定されたタイル位置の家畜を殺して肉を取得します。
+     * @param tileX タイルX座標（マップ升単位）
+     * @param tileY タイルY座標（マップ升単位）
+     * @return 殺すことができた場合true
+     */
+    public boolean killAnimal(int tileX, int tileY) {
+        String key = tileX + "," + tileY;
+        LivestockTile livestockTile = livestockTiles.get(key);
+        
+        if (livestockTile == null || !livestockTile.hasAnimal()) {
+            return false;
+        }
+        
+        // 家畜を殺して肉のアイテムIDを取得
+        int meatId = livestockTile.killAnimal();
+        if (meatId != -1) {
+            // インベントリに肉を追加
+            if (inventory != null) {
+                inventory.addItem(meatId, 1);
             }
             return true;
         }
@@ -140,5 +198,12 @@ public class LivestockManager {
      */
     public void setLivestockTiles(Map<String, LivestockTile> livestockTiles) {
         this.livestockTiles = livestockTiles != null ? livestockTiles : new HashMap<>();
+    }
+    
+    /**
+     * 家畜データローダーを取得します。
+     */
+    public LivestockDataLoader getLivestockDataLoader() {
+        return livestockDataLoader;
     }
 }

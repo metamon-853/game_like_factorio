@@ -48,6 +48,12 @@ public class InputHandler {
             return; // 畜産アクション時は移動しない
         }
         
+        // Kキーで家畜を殺して肉を取得する（移動中でも可能）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
+            handleKillLivestockAction();
+            return; // 家畜を殺すアクション時は移動しない
+        }
+        
         // 移動中は新しい入力を無視
         if (player.isMoving()) {
             return;
@@ -152,6 +158,26 @@ public class InputHandler {
             Gdx.app.log("Livestock", "動物を配置しました！");
         } else {
             Gdx.app.log("Livestock", "餌がありません、または既に動物が配置されています。");
+        }
+    }
+    
+    /**
+     * 家畜を殺すアクションを処理します。
+     */
+    private void handleKillLivestockAction() {
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int tileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int tileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        
+        // 家畜を殺して肉を取得
+        if (livestockManager.killAnimal(tileX, tileY)) {
+            Gdx.app.log("Livestock", "家畜を殺して肉を取得しました！");
+        } else {
+            Gdx.app.log("Livestock", "家畜がいません。");
         }
     }
     
