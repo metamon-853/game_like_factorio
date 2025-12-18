@@ -309,8 +309,8 @@ public class HelpUI {
         shapeRenderer.end();
         
         // batchを開始
-        batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
         
         font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
@@ -356,6 +356,7 @@ public class HelpUI {
             shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
             shapeRenderer.end();
             
+            batch.setProjectionMatrix(uiCamera.combined);
             batch.begin();
             font.getData().setScale(0.675f);
             font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
@@ -437,7 +438,7 @@ public class HelpUI {
         currentY -= lineSpacing * 0.8f;
         drawTextLine(batch, "・成熟した家畜は一定時間ごとに製品（卵、ミルク、羊毛など）を生産します", startX + 20, currentY);
         currentY -= lineSpacing * 0.8f;
-            drawTextLine(batch, "・製品が生産されたらLキーで収穫できます", startX + 20, currentY);
+        drawTextLine(batch, "・製品が生産されたらLキーで収穫できます", startX + 20, currentY);
         currentY -= lineSpacing;
         
         font.getData().setScale(0.6f);
