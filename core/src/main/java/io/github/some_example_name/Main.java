@@ -22,6 +22,7 @@ import io.github.some_example_name.ui.UIRenderer;
 import io.github.some_example_name.ui.InventoryUI;
 import io.github.some_example_name.ui.ItemEncyclopediaUI;
 import io.github.some_example_name.ui.MenuSystem;
+import io.github.some_example_name.ui.HelpUI;
 import io.github.some_example_name.ui.FontManager;
 import io.github.some_example_name.system.SaveGameManager;
 import io.github.some_example_name.system.SoundSettings;
@@ -64,6 +65,7 @@ public class Main extends ApplicationAdapter {
     private CraftingSystem craftingSystem;
     private InventoryUI inventoryUI;
     private ItemEncyclopediaUI encyclopediaUI;
+    private HelpUI helpUI;
     private boolean inventoryOpen = false;
     private boolean showEncyclopedia = false; // アイテム図鑑を表示するかどうか
     
@@ -151,7 +153,7 @@ public class Main extends ApplicationAdapter {
         uiRenderer = new UIRenderer(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         inventoryUI = new InventoryUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         encyclopediaUI = new ItemEncyclopediaUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
-        HelpUI helpUI = new HelpUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        helpUI = new HelpUI(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
         saveGameManager = new SaveGameManager();
         soundSettings = new SoundSettings();
         soundManager = new SoundManager(soundSettings); // SoundManagerを先に作成

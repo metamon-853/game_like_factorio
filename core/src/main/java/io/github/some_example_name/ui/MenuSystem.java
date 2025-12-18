@@ -68,7 +68,7 @@ public class MenuSystem {
                      TextInputHandler textInputHandler,
                      ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
                      OrthographicCamera uiCamera, int screenWidth, int screenHeight,
-                     MenuCallbacks callbacks) {
+                     MenuCallbacks callbacks, HelpUI helpUI) {
         this.uiRenderer = uiRenderer;
         this.saveGameManager = saveGameManager;
         this.soundSettings = soundSettings;
@@ -81,6 +81,7 @@ public class MenuSystem {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         this.callbacks = callbacks;
+        this.helpUI = helpUI;
     }
     
     /**
@@ -167,8 +168,6 @@ public class MenuSystem {
             drawLoadMenu();
         } else if (currentMenuState == MenuState.QUIT_CONFIRM) {
             drawQuitConfirmDialog();
-        } else if (currentMenuState == MenuState.HELP_MENU) {
-            drawHelpMenu();
         } else if (currentMenuState == MenuState.HELP_MENU) {
             drawHelpMenu();
         }
@@ -773,27 +772,6 @@ public class MenuSystem {
         
         font.getData().setScale(0.5f);
         batch.end();
-    }
-    
-    /**
-     * ヘルプメニューのマウスクリックを処理します。
-     */
-    private void handleHelpMenuClick() {
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            float mouseX = Gdx.input.getX();
-            float mouseY = screenHeight - Gdx.input.getY();
-            
-            float buttonWidth = 320;
-            float buttonHeight = 65;
-            float centerX = screenWidth / 2;
-            float backButtonY = screenHeight / 2 - 250;
-            
-            Button backButton = new Button(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-            
-            if (backButton.contains(mouseX, mouseY)) {
-                currentMenuState = MenuState.MAIN_MENU;
-            }
-        }
     }
     
     /**
