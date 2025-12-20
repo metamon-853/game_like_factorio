@@ -141,7 +141,7 @@ public class UIRenderer {
         
         batch.end();
         
-        // ボタンを描画
+        // ボタンを描画（drawButton内でbatchの開始/終了を管理）
         drawButton(buttonX, buttonY, buttonWidth, buttonHeight, "ゲームガイド", isHovered);
     }
     
@@ -155,7 +155,13 @@ public class UIRenderer {
      * @param isHovered ホバー状態
      */
     public void drawButton(float x, float y, float width, float height, String text, boolean isHovered) {
-        batch.end();
+        // batchが既に開始されているかチェック
+        boolean batchWasActive = batch.isDrawing();
+        
+        // batchが開始されている場合は終了してからShapeRendererを使用
+        if (batchWasActive) {
+            batch.end();
+        }
         
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -178,6 +184,7 @@ public class UIRenderer {
         }
         shapeRenderer.end();
         
+        // batchを開始（元々開始されていた場合は再度開始、されていなかった場合は新規開始）
         batch.begin();
         font.getData().setScale(0.45f);
         font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
@@ -185,6 +192,12 @@ public class UIRenderer {
         float textX = x + (width - layout.width) / 2;
         float textY = y + height / 2 + layout.height / 2;
         font.draw(batch, text, textX, textY);
+        
+        // batchが元々開始されていなかった場合は終了する
+        // （呼び出し元で開始されていた場合は、呼び出し元で終了を管理）
+        if (!batchWasActive) {
+            batch.end();
+        }
     }
     
     /**
