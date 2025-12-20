@@ -465,11 +465,13 @@ public class Main extends ApplicationAdapter {
             shapeRenderer.end();
         }
         
+        // 地形を描画（最下層）- SpriteBatchを使用
+        batch.begin();
+        terrainManager.render(batch, camera);
+        batch.end();
+        
         // その他の描画（Filledモード）
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        
-        // 地形を描画（最下層）
-        terrainManager.render(shapeRenderer, camera);
         
         // 農地を描画（アイテムより下に描画）
         farmManager.render(shapeRenderer);
@@ -605,6 +607,9 @@ public class Main extends ApplicationAdapter {
         }
         if (soundManager != null) {
             soundManager.dispose();
+        }
+        if (terrainManager != null) {
+            terrainManager.dispose();
         }
     }
 }

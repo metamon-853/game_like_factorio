@@ -26,6 +26,7 @@ public class HelpUI {
         CONTROLS,       // 操作方法
         FARMING,        // 農業
         LIVESTOCK,      // 家畜
+        TERRAIN,        // 地形
         OTHER_FEATURES  // その他の機能
     }
     
@@ -72,6 +73,7 @@ public class HelpUI {
     private Button controlsButton;
     private Button farmingButton;
     private Button livestockButton;
+    private Button terrainButton;
     private Button otherFeaturesButton;
     
     // サウンドマネージャー
@@ -82,6 +84,7 @@ public class HelpUI {
     private boolean lastControlsButtonHovered = false;
     private boolean lastFarmingButtonHovered = false;
     private boolean lastLivestockButtonHovered = false;
+    private boolean lastTerrainButtonHovered = false;
     private boolean lastOtherFeaturesButtonHovered = false;
     
     public HelpUI(ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
@@ -184,7 +187,8 @@ public class HelpUI {
         controlsButton = new Button(menuStartX, menuStartY, menuButtonWidth, menuButtonHeight);
         farmingButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing), menuButtonWidth, menuButtonHeight);
         livestockButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 2, menuButtonWidth, menuButtonHeight);
-        otherFeaturesButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 3, menuButtonWidth, menuButtonHeight);
+        terrainButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 3, menuButtonWidth, menuButtonHeight);
+        otherFeaturesButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 4, menuButtonWidth, menuButtonHeight);
     }
     
     /**
@@ -211,6 +215,11 @@ public class HelpUI {
             }
             if (livestockButton != null && livestockButton.contains((float)screenX, uiY)) {
                 currentState = GuideState.LIVESTOCK;
+                resetScroll();
+                return false;
+            }
+            if (terrainButton != null && terrainButton.contains((float)screenX, uiY)) {
+                currentState = GuideState.TERRAIN;
                 resetScroll();
                 return false;
             }
@@ -356,6 +365,10 @@ public class HelpUI {
                     }
                 }
                 break;
+            case TERRAIN:
+                // 地形: タイトル + 6種類の地形説明（各2行）
+                totalHeight = lineSpacing * (1 + 6 * 2);
+                break;
             case OTHER_FEATURES:
                 // その他の機能: タイトル + 4行
                 totalHeight = lineSpacing * 5;
@@ -460,6 +473,16 @@ public class HelpUI {
             drawButton(livestockButton, "家畜", isHovered);
         }
         
+        // 地形ボタン
+        if (terrainButton != null) {
+            boolean isHovered = terrainButton.contains(mouseX, mouseY);
+            if (isHovered && !lastTerrainButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastTerrainButtonHovered = isHovered;
+            drawButton(terrainButton, "地形", isHovered);
+        }
+        
         // その他の機能ボタン
         if (otherFeaturesButton != null) {
             boolean isHovered = otherFeaturesButton.contains(mouseX, mouseY);
@@ -531,6 +554,9 @@ public class HelpUI {
                 break;
             case LIVESTOCK:
                 renderLivestockGuide(batch, livestockDataLoader, startX, currentY, lineSpacing);
+                break;
+            case TERRAIN:
+                renderTerrainGuide(batch, startX, currentY, lineSpacing);
                 break;
             case OTHER_FEATURES:
                 renderOtherFeaturesGuide(batch, startX, currentY, lineSpacing);
@@ -695,6 +721,66 @@ public class HelpUI {
                 }
             }
         }
+    }
+    
+    /**
+     * 地形ガイドを描画します。
+     */
+    private void renderTerrainGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
+        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
+        font.getData().setScale(0.75f);
+        font.draw(batch, "【地形の種類】", startX, currentY);
+        currentY -= lineSpacing;
+        
+        font.getData().setScale(0.6f);
+        font.setColor(Color.WHITE);
+        
+        // 草
+        font.setColor(new Color(0.3f, 0.6f, 0.2f, 1f));
+        drawTextLine(batch, "・草（GRASS）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  緑色の草原。基本的な地形で、農業に適しています。", startX + 30, currentY);
+        currentY -= lineSpacing;
+        
+        // 土
+        font.setColor(new Color(0.5f, 0.4f, 0.3f, 1f));
+        drawTextLine(batch, "・土（DIRT）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  茶色の土壌。農業に最適な地形です。", startX + 30, currentY);
+        currentY -= lineSpacing;
+        
+        // 砂
+        font.setColor(new Color(0.9f, 0.85f, 0.7f, 1f));
+        drawTextLine(batch, "・砂（SAND）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  砂色の砂浜。水の近くに生成されます。", startX + 30, currentY);
+        currentY -= lineSpacing;
+        
+        // 水
+        font.setColor(new Color(0.2f, 0.4f, 0.7f, 1f));
+        drawTextLine(batch, "・水（WATER）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  青色の水域。低地に生成され、通過できません。", startX + 30, currentY);
+        currentY -= lineSpacing;
+        
+        // 岩
+        font.setColor(new Color(0.5f, 0.5f, 0.5f, 1f));
+        drawTextLine(batch, "・岩（STONE）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  灰色の岩場。高地に生成されます。", startX + 30, currentY);
+        currentY -= lineSpacing;
+        
+        // 森
+        font.setColor(new Color(0.2f, 0.5f, 0.15f, 1f));
+        drawTextLine(batch, "・森（FOREST）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  濃い緑色の森林。高湿度の地域に生成されます。", startX + 30, currentY);
     }
     
     /**

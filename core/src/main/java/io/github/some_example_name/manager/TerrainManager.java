@@ -4,7 +4,8 @@ import io.github.some_example_name.entity.Player;
 import io.github.some_example_name.entity.TerrainTile;
 
 import com.badlogic.gdx.graphics.OrthographicCamera;
-import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.graphics.Texture;
+import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -20,9 +21,13 @@ public class TerrainManager {
     // 生成済みのチャンクを記録（無限マップ用）
     private java.util.Set<String> generatedChunks;
     
+    // テクスチャマネージャー
+    private TerrainTextureManager textureManager;
+    
     public TerrainManager() {
         this.terrainTiles = new HashMap<>();
         this.generatedChunks = new java.util.HashSet<>();
+        this.textureManager = new TerrainTextureManager();
     }
     
     /**
@@ -75,10 +80,6 @@ public class TerrainManager {
      * @param chunkSize チャンクサイズ（タイル単位）
      */
     private void generateChunkTerrain(int chunkX, int chunkY, int chunkSize) {
-        // チャンクごとにシードを設定（同じチャンクは常に同じ地形を生成）
-        long seed = (long)chunkX * 73856093L ^ (long)chunkY * 19349663L;
-        Random chunkRandom = new Random(seed);
-        
         int startTileX = chunkX * chunkSize;
         int startTileY = chunkY * chunkSize;
         
@@ -221,11 +222,11 @@ public class TerrainManager {
     }
     
     /**
-     * すべての地形を描画します。
-     * @param shapeRenderer ShapeRendererインスタンス
+     * すべての地形を描画します（SpriteBatchを使用）。
+     * @param batch SpriteBatchインスタンス
      * @param camera カメラ（視野範囲内の地形のみ描画）
      */
-    public void render(ShapeRenderer shapeRenderer, OrthographicCamera camera) {
+    public void render(SpriteBatch batch, OrthographicCamera camera) {
         // カメラの視野範囲を計算
         float actualViewportWidth = camera.viewportWidth * camera.zoom;
         float actualViewportHeight = camera.viewportHeight * camera.zoom;
@@ -247,9 +248,23 @@ public class TerrainManager {
                 String tileKey = x + "," + y;
                 TerrainTile tile = terrainTiles.get(tileKey);
                 if (tile != null) {
-                    tile.render(shapeRenderer);
+                    float pixelX = tile.getTileX() * Player.TILE_SIZE;
+                    float pixelY = tile.getTileY() * Player.TILE_SIZE;
+                    Texture texture = textureManager.getTexture(tile.getTerrainType());
+                    if (texture != null) {
+                        batch.draw(texture, pixelX, pixelY, Player.TILE_SIZE, Player.TILE_SIZE);
+                    }
                 }
             }
+        }
+    }
+    
+    /**
+     * リソースを解放します。
+     */
+    public void dispose() {
+        if (textureManager != null) {
+            textureManager.dispose();
         }
     }
     
