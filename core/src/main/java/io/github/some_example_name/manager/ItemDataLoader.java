@@ -28,9 +28,9 @@ public class ItemDataLoader {
      * CSVファイルからアイテムデータを読み込みます。
      */
     private void loadItemData() {
-        FileHandle file = Gdx.files.internal("items/items.csv");
+        FileHandle file = Gdx.files.internal("items/entity.csv");
         if (!file.exists()) {
-            Gdx.app.error("ItemDataLoader", "items.csv not found at: items/items.csv");
+            Gdx.app.error("ItemDataLoader", "entity.csv not found at: items/entity.csv");
             return;
         }
         
@@ -41,7 +41,7 @@ public class ItemDataLoader {
             String[] lines = content.split("\n");
             
             if (lines.length < 2) {
-                Gdx.app.error("ItemDataLoader", "items.csv has no data rows");
+                Gdx.app.error("ItemDataLoader", "entity.csv has no data rows");
                 return;
             }
             
@@ -54,8 +54,14 @@ public class ItemDataLoader {
                 
                 // CSVのパース（引用符を考慮したカンマ区切り）
                 List<String> parts = parseCSVLine(line);
-                if (parts.size() < 3) {
+                if (parts.size() < 4) {
                     Gdx.app.log("ItemDataLoader", "Skipping invalid line: " + line);
+                    continue;
+                }
+                
+                // カテゴリが"動物"の場合はスキップ（家畜データはLivestockDataLoaderで処理）
+                String category = parts.get(1).trim();
+                if ("動物".equals(category)) {
                     continue;
                 }
                 
@@ -66,12 +72,13 @@ public class ItemDataLoader {
                     Gdx.app.log("ItemDataLoader", "Invalid item ID: " + parts.get(0));
                     continue;
                 }
-                itemData.name = parts.get(1).trim();
-                itemData.description = parts.get(2).trim();
+                itemData.category = category;
+                itemData.name = parts.get(2).trim();
+                itemData.description = parts.get(3).trim();
                 
-                // 素材情報を読み込む（4番目のカラム、存在する場合）
-                if (parts.size() >= 4 && !parts.get(3).trim().isEmpty()) {
-                    String materialsStr = parts.get(3).trim();
+                // 素材情報を読み込む（5番目のカラム、存在する場合）
+                if (parts.size() >= 5 && !parts.get(4).trim().isEmpty()) {
+                    String materialsStr = parts.get(4).trim();
                     // 引用符を除去
                     if (materialsStr.startsWith("\"") && materialsStr.endsWith("\"")) {
                         materialsStr = materialsStr.substring(1, materialsStr.length() - 1);
@@ -86,7 +93,7 @@ public class ItemDataLoader {
                 itemDataList.add(itemData);
             }
         } catch (Exception e) {
-            Gdx.app.error("ItemDataLoader", "Error loading items.csv: " + e.getMessage());
+            Gdx.app.error("ItemDataLoader", "Error loading entity.csv: " + e.getMessage());
             e.printStackTrace();
         }
         

@@ -28,9 +28,9 @@ public class LivestockDataLoader {
      * CSVファイルから家畜データを読み込みます。
      */
     private void loadLivestockData() {
-        FileHandle file = Gdx.files.internal("livestock/livestock.csv");
+        FileHandle file = Gdx.files.internal("items/entity.csv");
         if (!file.exists()) {
-            Gdx.app.error("LivestockDataLoader", "livestock.csv not found at: livestock/livestock.csv");
+            Gdx.app.error("LivestockDataLoader", "entity.csv not found at: items/entity.csv");
             return;
         }
         
@@ -41,7 +41,7 @@ public class LivestockDataLoader {
             String[] lines = content.split("\n");
             
             if (lines.length < 2) {
-                Gdx.app.error("LivestockDataLoader", "livestock.csv has no data rows");
+                Gdx.app.error("LivestockDataLoader", "entity.csv has no data rows");
                 return;
             }
             
@@ -54,31 +54,28 @@ public class LivestockDataLoader {
                 
                 // CSVのパース（引用符を考慮したカンマ区切り）
                 List<String> parts = parseCSVLine(line);
-                if (parts.size() < 9) {
-                    Gdx.app.log("LivestockDataLoader", "Skipping invalid line (need at least 9 columns): " + line);
+                if (parts.size() < 5) {
+                    Gdx.app.log("LivestockDataLoader", "Skipping invalid line (need at least 5 columns): " + line);
+                    continue;
+                }
+                
+                // カテゴリが"動物"の場合のみ処理
+                String category = parts.get(1).trim();
+                if (!"動物".equals(category)) {
                     continue;
                 }
                 
                 LivestockData livestockData = new LivestockData();
                 try {
                     livestockData.id = Integer.parseInt(parts.get(0).trim());
-                    livestockData.name = parts.get(1).trim();
-                    livestockData.description = parts.get(2).trim();
-                    livestockData.meatItemId = Integer.parseInt(parts.get(3).trim());
+                    livestockData.name = parts.get(2).trim();
+                    livestockData.description = parts.get(3).trim();
                     
-                    String productItemIdStr = parts.get(4).trim();
-                    if (productItemIdStr.equals("-1") || productItemIdStr.isEmpty()) {
-                        livestockData.productItemId = -1;
-                    } else {
-                        livestockData.productItemId = Integer.parseInt(productItemIdStr);
-                    }
-                    
-                    livestockData.productInterval = Float.parseFloat(parts.get(5).trim());
-                    
-                    float r = Float.parseFloat(parts.get(6).trim());
-                    float g = Float.parseFloat(parts.get(7).trim());
-                    float b = Float.parseFloat(parts.get(8).trim());
-                    livestockData.setColor(r, g, b);
+                    // 削除された属性はデフォルト値を使用
+                    livestockData.meatItemId = -1;
+                    livestockData.productItemId = -1;
+                    livestockData.productInterval = 0.0f;
+                    livestockData.setColor(1.0f, 1.0f, 1.0f);
                     
                 } catch (NumberFormatException e) {
                     Gdx.app.log("LivestockDataLoader", "Invalid number format in line: " + line + " - " + e.getMessage());
@@ -89,7 +86,7 @@ public class LivestockDataLoader {
                 livestockDataList.add(livestockData);
             }
         } catch (Exception e) {
-            Gdx.app.error("LivestockDataLoader", "Error loading livestock.csv: " + e.getMessage());
+            Gdx.app.error("LivestockDataLoader", "Error loading entity.csv: " + e.getMessage());
             e.printStackTrace();
         }
         
