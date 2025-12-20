@@ -207,10 +207,7 @@ public class MenuSystem {
             float soundButtonY = centerY - buttonSpacing * 2 - 20;
             Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
-            float helpButtonY = centerY - buttonSpacing * 3 - 20;
-            Button helpButton = new Button(centerX - buttonWidth / 2, helpButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-            
-            float quitButtonY = centerY - buttonSpacing * 4 - 20;
+            float quitButtonY = centerY - buttonSpacing * 3 - 20;
             Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
             if (gridButton.contains(mouseX, mouseY)) {
@@ -221,8 +218,6 @@ public class MenuSystem {
                 currentMenuState = MenuState.LOAD_MENU;
             } else if (soundButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.SOUND_MENU;
-            } else if (helpButton.contains(mouseX, mouseY)) {
-                currentMenuState = MenuState.HELP_MENU;
             } else if (quitButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.QUIT_CONFIRM;
             }
@@ -276,14 +271,7 @@ public class MenuSystem {
         uiRenderer.drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Sound", soundHovered);
         
-        float helpButtonY = centerY - buttonSpacing * 3 - 20;
-        Button helpButton = new Button(centerX - buttonWidth / 2, helpButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        boolean helpHovered = helpButton.contains(mouseX, mouseY);
-        isAnyButtonHovered = isAnyButtonHovered || helpHovered;
-        uiRenderer.drawButton(centerX - buttonWidth / 2, helpButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Help / ヘルプ", helpHovered);
-        
-        float quitButtonY = centerY - buttonSpacing * 4 - 20;
+        float quitButtonY = centerY - buttonSpacing * 3 - 20;
         Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         boolean quitHovered = quitButton.contains(mouseX, mouseY);
         isAnyButtonHovered = isAnyButtonHovered || quitHovered;
@@ -793,6 +781,8 @@ public class MenuSystem {
                 int mouseX = Gdx.input.getX();
                 int mouseY = Gdx.input.getY();
                 if (helpUI.handleClick(mouseX, mouseY)) {
+                    // 戻るボタンがクリックされた場合、ゲームガイドを閉じてゲーム画面に戻る
+                    callbacks.setPaused(false);
                     currentMenuState = MenuState.MAIN_MENU;
                 }
             }

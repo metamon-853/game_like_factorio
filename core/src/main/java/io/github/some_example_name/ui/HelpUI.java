@@ -45,6 +45,10 @@ public class HelpUI {
     private float panelX;
     private float panelY;
     
+    // ヘッダーエリア（タイトル用）
+    private float headerY;
+    private float headerHeight;
+    
     // コンテンツエリア（タイトルとフッターの間）
     private float contentAreaY;
     private float contentAreaHeight;
@@ -144,11 +148,14 @@ public class HelpUI {
         panelX = (screenWidth - panelWidth) / 2;
         panelY = (screenHeight - panelHeight) / 2;
         
-        // コンテンツエリアとフッターエリアの設定
-        float titleHeight = 60;
+        // エリアの設定
+        float bodyPadding = 30;
         float buttonHeight = 75;
-        float padding = 20;
         float footerPadding = 20;
+        
+        // ヘッダーエリアの設定（上部）
+        headerHeight = 80;
+        headerY = panelY + panelHeight - headerHeight;
         
         // フッターエリアの設定（ウィンドウ下端に接地）
         // LibGDXではY=0が下部、Y=screenHeightが上部なので、
@@ -156,12 +163,9 @@ public class HelpUI {
         footerHeight = buttonHeight + footerPadding * 2;
         footerY = panelY; // フッター下辺 = ウィンドウ下辺
         
-        // コンテンツエリアの設定（タイトルとフッターの間）
-        // タイトルは上部（panelY + panelHeight - titleHeight付近）
-        // コンテンツエリアはタイトルの下からフッターの上まで
-        float titleBottomY = panelY + panelHeight - titleHeight - padding;
-        contentAreaY = footerY + footerHeight + padding;
-        contentAreaHeight = titleBottomY - contentAreaY;
+        // コンテンツエリアの設定（ガイド表示用、ヘッダーとフッターの間）
+        contentAreaY = footerY + footerHeight + bodyPadding;
+        contentAreaHeight = headerY - contentAreaY - bodyPadding;
         
         // 戻るボタンの位置を設定（フッターエリア内に配置、下部）
         float buttonWidth = 300;
@@ -169,12 +173,13 @@ public class HelpUI {
         float buttonY = footerY + footerPadding;
         backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
         
-        // メニューボタンの位置を設定
+        // メニューボタンの位置を設定（ボディエリア内に配置）
         float menuButtonWidth = 500;
         float menuButtonHeight = 80;
         float menuButtonSpacing = 20;
         float menuStartX = panelX + (panelWidth - menuButtonWidth) / 2;
-        float menuStartY = panelY + panelHeight - 150;
+        // ボタンをヘッダーの下から配置（上から下へ）
+        float menuStartY = headerY - bodyPadding - menuButtonHeight;
         
         controlsButton = new Button(menuStartX, menuStartY, menuButtonWidth, menuButtonHeight);
         farmingButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing), menuButtonWidth, menuButtonHeight);
@@ -213,6 +218,10 @@ public class HelpUI {
                 currentState = GuideState.OTHER_FEATURES;
                 resetScroll();
                 return false;
+            }
+            // メニュー画面での戻るボタンのクリック判定（ゲームガイドを閉じる）
+            if (backButton != null && backButton.contains((float)screenX, uiY)) {
+                return true; // ゲームガイドを閉じる
             }
         } else {
             // 各ガイド画面での戻るボタンのクリック判定
@@ -375,26 +384,33 @@ public class HelpUI {
         shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
         shapeRenderer.end();
         
+        // ヘッダーエリアの背景を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.15f, 0.15f, 0.2f, 0.95f);
+        shapeRenderer.rect(panelX, headerY, panelWidth, headerHeight);
+        shapeRenderer.end();
+        
         // パネルの枠線を描画
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
         shapeRenderer.line(panelX, panelY + panelHeight, panelX + panelWidth, panelY + panelHeight);
         shapeRenderer.line(panelX, panelY + panelHeight, panelX, panelY);
         shapeRenderer.line(panelX + panelWidth, panelY + panelHeight, panelX + panelWidth, panelY);
+        // ヘッダーとボディの区切り線
+        shapeRenderer.line(panelX, headerY, panelX + panelWidth, headerY);
         shapeRenderer.end();
         
         // batchを開始
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
-        font.getData().setScale(0.825f);
+        // ヘッダーにタイトルを描画
+        font.getData().setScale(1.0f);
         font.setColor(Color.WHITE);
-        
-        // タイトルを描画
         String title = "ゲームガイド";
         GlyphLayout titleLayout = new GlyphLayout(font, title);
         float titleX = panelX + (panelWidth - titleLayout.width) / 2;
-        float titleY = panelY + panelHeight - 45;
+        float titleY = headerY + headerHeight / 2 + titleLayout.height / 2;
         font.draw(batch, title, titleX, titleY);
         
         batch.end();
@@ -452,6 +468,16 @@ public class HelpUI {
             }
             lastOtherFeaturesButtonHovered = isHovered;
             drawButton(otherFeaturesButton, "その他の機能", isHovered);
+        }
+        
+        // 戻るボタンを描画（フッター）
+        if (backButton != null) {
+            boolean isHovered = backButton.contains(mouseX, mouseY);
+            if (isHovered && !lastBackButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastBackButtonHovered = isHovered;
+            drawButton(backButton, "戻る", isHovered);
         }
     }
     
@@ -535,7 +561,13 @@ public class HelpUI {
      * ボタンを描画します。
      */
     private void drawButton(Button button, String text, boolean isHovered) {
-        batch.end();
+        // batchが既に開始されているかチェック
+        boolean batchWasActive = batch.isDrawing();
+        
+        // batchが開始されている場合は終了してからShapeRendererを使用
+        if (batchWasActive) {
+            batch.end();
+        }
         
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -556,6 +588,7 @@ public class HelpUI {
         shapeRenderer.rect(button.x, button.y, button.width, button.height);
         shapeRenderer.end();
         
+        // batchを開始（元々開始されていた場合は再度開始、されていなかった場合は新規開始）
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         font.getData().setScale(0.675f);
@@ -564,6 +597,12 @@ public class HelpUI {
         float textX = button.x + (button.width - layout.width) / 2;
         float textY = button.y + button.height / 2 + layout.height / 2;
         font.draw(batch, text, textX, textY);
+        
+        // batchが元々開始されていなかった場合は終了する
+        // （呼び出し元で開始されていた場合は、呼び出し元で終了を管理）
+        if (!batchWasActive) {
+            batch.end();
+        }
     }
     
     /**

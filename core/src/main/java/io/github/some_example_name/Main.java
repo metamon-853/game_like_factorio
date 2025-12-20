@@ -305,7 +305,11 @@ public class Main extends ApplicationAdapter {
         
         // ESCキーでポーズ/再開を切り替え、またはメニューから戻る
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            if (isPaused) {
+            // ゲームガイドが開いている場合は直接ゲーム画面に戻る
+            if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
+                isPaused = false;
+                menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+            } else if (isPaused) {
                 if (!menuSystem.handleEscapeKey()) {
                     // メニューが閉じられなかった場合（サブメニューから戻ったなど）
                 }
@@ -339,12 +343,6 @@ public class Main extends ApplicationAdapter {
         if ((inventoryOpen || showEncyclopedia) && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             inventoryOpen = false;
             showEncyclopedia = false;
-        }
-        
-        // ヘルプが開いているときはESCで閉じる
-        if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
-            isPaused = false;
         }
         
         // インベントリが開いているときのマウスクリック処理
