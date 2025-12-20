@@ -23,6 +23,9 @@ public class UIRenderer {
     private int screenWidth;
     private int screenHeight;
     
+    // ゲームガイドボタン
+    private Button guideButton;
+    
     public UIRenderer(ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font, 
                      OrthographicCamera uiCamera, int screenWidth, int screenHeight) {
         this.shapeRenderer = shapeRenderer;
@@ -121,15 +124,25 @@ public class UIRenderer {
         GlyphLayout civLayout = new GlyphLayout(font, civText);
         font.draw(batch, civText, leftX, topY - civLayout.height - 10);
         
-        // インベントリ操作の説明を表示
+        // ゲームガイドボタンを描画
         float rightX = screenWidth - padding;
-        String hintText = "Eでインベントリ";
-        GlyphLayout hintLayout = new GlyphLayout(font, hintText);
-        float hintX = rightX - hintLayout.width;
-        font.draw(batch, hintText, hintX, topY);
+        float buttonWidth = 150;
+        float buttonHeight = 40;
+        float buttonX = rightX - buttonWidth;
+        float buttonY = topY - buttonHeight;
         
-        font.getData().setScale(0.5f);
+        // ボタンの位置を更新
+        guideButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
+        
+        // マウスホバー判定
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        boolean isHovered = guideButton.contains(mouseX, mouseY);
+        
         batch.end();
+        
+        // ボタンを描画
+        drawButton(buttonX, buttonY, buttonWidth, buttonHeight, "ゲームガイド", isHovered);
     }
     
     /**
@@ -241,6 +254,14 @@ public class UIRenderer {
      */
     public int getScreenHeight() {
         return screenHeight;
+    }
+    
+    /**
+     * ゲームガイドボタンを取得します。
+     * @return ゲームガイドボタン（存在しない場合はnull）
+     */
+    public Button getGuideButton() {
+        return guideButton;
     }
     
 }

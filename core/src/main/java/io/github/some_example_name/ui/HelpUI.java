@@ -18,12 +18,26 @@ import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
  * ヘルプ/ガイドUIを描画するクラス。
  */
 public class HelpUI {
+    /**
+     * ガイドの状態を表すenum
+     */
+    public enum GuideState {
+        MENU,           // メニュー画面
+        CONTROLS,       // 操作方法
+        FARMING,        // 農業
+        LIVESTOCK,      // 家畜
+        OTHER_FEATURES  // その他の機能
+    }
+    
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
     private BitmapFont font;
     private OrthographicCamera uiCamera;
     private int screenWidth;
     private int screenHeight;
+    
+    // 現在の状態
+    private GuideState currentState = GuideState.MENU;
     
     // UIのサイズと位置
     private float panelWidth = 1200;
@@ -49,14 +63,22 @@ public class HelpUI {
     private boolean isDraggingScrollThumb = false;
     private float scrollThumbGrabOffsetY = 0f; // つまみ内で掴んだ位置（Y）
     
-    // 戻るボタン
+    // ボタン
     private Button backButton;
+    private Button controlsButton;
+    private Button farmingButton;
+    private Button livestockButton;
+    private Button otherFeaturesButton;
     
     // サウンドマネージャー
     private io.github.some_example_name.system.SoundManager soundManager;
     
     // 前回のホバー状態を記録
     private boolean lastBackButtonHovered = false;
+    private boolean lastControlsButtonHovered = false;
+    private boolean lastFarmingButtonHovered = false;
+    private boolean lastLivestockButtonHovered = false;
+    private boolean lastOtherFeaturesButtonHovered = false;
     
     public HelpUI(ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
                  OrthographicCamera uiCamera, int screenWidth, int screenHeight) {
@@ -87,6 +109,22 @@ public class HelpUI {
      * ヘルプ画面が開かれたときに呼び出されます。
      */
     public void onOpen() {
+        resetScroll();
+        currentState = GuideState.MENU; // メニュー画面に戻る
+    }
+    
+    /**
+     * 現在の状態を取得します。
+     */
+    public GuideState getCurrentState() {
+        return currentState;
+    }
+    
+    /**
+     * 状態を設定します。
+     */
+    public void setState(GuideState state) {
+        this.currentState = state;
         resetScroll();
     }
     
@@ -130,21 +168,59 @@ public class HelpUI {
         float buttonX = panelX + 20;
         float buttonY = footerY + footerPadding;
         backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
+        
+        // メニューボタンの位置を設定
+        float menuButtonWidth = 500;
+        float menuButtonHeight = 80;
+        float menuButtonSpacing = 20;
+        float menuStartX = panelX + (panelWidth - menuButtonWidth) / 2;
+        float menuStartY = panelY + panelHeight - 150;
+        
+        controlsButton = new Button(menuStartX, menuStartY, menuButtonWidth, menuButtonHeight);
+        farmingButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing), menuButtonWidth, menuButtonHeight);
+        livestockButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 2, menuButtonWidth, menuButtonHeight);
+        otherFeaturesButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 3, menuButtonWidth, menuButtonHeight);
     }
     
     /**
      * マウスクリックを処理します。
      * @param screenX スクリーンX座標（LibGDXの座標系、左上が原点）
      * @param screenY スクリーンY座標（LibGDXの座標系、左上が原点）
-     * @return 戻るボタンがクリックされた場合true
+     * @return 戻るボタンがクリックされた場合true（ゲームを終了する必要がある場合）
      */
     public boolean handleClick(int screenX, int screenY) {
         // スクリーン座標をUI座標に変換（LibGDXはY座標が下から上）
         float uiY = screenHeight - screenY;
         
-        // 戻るボタンのクリック判定
-        if (backButton != null && backButton.contains((float)screenX, uiY)) {
-            return true; // 戻るボタンがクリックされた
+        if (currentState == GuideState.MENU) {
+            // メニュー画面でのクリック処理
+            if (controlsButton != null && controlsButton.contains((float)screenX, uiY)) {
+                currentState = GuideState.CONTROLS;
+                resetScroll();
+                return false;
+            }
+            if (farmingButton != null && farmingButton.contains((float)screenX, uiY)) {
+                currentState = GuideState.FARMING;
+                resetScroll();
+                return false;
+            }
+            if (livestockButton != null && livestockButton.contains((float)screenX, uiY)) {
+                currentState = GuideState.LIVESTOCK;
+                resetScroll();
+                return false;
+            }
+            if (otherFeaturesButton != null && otherFeaturesButton.contains((float)screenX, uiY)) {
+                currentState = GuideState.OTHER_FEATURES;
+                resetScroll();
+                return false;
+            }
+        } else {
+            // 各ガイド画面での戻るボタンのクリック判定
+            if (backButton != null && backButton.contains((float)screenX, uiY)) {
+                currentState = GuideState.MENU;
+                resetScroll();
+                return false;
+            }
         }
         
         return false;
@@ -246,33 +322,39 @@ public class HelpUI {
      */
     private void calculateContentHeight(LivestockDataLoader livestockDataLoader) {
         float lineSpacing = 35f;
-        float sectionSpacing = 50f;
         float totalHeight = 0;
         
-        // 操作方法セクション
-        totalHeight += lineSpacing * 4 + sectionSpacing;
-        
-        // 農業セクション
-        totalHeight += lineSpacing * 4 + sectionSpacing;
-        
-        // 家畜セクション
-        totalHeight += lineSpacing * 5 + sectionSpacing;
-        
-        // 家畜の種類セクション
-        if (livestockDataLoader != null) {
-            Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
-            totalHeight += lineSpacing; // タイトル
-            for (LivestockData livestock : allLivestock) {
-                totalHeight += lineSpacing * 0.8f; // 基本情報
-                if (livestock.description != null && !livestock.description.isEmpty()) {
-                    totalHeight += lineSpacing * 0.8f; // 説明
+        switch (currentState) {
+            case CONTROLS:
+                // 操作方法: タイトル + 4行
+                totalHeight = lineSpacing * 5;
+                break;
+            case FARMING:
+                // 農業: タイトル + 1行 + 3行（説明）
+                totalHeight = lineSpacing * 5;
+                break;
+            case LIVESTOCK:
+                // 家畜: タイトル + 基本操作 + 家畜の種類
+                totalHeight = lineSpacing * 6; // 基本操作
+                if (livestockDataLoader != null) {
+                    totalHeight += lineSpacing; // 家畜の種類タイトル
+                    Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
+                    for (LivestockData livestock : allLivestock) {
+                        totalHeight += lineSpacing * 0.8f; // 基本情報
+                        if (livestock.description != null && !livestock.description.isEmpty()) {
+                            totalHeight += lineSpacing * 0.8f; // 説明
+                        }
+                    }
                 }
-            }
-            totalHeight += sectionSpacing * 0.5f;
+                break;
+            case OTHER_FEATURES:
+                // その他の機能: タイトル + 4行
+                totalHeight = lineSpacing * 5;
+                break;
+            default:
+                totalHeight = 0;
+                break;
         }
-        
-        // その他の機能セクション
-        totalHeight += lineSpacing * 4;
         
         // 実際のコンテンツの高さを保存
         totalContentHeight = totalHeight;
@@ -286,9 +368,6 @@ public class HelpUI {
      * ヘルプUIを描画します。
      */
     public void render(LivestockDataLoader livestockDataLoader) {
-        // コンテンツの高さを計算
-        calculateContentHeight(livestockDataLoader);
-        
         // パネルの背景を描画
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
@@ -296,16 +375,12 @@ public class HelpUI {
         shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
         shapeRenderer.end();
         
-        // パネルの枠線を描画（下端を除く）
+        // パネルの枠線を描画
         shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
         shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        // 上端
         shapeRenderer.line(panelX, panelY + panelHeight, panelX + panelWidth, panelY + panelHeight);
-        // 左端
         shapeRenderer.line(panelX, panelY + panelHeight, panelX, panelY);
-        // 右端
         shapeRenderer.line(panelX + panelWidth, panelY + panelHeight, panelX + panelWidth, panelY);
-        // 下端は描画しない（戻るボタンの下の線を消すため）
         shapeRenderer.end();
         
         // batchを開始
@@ -322,75 +397,179 @@ public class HelpUI {
         float titleY = panelY + panelHeight - 45;
         font.draw(batch, title, titleX, titleY);
         
-        // フッター区切り線（ボタン下の横線）は描かない
+        batch.end();
         
-        // 戻るボタンを描画（フッターエリア内、下部に配置）
+        // 状態に応じて描画
+        if (currentState == GuideState.MENU) {
+            renderMenu();
+        } else {
+            renderGuide(livestockDataLoader);
+        }
+    }
+    
+    /**
+     * メニュー画面を描画します。
+     */
+    private void renderMenu() {
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
+        // 操作方法ボタン
+        if (controlsButton != null) {
+            boolean isHovered = controlsButton.contains(mouseX, mouseY);
+            if (isHovered && !lastControlsButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastControlsButtonHovered = isHovered;
+            drawButton(controlsButton, "操作方法", isHovered);
+        }
+        
+        // 農業ボタン
+        if (farmingButton != null) {
+            boolean isHovered = farmingButton.contains(mouseX, mouseY);
+            if (isHovered && !lastFarmingButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastFarmingButtonHovered = isHovered;
+            drawButton(farmingButton, "農業", isHovered);
+        }
+        
+        // 家畜ボタン
+        if (livestockButton != null) {
+            boolean isHovered = livestockButton.contains(mouseX, mouseY);
+            if (isHovered && !lastLivestockButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastLivestockButtonHovered = isHovered;
+            drawButton(livestockButton, "家畜", isHovered);
+        }
+        
+        // その他の機能ボタン
+        if (otherFeaturesButton != null) {
+            boolean isHovered = otherFeaturesButton.contains(mouseX, mouseY);
+            if (isHovered && !lastOtherFeaturesButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastOtherFeaturesButtonHovered = isHovered;
+            drawButton(otherFeaturesButton, "その他の機能", isHovered);
+        }
+    }
+    
+    /**
+     * 各ガイド画面を描画します。
+     */
+    private void renderGuide(LivestockDataLoader livestockDataLoader) {
+        // コンテンツの高さを計算
+        calculateContentHeight(livestockDataLoader);
+        
+        // 戻るボタンを描画
         if (backButton != null) {
             float mouseX = Gdx.input.getX();
             float mouseY = screenHeight - Gdx.input.getY();
             boolean isHovered = backButton.contains(mouseX, mouseY);
             
-            // ホバー状態が変わったときに音を再生
             if (isHovered && !lastBackButtonHovered && soundManager != null) {
                 soundManager.playHoverSound();
             }
             lastBackButtonHovered = isHovered;
             
-            batch.end();
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            if (isHovered) {
-                shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 0.95f);
-            } else {
-                shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
-            }
-            shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
-            shapeRenderer.end();
-            
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            if (isHovered) {
-                shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
-            } else {
-                shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-            }
-            // ボタン枠は通常どおり描画（下辺も含む）
-            shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
-            shapeRenderer.end();
-            
-            batch.setProjectionMatrix(uiCamera.combined);
-            batch.begin();
-            font.getData().setScale(0.675f);
-            font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
-            String backText = "戻る";
-            GlyphLayout backLayout = new GlyphLayout(font, backText);
-            float backTextX = backButton.x + (backButton.width - backLayout.width) / 2;
-            float backTextY = backButton.y + backButton.height / 2 + backLayout.height / 2;
-            font.draw(batch, backText, backTextX, backTextY);
+            drawButton(backButton, "戻る", isHovered);
         }
         
         // クリッピング領域を設定（コンテンツエリアのみ描画）
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
         batch.flush();
         Rectangle scissors = new Rectangle();
         Rectangle clipBounds = new Rectangle(
             panelX, contentAreaY, panelWidth, contentAreaHeight
         );
         ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
-        // pushに失敗するケースがある（その場合popすると落ちる）ので成否を保持
         boolean scissorsPushed = ScissorStack.pushScissors(scissors);
         
         // コンテンツを描画
         float startX = panelX + 40;
-        // コンテンツは上から下に描画される（LibGDXではY座標が大きいほど上）
-        // scrollOffset = 0 のときは最上部から開始（startYは最大値）
-        // scrollOffset が増えると startY が増え、コンテンツが上に移動（下のコンテンツが見える）
         float startY = contentAreaY + contentAreaHeight - 20 + scrollOffset;
         float currentY = startY;
         float lineSpacing = 35f;
-        float sectionSpacing = 50f;
         
         font.getData().setScale(0.7f);
         font.setColor(Color.WHITE);
         
-        // 操作方法セクション
+        switch (currentState) {
+            case CONTROLS:
+                renderControlsGuide(batch, startX, currentY, lineSpacing);
+                break;
+            case FARMING:
+                renderFarmingGuide(batch, startX, currentY, lineSpacing);
+                break;
+            case LIVESTOCK:
+                renderLivestockGuide(batch, livestockDataLoader, startX, currentY, lineSpacing);
+                break;
+            case OTHER_FEATURES:
+                renderOtherFeaturesGuide(batch, startX, currentY, lineSpacing);
+                break;
+            case MENU:
+            default:
+                // メニュー画面の場合はここには来ない
+                break;
+        }
+        
+        font.getData().setScale(0.825f);
+        font.setColor(Color.WHITE);
+        
+        // クリッピングを解除
+        batch.flush();
+        if (scissorsPushed) {
+            ScissorStack.popScissors();
+        }
+        batch.end();
+        
+        // スクロール可能な場合、スクロールバーを描画
+        if (maxScrollOffset > 0) {
+            drawScrollBar();
+        }
+    }
+    
+    /**
+     * ボタンを描画します。
+     */
+    private void drawButton(Button button, String text, boolean isHovered) {
+        batch.end();
+        
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        if (isHovered) {
+            shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 0.95f);
+        } else {
+            shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
+        }
+        shapeRenderer.rect(button.x, button.y, button.width, button.height);
+        shapeRenderer.end();
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        if (isHovered) {
+            shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
+        } else {
+            shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+        }
+        shapeRenderer.rect(button.x, button.y, button.width, button.height);
+        shapeRenderer.end();
+        
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        font.getData().setScale(0.675f);
+        font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
+        GlyphLayout layout = new GlyphLayout(font, text);
+        float textX = button.x + (button.width - layout.width) / 2;
+        float textY = button.y + button.height / 2 + layout.height / 2;
+        font.draw(batch, text, textX, textY);
+    }
+    
+    /**
+     * 操作方法ガイドを描画します。
+     */
+    private void renderControlsGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
         font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
         font.getData().setScale(0.75f);
         font.draw(batch, "【操作方法】", startX, currentY);
@@ -405,9 +584,12 @@ public class HelpUI {
         drawTextLine(batch, "ポーズメニュー: ESCキー", startX, currentY);
         currentY -= lineSpacing;
         drawTextLine(batch, "カメラズーム: マウスホイール", startX, currentY);
-        currentY -= sectionSpacing;
-        
-        // 農業セクション
+    }
+    
+    /**
+     * 農業ガイドを描画します。
+     */
+    private void renderFarmingGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
         font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
         font.getData().setScale(0.75f);
         font.draw(batch, "【農業】", startX, currentY);
@@ -422,9 +604,12 @@ public class HelpUI {
         drawTextLine(batch, "・成長した作物がある場所でFキーを押すと収穫できます", startX + 20, currentY);
         currentY -= lineSpacing * 0.8f;
         drawTextLine(batch, "・作物は一定時間で成長し、収穫可能になります", startX + 20, currentY);
-        currentY -= sectionSpacing;
-        
-        // 家畜セクション
+    }
+    
+    /**
+     * 家畜ガイドを描画します。
+     */
+    private void renderLivestockGuide(SpriteBatch batch, LivestockDataLoader livestockDataLoader, float startX, float currentY, float lineSpacing) {
         font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
         font.getData().setScale(0.75f);
         font.draw(batch, "【家畜】", startX, currentY);
@@ -441,12 +626,10 @@ public class HelpUI {
         drawTextLine(batch, "・製品が生産されたらLキーで収穫できます", startX + 20, currentY);
         currentY -= lineSpacing;
         
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
         drawTextLine(batch, "Kキー: 家畜を殺して肉を取得", startX, currentY);
         currentY -= lineSpacing;
         drawTextLine(batch, "・家畜がいる場所でKキーを押すと家畜を殺して肉を取得できます", startX + 20, currentY);
-        currentY -= sectionSpacing;
+        currentY -= lineSpacing * 1.5f;
         
         // 家畜の種類
         if (livestockDataLoader != null) {
@@ -472,10 +655,13 @@ public class HelpUI {
                     currentY -= lineSpacing * 0.8f;
                 }
             }
-            currentY -= sectionSpacing * 0.5f;
         }
-        
-        // その他の機能
+    }
+    
+    /**
+     * その他の機能ガイドを描画します。
+     */
+    private void renderOtherFeaturesGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
         font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
         font.getData().setScale(0.75f);
         font.draw(batch, "【その他の機能】", startX, currentY);
@@ -490,23 +676,6 @@ public class HelpUI {
         drawTextLine(batch, "・ポーズメニューからゲームをセーブ/ロードできます", startX + 20, currentY);
         currentY -= lineSpacing * 0.8f;
         drawTextLine(batch, "・文明レベルが上がると新しいアイテムが利用可能になります", startX + 20, currentY);
-        
-        font.getData().setScale(0.825f);
-        font.setColor(Color.WHITE);
-        
-        // クリッピングを解除
-        batch.flush();
-        if (scissorsPushed) {
-            ScissorStack.popScissors();
-        }
-
-        // ここでSpriteBatchを確実に閉じる
-        batch.end();
-
-        // スクロール可能な場合、スクロールバーを描画（ShapeRendererなのでbatch外）
-        if (maxScrollOffset > 0) {
-            drawScrollBar();
-        }
     }
     
     /**

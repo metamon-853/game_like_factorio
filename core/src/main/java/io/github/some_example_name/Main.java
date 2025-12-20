@@ -24,6 +24,7 @@ import io.github.some_example_name.ui.ItemEncyclopediaUI;
 import io.github.some_example_name.ui.MenuSystem;
 import io.github.some_example_name.ui.HelpUI;
 import io.github.some_example_name.ui.FontManager;
+import io.github.some_example_name.ui.Button;
 import io.github.some_example_name.system.SaveGameManager;
 import io.github.some_example_name.system.SoundSettings;
 import io.github.some_example_name.system.SoundManager;
@@ -374,6 +375,24 @@ public class Main extends ApplicationAdapter {
             // 戻るボタンがクリックされた場合
             if (backClicked) {
                 showEncyclopedia = false; // インベントリに戻る
+            }
+        }
+        
+        // ゲームガイドボタンのクリック処理（ポーズ中でない場合のみ）
+        if (!isPaused && !inventoryOpen && !showEncyclopedia && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+            int mouseX = Gdx.input.getX();
+            int mouseY = Gdx.input.getY();
+            Button guideButton = uiRenderer.getGuideButton();
+            if (guideButton != null) {
+                float uiY = screenHeight - mouseY;
+                if (guideButton.contains((float)mouseX, uiY)) {
+                    // ゲームガイドを開く
+                    isPaused = true;
+                    menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
+                    if (helpUI != null) {
+                        helpUI.onOpen();
+                    }
+                }
             }
         }
         
