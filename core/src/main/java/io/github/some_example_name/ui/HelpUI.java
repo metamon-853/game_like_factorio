@@ -13,6 +13,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
+import java.util.List;
 
 /**
  * ヘルプ/ガイドUIを描画するクラス。
@@ -344,34 +345,13 @@ public class HelpUI {
         
         switch (currentState) {
             case CONTROLS:
-                // 操作方法: タイトル + 4行
-                totalHeight = lineSpacing * 5;
-                break;
             case FARMING:
-                // 農業: タイトル + 基本操作 + 土壌システム + 作物の特性
-                totalHeight = lineSpacing * 25; // 大幅に増加
-                break;
             case LIVESTOCK:
-                // 家畜: タイトル + 基本操作 + 家畜の種類
-                totalHeight = lineSpacing * 6; // 基本操作
-                if (livestockDataLoader != null) {
-                    totalHeight += lineSpacing; // 家畜の種類タイトル
-                    Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
-                    for (LivestockData livestock : allLivestock) {
-                        totalHeight += lineSpacing * 0.8f; // 基本情報
-                        if (livestock.description != null && !livestock.description.isEmpty()) {
-                            totalHeight += lineSpacing * 0.8f; // 説明
-                        }
-                    }
-                }
-                break;
             case TERRAIN:
-                // 地形: タイトル + 6種類の地形説明（各2行）
-                totalHeight = lineSpacing * (1 + 6 * 2);
-                break;
             case OTHER_FEATURES:
-                // その他の機能: タイトル + 4行
-                totalHeight = lineSpacing * 5;
+                // Markdownファイルから読み込んだ要素の高さを計算
+                List<GuideContentLoader.GuideElement> elements = GuideContentLoader.loadGuideContent(currentState, livestockDataLoader);
+                totalHeight = calculateGuideElementsHeight(elements, lineSpacing);
                 break;
             default:
                 totalHeight = 0;
@@ -545,27 +525,9 @@ public class HelpUI {
         font.getData().setScale(0.7f);
         font.setColor(Color.WHITE);
         
-        switch (currentState) {
-            case CONTROLS:
-                renderControlsGuide(batch, startX, currentY, lineSpacing);
-                break;
-            case FARMING:
-                renderFarmingGuide(batch, startX, currentY, lineSpacing);
-                break;
-            case LIVESTOCK:
-                renderLivestockGuide(batch, livestockDataLoader, startX, currentY, lineSpacing);
-                break;
-            case TERRAIN:
-                renderTerrainGuide(batch, startX, currentY, lineSpacing);
-                break;
-            case OTHER_FEATURES:
-                renderOtherFeaturesGuide(batch, startX, currentY, lineSpacing);
-                break;
-            case MENU:
-            default:
-                // メニュー画面の場合はここには来ない
-                break;
-        }
+        // Markdownファイルからガイドコンテンツを読み込んで描画
+        List<GuideContentLoader.GuideElement> elements = GuideContentLoader.loadGuideContent(currentState, livestockDataLoader);
+        currentY = renderGuideElements(batch, elements, startX, currentY, lineSpacing);
         
         font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
@@ -632,266 +594,94 @@ public class HelpUI {
     }
     
     /**
-     * 操作方法ガイドを描画します。
+     * ガイド要素のリストを描画します。
+     * @param batch SpriteBatch
+     * @param elements ガイド要素のリスト
+     * @param startX 開始X座標
+     * @param startY 開始Y座標
+     * @param lineSpacing 行間隔
+     * @return 描画後のY座標
      */
-    private void renderControlsGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【操作方法】", startX, currentY);
-        currentY -= lineSpacing;
+    private float renderGuideElements(SpriteBatch batch, List<GuideContentLoader.GuideElement> elements, 
+                                     float startX, float startY, float lineSpacing) {
+        float currentY = startY;
         
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "移動: WASDキー または 矢印キー", startX, currentY);
-        currentY -= lineSpacing;
-        drawTextLine(batch, "インベントリ: Eキー", startX, currentY);
-        currentY -= lineSpacing;
-        drawTextLine(batch, "ポーズメニュー: ESCキー", startX, currentY);
-        currentY -= lineSpacing;
-        drawTextLine(batch, "カメラズーム: マウスホイール", startX, currentY);
-    }
-    
-    /**
-     * 農業ガイドを描画します。
-     */
-    private void renderFarmingGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【農業の基本操作】", startX, currentY);
-        currentY -= lineSpacing;
-        
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "Fキー: 種を植える / 作物を収穫", startX, currentY);
-        currentY -= lineSpacing;
-        drawTextLine(batch, "・種を持っている状態でFキーを押すと種を植えます", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・成長した作物がある場所でFキーを押すと収穫できます", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・作物は一定時間で成長し、収穫可能になります", startX + 20, currentY);
-        currentY -= lineSpacing * 1.2f;
-        
-        // 土壌システムの説明
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【土壌システム】", startX, currentY);
-        currentY -= lineSpacing;
-        
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "農地には4つの土壌パラメータがあります：", startX, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・水分量: 土壌の湿り具合（乾燥～湿潤）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・肥沃度: 土壌の栄養分（低～高）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・排水性: 水の流れやすさ（悪い～良い）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・耕作難度: 耕す難しさ（低～高）", startX + 20, currentY);
-        currentY -= lineSpacing * 1.0f;
-        drawTextLine(batch, "地形タイプによって初期の土壌パラメータが決まります：", startX, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・草原: バランス型、農業に適している", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・土: 肥沃度が高く、農業に最適", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・砂: 排水性が高いが肥沃度が低い", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・森: 肥沃度が高いが耕作難度が高い", startX + 20, currentY);
-        currentY -= lineSpacing * 1.2f;
-        
-        // 作物の特性
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【作物の特性と土壌条件】", startX, currentY);
-        currentY -= lineSpacing;
-        
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
-        
-        // 米
-        font.setColor(new Color(0.2f, 0.4f, 0.7f, 1f));
-        drawTextLine(batch, "・米（稲作）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  要求条件: 水分量が非常に高い（0.8以上）、肥沃度中～高", startX + 30, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "  特徴: 水田が必要（排水性が低い方が良い）、水辺必須", startX + 30, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "  役割: 安定供給型の主食、インフラ整備後に強い", startX + 30, currentY);
-        currentY -= lineSpacing * 1.0f;
-        
-        // 麦
-        font.setColor(new Color(0.9f, 0.8f, 0.3f, 1f));
-        drawTextLine(batch, "・麦（小麦）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  要求条件: 水分量低～中（0.2～0.6）、肥沃度中、排水性高", startX + 30, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "  特徴: 乾燥気候でも育つ、過湿に弱い", startX + 30, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "  役割: 加工産業の起点（パン・ビールなど）、文明発展との相性が良い", startX + 30, currentY);
-        currentY -= lineSpacing * 1.0f;
-        
-        // 芋
-        font.setColor(new Color(0.8f, 0.5f, 0.2f, 1f));
-        drawTextLine(batch, "・芋（サツマイモ系）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  要求条件: 水分量低～中（0.2～0.6）、肥沃度低でも可、排水性中～高", startX + 30, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "  特徴: 痩せた土地でも育つ、単位面積あたりのカロリーが高い", startX + 30, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "  役割: 序盤の救世主、文明度が低くても強い", startX + 30, currentY);
-        currentY -= lineSpacing * 1.2f;
-        
-        // 土壌条件の影響
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【土壌条件の影響】", startX, currentY);
-        currentY -= lineSpacing;
-        
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "・土壌条件が作物の要求を満たしていない場合、種を植えることができません", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・土壌条件が良いほど、成長速度と収穫量が向上します", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・肥沃度は特に収穫量に大きく影響します", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・農具の効率も収穫量に影響します", startX + 20, currentY);
-    }
-    
-    /**
-     * 家畜ガイドを描画します。
-     */
-    private void renderLivestockGuide(SpriteBatch batch, LivestockDataLoader livestockDataLoader, float startX, float currentY, float lineSpacing) {
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【家畜】", startX, currentY);
-        currentY -= lineSpacing;
-        
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "Lキー: 家畜を配置 / 製品を収穫", startX, currentY);
-        currentY -= lineSpacing;
-        drawTextLine(batch, "・作物（餌）を持っている状態でLキーを押すと家畜を配置します", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・成熟した家畜は一定時間ごとに製品（卵、ミルク、羊毛など）を生産します", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・製品が生産されたらLキーで収穫できます", startX + 20, currentY);
-        currentY -= lineSpacing;
-        
-        drawTextLine(batch, "Kキー: 家畜を殺して肉を取得", startX, currentY);
-        currentY -= lineSpacing;
-        drawTextLine(batch, "・家畜がいる場所でKキーを押すと家畜を殺して肉を取得できます", startX + 20, currentY);
-        currentY -= lineSpacing * 1.5f;
-        
-        // 家畜の種類
-        if (livestockDataLoader != null) {
-            font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-            font.getData().setScale(0.75f);
-            font.draw(batch, "【家畜の種類】", startX, currentY);
-            currentY -= lineSpacing;
-            
-            font.getData().setScale(0.6f);
-            font.setColor(Color.WHITE);
-            Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
-            for (LivestockData livestock : allLivestock) {
-                String livestockInfo = "・" + livestock.name + ": ";
-                if (livestock.hasProduct()) {
-                    livestockInfo += "肉（ID:" + livestock.meatItemId + "）、製品（ID:" + livestock.productItemId + "）";
-                } else {
-                    livestockInfo += "肉（ID:" + livestock.meatItemId + "）のみ";
-                }
-                drawTextLine(batch, livestockInfo, startX + 20, currentY);
-                currentY -= lineSpacing * 0.8f;
-                if (livestock.description != null && !livestock.description.isEmpty()) {
-                    drawTextLine(batch, "  " + livestock.description, startX + 30, currentY);
+        for (GuideContentLoader.GuideElement element : elements) {
+            switch (element.type) {
+                case HEADING_1:
+                    font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
+                    font.getData().setScale(0.75f);
+                    font.draw(batch, "【" + element.text + "】", startX, currentY);
+                    currentY -= lineSpacing;
+                    break;
+                    
+                case HEADING_2:
+                    font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
+                    font.getData().setScale(0.75f);
+                    font.draw(batch, element.text, startX, currentY);
+                    currentY -= lineSpacing;
+                    break;
+                    
+                case HEADING_3:
+                    font.setColor(new Color(0.7f, 0.8f, 0.95f, 1f));
+                    font.getData().setScale(0.7f);
+                    font.draw(batch, element.text, startX, currentY);
+                    currentY -= lineSpacing * 0.9f;
+                    break;
+                    
+                case LIST_ITEM:
+                    font.getData().setScale(0.6f);
+                    font.setColor(Color.WHITE);
+                    float indentX = startX + 20 + (element.indentLevel * 20);
+                    drawTextLine(batch, "・" + element.text, indentX, currentY);
                     currentY -= lineSpacing * 0.8f;
-                }
+                    break;
+                    
+                case TEXT:
+                    font.getData().setScale(0.6f);
+                    font.setColor(Color.WHITE);
+                    drawTextLine(batch, element.text, startX, currentY);
+                    currentY -= lineSpacing * 0.8f;
+                    break;
+                    
+                case SEPARATOR:
+                    currentY -= lineSpacing * 0.5f; // 区切り線の前後にスペース
+                    break;
             }
         }
+        
+        return currentY;
     }
     
     /**
-     * 地形ガイドを描画します。
+     * ガイド要素のリストの高さを計算します。
+     * @param elements ガイド要素のリスト
+     * @param lineSpacing 行間隔
+     * @return 合計の高さ
      */
-    private void renderTerrainGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【地形の種類】", startX, currentY);
-        currentY -= lineSpacing;
+    private float calculateGuideElementsHeight(List<GuideContentLoader.GuideElement> elements, float lineSpacing) {
+        float totalHeight = 0;
         
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
+        for (GuideContentLoader.GuideElement element : elements) {
+            switch (element.type) {
+                case HEADING_1:
+                case HEADING_2:
+                    totalHeight += lineSpacing;
+                    break;
+                case HEADING_3:
+                    totalHeight += lineSpacing * 0.9f;
+                    break;
+                case LIST_ITEM:
+                case TEXT:
+                    totalHeight += lineSpacing * 0.8f;
+                    break;
+                case SEPARATOR:
+                    totalHeight += lineSpacing * 0.5f;
+                    break;
+            }
+        }
         
-        // 草
-        font.setColor(new Color(0.3f, 0.6f, 0.2f, 1f));
-        drawTextLine(batch, "・草（GRASS）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  緑色の草原。基本的な地形で、農業に適しています。", startX + 30, currentY);
-        currentY -= lineSpacing;
-        
-        // 土
-        font.setColor(new Color(0.5f, 0.4f, 0.3f, 1f));
-        drawTextLine(batch, "・土（DIRT）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  茶色の土壌。農業に最適な地形です。", startX + 30, currentY);
-        currentY -= lineSpacing;
-        
-        // 砂
-        font.setColor(new Color(0.9f, 0.85f, 0.7f, 1f));
-        drawTextLine(batch, "・砂（SAND）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  砂色の砂浜。水の近くに生成されます。", startX + 30, currentY);
-        currentY -= lineSpacing;
-        
-        // 水
-        font.setColor(new Color(0.2f, 0.4f, 0.7f, 1f));
-        drawTextLine(batch, "・水（WATER）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  青色の水域。低地に生成され、通過できません。", startX + 30, currentY);
-        currentY -= lineSpacing;
-        
-        // 岩
-        font.setColor(new Color(0.5f, 0.5f, 0.5f, 1f));
-        drawTextLine(batch, "・岩（STONE）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  灰色の岩場。高地に生成されます。", startX + 30, currentY);
-        currentY -= lineSpacing;
-        
-        // 森
-        font.setColor(new Color(0.2f, 0.5f, 0.15f, 1f));
-        drawTextLine(batch, "・森（FOREST）", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "  濃い緑色の森林。高湿度の地域に生成されます。", startX + 30, currentY);
-    }
-    
-    /**
-     * その他の機能ガイドを描画します。
-     */
-    private void renderOtherFeaturesGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
-        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
-        font.getData().setScale(0.75f);
-        font.draw(batch, "【その他の機能】", startX, currentY);
-        currentY -= lineSpacing;
-        
-        font.getData().setScale(0.6f);
-        font.setColor(Color.WHITE);
-        drawTextLine(batch, "・インベントリでアイテムをクラフトできます", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・アイテム図鑑でアイテムの詳細を確認できます", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・ポーズメニューからゲームをセーブ/ロードできます", startX + 20, currentY);
-        currentY -= lineSpacing * 0.8f;
-        drawTextLine(batch, "・文明レベルが上がると新しいアイテムが利用可能になります", startX + 20, currentY);
+        return totalHeight;
     }
     
     /**
