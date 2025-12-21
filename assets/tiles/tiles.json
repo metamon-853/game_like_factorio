@@ -1,0 +1,141 @@
+{
+  "GRASS": {
+    "name": "草",
+    "description": "緑色の草原。基本的な地形で、農業に適しています。",
+    "color": [0.3, 0.6, 0.2, 1.0],
+    "decorationType": "GRASS_DOTS",
+    "decorationColor": [0.2, 0.5, 0.1, 0.5],
+    "decorationCount": 3,
+    "moisture": 0.5,
+    "fertility": 0.6,
+    "drainage": 0.6,
+    "tillageDifficulty": 0.3
+  },
+  "DIRT": {
+    "name": "土",
+    "description": "茶色の土壌。農業に最適な地形です。",
+    "color": [0.5, 0.4, 0.3, 1.0],
+    "decorationType": "NONE",
+    "moisture": 0.5,
+    "fertility": 0.7,
+    "drainage": 0.5,
+    "tillageDifficulty": 0.4
+  },
+  "SAND": {
+    "name": "砂",
+    "description": "砂色の砂浜。水の近くに生成されます。",
+    "color": [0.9, 0.85, 0.7, 1.0],
+    "decorationType": "SAND_DOTS",
+    "decorationColor": [0.8, 0.75, 0.6, 0.6],
+    "decorationCount": 4,
+    "moisture": 0.3,
+    "fertility": 0.3,
+    "drainage": 0.9,
+    "tillageDifficulty": 0.2
+  },
+  "WATER": {
+    "name": "水",
+    "description": "青色の水域。低地に生成され、通過できません。",
+    "color": [0.2, 0.4, 0.7, 1.0],
+    "decorationType": "WATER_WAVES",
+    "decorationColor": [0.3, 0.5, 0.8, 0.5],
+    "decorationCount": 2,
+    "moisture": 1.0,
+    "fertility": 0.2,
+    "drainage": 0.0,
+    "tillageDifficulty": 1.0
+  },
+  "STONE": {
+    "name": "岩",
+    "description": "灰色の岩場。高地に生成されます。",
+    "color": [0.5, 0.5, 0.5, 1.0],
+    "decorationType": "STONE_PATTERN",
+    "decorationColor": [0.4, 0.4, 0.4, 1.0],
+    "moisture": 0.2,
+    "fertility": 0.1,
+    "drainage": 0.8,
+    "tillageDifficulty": 1.0
+  },
+  "FOREST": {
+    "name": "森",
+    "description": "濃い緑色の森林。高湿度の地域に生成されます。",
+    "color": [0.2, 0.5, 0.15, 1.0],
+    "decorationType": "TREE",
+    "trunkColor": [0.3, 0.2, 0.1, 1.0],
+    "leafColor": [0.1, 0.4, 0.1, 1.0],
+    "moisture": 0.6,
+    "fertility": 0.8,
+    "drainage": 0.4,
+    "tillageDifficulty": 0.7
+  },
+  "PADDY": {
+    "name": "田",
+    "description": "灌漑された水田。稲作に特化した地形。",
+    "color": [0.25, 0.45, 0.35, 1.0],
+    "decorationType": "WATER_WAVES",
+    "decorationColor": [0.3, 0.5, 0.4, 0.4],
+    "decorationCount": 1,
+    "moisture": 0.95,
+    "fertility": 0.7,
+    "drainage": 0.2,
+    "tillageDifficulty": 0.8
+  },
+  "FARMLAND": {
+    "name": "畑",
+    "description": "耕作された農地。穀物栽培に適している。",
+    "color": [0.45, 0.35, 0.25, 1.0],
+    "decorationType": "FURROWS",
+    "decorationColor": [0.4, 0.3, 0.2, 0.6],
+    "decorationCount": 3,
+    "moisture": 0.45,
+    "fertility": 0.75,
+    "drainage": 0.6,
+    "tillageDifficulty": 0.3
+  },
+  "MARSH": {
+    "name": "湿地",
+    "description": "水は多いが排水が悪い土地。耕作は困難ですが、適切な排水工事を行うことで水田に変換できます。",
+    "color": [0.2, 0.4, 0.25, 1.0],
+    "decorationType": "WATER_WAVES",
+    "decorationColor": [0.25, 0.45, 0.3, 0.5],
+    "decorationCount": 2,
+    "moisture": 0.85,
+    "fertility": 0.6,
+    "drainage": 0.1,
+    "tillageDifficulty": 0.9
+  },
+  "DRAINED_MARSH": {
+    "name": "排水後湿地",
+    "description": "排水工事が完了した湿地。まだ作物は植えられませんが、水田整備が可能です。",
+    "color": [0.25, 0.42, 0.28, 1.0],
+    "decorationType": "WATER_WAVES",
+    "decorationColor": [0.28, 0.45, 0.32, 0.3],
+    "decorationCount": 1,
+    "moisture": 0.6,
+    "fertility": 0.65,
+    "drainage": 0.5,
+    "tillageDifficulty": 0.7
+  },
+  "WATER_CHANNEL": {
+    "name": "水路",
+    "description": "水を導くための人工水路。農地への灌漑に使用されます。",
+    "color": [0.25, 0.45, 0.65, 1.0],
+    "decorationType": "WATER_WAVES",
+    "decorationColor": [0.3, 0.5, 0.75, 0.6],
+    "decorationCount": 2,
+    "moisture": 1.0,
+    "fertility": 0.3,
+    "drainage": 0.0,
+    "tillageDifficulty": 1.0
+  },
+  "BARREN": {
+    "name": "荒地",
+    "description": "採掘によって荒廃した土地。農業や畜産には適さないが、建築には使用できる。",
+    "color": [0.4, 0.35, 0.3, 1.0],
+    "decorationType": "NONE",
+    "moisture": 0.1,
+    "fertility": 0.0,
+    "drainage": 0.9,
+    "tillageDifficulty": 1.0
+  }
+}

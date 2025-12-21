@@ -6,7 +6,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Array;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -73,12 +72,12 @@ public class ItemDataLoader {
                     continue;
                 }
                 itemData.category = category;
-                itemData.name = parts.get(2).trim();
-                itemData.description = parts.get(3).trim();
+                itemData.name = parts.get(3).trim(); // nameは4番目のカラム（インデックス3）
+                itemData.description = parts.get(4).trim(); // descriptionは5番目のカラム（インデックス4）
                 
-                // 素材情報を読み込む（5番目のカラム、存在する場合）
-                if (parts.size() >= 5 && !parts.get(4).trim().isEmpty()) {
-                    String materialsStr = parts.get(4).trim();
+                // 素材情報を読み込む（6番目のカラム、インデックス5、存在する場合）
+                if (parts.size() >= 6 && !parts.get(5).trim().isEmpty()) {
+                    String materialsStr = parts.get(5).trim();
                     // 引用符を除去
                     if (materialsStr.startsWith("\"") && materialsStr.endsWith("\"")) {
                         materialsStr = materialsStr.substring(1, materialsStr.length() - 1);
@@ -87,9 +86,9 @@ public class ItemDataLoader {
                     itemData.setMaterials(materials);
                 }
                 
-                // 要求条件情報を読み込む（6番目のカラム、存在する場合）
-                if (parts.size() >= 6 && !parts.get(5).trim().isEmpty()) {
-                    String requirementsStr = parts.get(5).trim();
+                // 要求条件情報を読み込む（7番目のカラム、インデックス6、存在する場合）
+                if (parts.size() >= 7 && !parts.get(6).trim().isEmpty()) {
+                    String requirementsStr = parts.get(6).trim();
                     // 引用符を除去
                     if (requirementsStr.startsWith("\"") && requirementsStr.endsWith("\"")) {
                         requirementsStr = requirementsStr.substring(1, requirementsStr.length() - 1);
@@ -98,29 +97,29 @@ public class ItemDataLoader {
                     itemData.setRequirements(requirements);
                 }
                 
-                // 農具の耐久値を読み込む（7番目のカラム、存在する場合）
-                if (parts.size() >= 7 && !parts.get(6).trim().isEmpty()) {
-                    try {
-                        int durability = Integer.parseInt(parts.get(6).trim());
-                        itemData.setToolDurability(durability);
-                    } catch (NumberFormatException e) {
-                        Gdx.app.log("ItemDataLoader", "Invalid tool durability: " + parts.get(6));
-                    }
-                }
-                
-                // 農具の効率を読み込む（8番目のカラム、存在する場合）
+                // 農具の耐久値を読み込む（8番目のカラム、インデックス7、存在する場合）
                 if (parts.size() >= 8 && !parts.get(7).trim().isEmpty()) {
                     try {
-                        float efficiency = Float.parseFloat(parts.get(7).trim());
-                        itemData.setToolEfficiency(efficiency);
+                        int durability = Integer.parseInt(parts.get(7).trim());
+                        itemData.setToolDurability(durability);
                     } catch (NumberFormatException e) {
-                        Gdx.app.log("ItemDataLoader", "Invalid tool efficiency: " + parts.get(7));
+                        Gdx.app.log("ItemDataLoader", "Invalid tool durability: " + parts.get(7));
                     }
                 }
                 
-                // 水条件を読み込む（9番目のカラム、存在する場合）
+                // 農具の効率を読み込む（9番目のカラム、インデックス8、存在する場合）
                 if (parts.size() >= 9 && !parts.get(8).trim().isEmpty()) {
-                    String waterRequirement = parts.get(8).trim();
+                    try {
+                        float efficiency = Float.parseFloat(parts.get(8).trim());
+                        itemData.setToolEfficiency(efficiency);
+                    } catch (NumberFormatException e) {
+                        Gdx.app.log("ItemDataLoader", "Invalid tool efficiency: " + parts.get(8));
+                    }
+                }
+                
+                // 水条件を読み込む（10番目のカラム、インデックス9、存在する場合）
+                if (parts.size() >= 10 && !parts.get(9).trim().isEmpty()) {
+                    String waterRequirement = parts.get(9).trim();
                     itemData.setRequiresWater("true".equalsIgnoreCase(waterRequirement) || "NEAR_WATER".equalsIgnoreCase(waterRequirement));
                 }
                 

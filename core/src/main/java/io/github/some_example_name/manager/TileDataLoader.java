@@ -5,12 +5,14 @@ import io.github.some_example_name.entity.TileData;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.utils.Json;
+import com.badlogic.gdx.utils.JsonValue;
 
 import java.util.HashMap;
 import java.util.Map;
 
 /**
- * タイルデータをMarkdownファイルから読み込むクラス。
+ * タイルデータをJSONファイルから読み込むクラス。
  */
 public class TileDataLoader {
     private static TileDataLoader instance;
@@ -41,60 +43,115 @@ public class TileDataLoader {
     }
     
     /**
-     * Markdownファイルからタイルデータを読み込みます。
+     * JSONファイルからタイルデータを読み込みます。
      */
     private void loadTileData() {
-        FileHandle file = Gdx.files.internal("tiles/tiles.md");
+        FileHandle file = Gdx.files.internal("tiles/tiles.json");
         if (!file.exists()) {
-            Gdx.app.error("TileDataLoader", "tiles.md not found at: tiles/tiles.md");
+            Gdx.app.error("TileDataLoader", "tiles.json not found at: tiles/tiles.json");
             // デフォルトデータを設定
             createDefaultTileData();
             return;
         }
         
         try {
-            String content = file.readString();
-            // 改行コードを統一（\r\n -> \n）
-            content = io.github.some_example_name.util.CSVParser.normalizeLineEndings(content);
-            String[] lines = content.split("\n");
+            String jsonString = file.readString();
+            Json json = new Json();
+            JsonValue root = json.fromJson(JsonValue.class, jsonString);
             
-            TerrainTile.TerrainType currentType = null;
-            TileData currentData = null;
-            
-            for (int i = 0; i < lines.length; i++) {
-                String line = lines[i].trim();
+            // 各タイルタイプを処理
+            for (JsonValue tileEntry = root.child(); tileEntry != null; tileEntry = tileEntry.next()) {
+                String terrainTypeName = tileEntry.name();
+                JsonValue tileData = tileEntry;
                 
-                // セクション開始（### で始まる行）
-                if (line.startsWith("### ")) {
-                    // 前のタイルデータを保存
-                    if (currentType != null && currentData != null) {
-                        tileDataMap.put(currentType, currentData);
+                try {
+                    TerrainTile.TerrainType terrainType = TerrainTile.TerrainType.valueOf(terrainTypeName);
+                    TileData data = new TileData(terrainType);
+                    
+                    // 基本情報
+                    if (tileData.has("name")) {
+                        data.setName(tileData.getString("name"));
+                    }
+                    if (tileData.has("description")) {
+                        data.setDescription(tileData.getString("description"));
                     }
                     
-                    // 新しいタイルタイプを解析
-                    String typeStr = line.substring(4).trim().split(" ")[0]; // "### GRASS (草)" -> "GRASS"
-                    currentType = parseTerrainType(typeStr);
-                    if (currentType != null) {
-                        currentData = new TileData(currentType);
-                    } else {
-                        currentData = null;
+                    // 色情報
+                    if (tileData.has("color")) {
+                        JsonValue colorArray = tileData.get("color");
+                        if (colorArray.isArray() && colorArray.size >= 3) {
+                            float r = colorArray.getFloat(0);
+                            float g = colorArray.getFloat(1);
+                            float b = colorArray.getFloat(2);
+                            float a = colorArray.size >= 4 ? colorArray.getFloat(3) : 1.0f;
+                            data.setColor(r, g, b, a);
+                        }
                     }
-                    continue;
+                    
+                    // 装飾情報
+                    if (tileData.has("decorationType")) {
+                        data.setDecorationType(parseDecorationType(tileData.getString("decorationType")));
+                    }
+                    if (tileData.has("decorationColor")) {
+                        JsonValue colorArray = tileData.get("decorationColor");
+                        if (colorArray.isArray() && colorArray.size >= 3) {
+                            float r = colorArray.getFloat(0);
+                            float g = colorArray.getFloat(1);
+                            float b = colorArray.getFloat(2);
+                            float a = colorArray.size >= 4 ? colorArray.getFloat(3) : 1.0f;
+                            data.setDecorationColor(r, g, b, a);
+                        }
+                    }
+                    if (tileData.has("decorationCount")) {
+                        data.setDecorationCount(tileData.getInt("decorationCount"));
+                    }
+                    
+                    // 木の装飾用の色
+                    if (tileData.has("trunkColor")) {
+                        JsonValue colorArray = tileData.get("trunkColor");
+                        if (colorArray.isArray() && colorArray.size >= 3) {
+                            float r = colorArray.getFloat(0);
+                            float g = colorArray.getFloat(1);
+                            float b = colorArray.getFloat(2);
+                            float a = colorArray.size >= 4 ? colorArray.getFloat(3) : 1.0f;
+                            data.setTrunkColor(r, g, b, a);
+                        }
+                    }
+                    if (tileData.has("leafColor")) {
+                        JsonValue colorArray = tileData.get("leafColor");
+                        if (colorArray.isArray() && colorArray.size >= 3) {
+                            float r = colorArray.getFloat(0);
+                            float g = colorArray.getFloat(1);
+                            float b = colorArray.getFloat(2);
+                            float a = colorArray.size >= 4 ? colorArray.getFloat(3) : 1.0f;
+                            data.setLeafColor(r, g, b, a);
+                        }
+                    }
+                    
+                    // 土壌パラメータ
+                    if (tileData.has("moisture")) {
+                        data.setMoisture(tileData.getFloat("moisture"));
+                    }
+                    if (tileData.has("fertility")) {
+                        data.setFertility(tileData.getFloat("fertility"));
+                    }
+                    if (tileData.has("drainage")) {
+                        data.setDrainage(tileData.getFloat("drainage"));
+                    }
+                    if (tileData.has("tillageDifficulty")) {
+                        data.setTillageDifficulty(tileData.getFloat("tillageDifficulty"));
+                    }
+                    
+                    tileDataMap.put(terrainType, data);
+                } catch (IllegalArgumentException e) {
+                    Gdx.app.log("TileDataLoader", "Unknown terrain type: " + terrainTypeName);
+                } catch (Exception e) {
+                    Gdx.app.log("TileDataLoader", "Error parsing tile data for " + terrainTypeName + ": " + e.getMessage());
                 }
-                
-                // データ行の解析
-                if (currentData != null && line.startsWith("- **")) {
-                    parseDataLine(line, currentData);
-                }
-            }
-            
-            // 最後のタイルデータを保存
-            if (currentType != null && currentData != null) {
-                tileDataMap.put(currentType, currentData);
             }
             
         } catch (Exception e) {
-            Gdx.app.error("TileDataLoader", "Error loading tiles.md: " + e.getMessage());
+            Gdx.app.error("TileDataLoader", "Error loading tiles.json: " + e.getMessage());
             e.printStackTrace();
             // エラー時はデフォルトデータを設定
             createDefaultTileData();
@@ -104,131 +161,27 @@ public class TileDataLoader {
     }
     
     /**
-     * 文字列からTerrainTypeを解析します。
-     */
-    private TerrainTile.TerrainType parseTerrainType(String typeStr) {
-        try {
-            return TerrainTile.TerrainType.valueOf(typeStr.toUpperCase());
-        } catch (IllegalArgumentException e) {
-            Gdx.app.log("TileDataLoader", "Unknown terrain type: " + typeStr);
-            return null;
-        }
-    }
-    
-    /**
-     * データ行を解析します。
-     */
-    private void parseDataLine(String line, TileData data) {
-        // "- **キー**: 値" の形式を解析
-        if (!line.contains("**") || !line.contains(":")) {
-            return;
-        }
-        
-        int keyStart = line.indexOf("**") + 2;
-        int keyEnd = line.indexOf("**", keyStart);
-        if (keyEnd == -1) {
-            return;
-        }
-        
-        String key = line.substring(keyStart, keyEnd).trim();
-        int valueStart = line.indexOf(":", keyEnd) + 1;
-        String value = line.substring(valueStart).trim();
-        
-        try {
-            switch (key) {
-                case "名前":
-                    data.setName(value);
-                    break;
-                case "説明":
-                    data.setDescription(value);
-                    break;
-                case "色":
-                    parseColor(value, data::setColor);
-                    break;
-                case "装飾タイプ":
-                    data.setDecorationType(parseDecorationType(value));
-                    break;
-                case "装飾色":
-                    parseColor(value, data::setDecorationColor);
-                    break;
-                case "装飾数":
-                    data.setDecorationCount(Integer.parseInt(value));
-                    break;
-                case "幹の色":
-                    parseColor(value, data::setTrunkColor);
-                    break;
-                case "葉の色":
-                    parseColor(value, data::setLeafColor);
-                    break;
-                case "水分量":
-                    data.setMoisture(Float.parseFloat(value));
-                    break;
-                case "肥沃度":
-                    data.setFertility(Float.parseFloat(value));
-                    break;
-                case "排水性":
-                    data.setDrainage(Float.parseFloat(value));
-                    break;
-                case "耕作難度":
-                    data.setTillageDifficulty(Float.parseFloat(value));
-                    break;
-            }
-        } catch (Exception e) {
-            Gdx.app.log("TileDataLoader", "Error parsing line: " + line + " - " + e.getMessage());
-        }
-    }
-    
-    /**
-     * 色の文字列を解析します。
-     * フォーマット: "0.3, 0.6, 0.2, 1.0 (RGBA)"
-     */
-    private void parseColor(String colorStr, ColorSetter setter) {
-        try {
-            // "(RGBA)" を除去
-            colorStr = colorStr.replace("(RGBA)", "").trim();
-            String[] parts = colorStr.split(",");
-            if (parts.length >= 3) {
-                float r = Float.parseFloat(parts[0].trim());
-                float g = Float.parseFloat(parts[1].trim());
-                float b = Float.parseFloat(parts[2].trim());
-                float a = parts.length >= 4 ? Float.parseFloat(parts[3].trim()) : 1.0f;
-                setter.set(r, g, b, a);
-            }
-        } catch (Exception e) {
-            Gdx.app.log("TileDataLoader", "Error parsing color: " + colorStr);
-        }
-    }
-    
-    /**
      * 装飾タイプの文字列を解析します。
      */
     private TileData.DecorationType parseDecorationType(String typeStr) {
-        switch (typeStr.toLowerCase()) {
-            case "none":
+        switch (typeStr.toUpperCase()) {
+            case "NONE":
                 return TileData.DecorationType.NONE;
-            case "grass_dots":
+            case "GRASS_DOTS":
                 return TileData.DecorationType.GRASS_DOTS;
-            case "sand_dots":
+            case "SAND_DOTS":
                 return TileData.DecorationType.SAND_DOTS;
-            case "water_waves":
+            case "WATER_WAVES":
                 return TileData.DecorationType.WATER_WAVES;
-            case "stone_pattern":
+            case "STONE_PATTERN":
                 return TileData.DecorationType.STONE_PATTERN;
-            case "tree":
+            case "TREE":
                 return TileData.DecorationType.TREE;
-            case "furrows":
+            case "FURROWS":
                 return TileData.DecorationType.FURROWS;
             default:
                 return TileData.DecorationType.NONE;
         }
-    }
-    
-    /**
-     * 色を設定するための関数型インターフェース。
-     */
-    @FunctionalInterface
-    private interface ColorSetter {
-        void set(float r, float g, float b, float a);
     }
     
     /**

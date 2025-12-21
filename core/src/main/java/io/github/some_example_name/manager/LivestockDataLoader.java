@@ -6,7 +6,6 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Array;
 
-import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -68,11 +67,41 @@ public class LivestockDataLoader {
                 LivestockData livestockData = new LivestockData();
                 try {
                     livestockData.id = Integer.parseInt(parts.get(0).trim());
-                    livestockData.name = parts.get(2).trim();
-                    livestockData.description = parts.get(3).trim();
+                    livestockData.name = parts.get(3).trim(); // nameは4番目のカラム（インデックス3）
+                    livestockData.description = parts.get(4).trim(); // descriptionは5番目のカラム（インデックス4）
                     
-                    // 家畜IDから対応する肉IDと製品IDを自動設定
-                    setupLivestockAttributes(livestockData);
+                    // CSVから家畜属性を読み込む（カラムが存在する場合）
+                    if (parts.size() >= 11 && !parts.get(10).trim().isEmpty()) {
+                        // meat_item_id (カラム11, インデックス10)
+                        livestockData.meatItemId = Integer.parseInt(parts.get(10).trim());
+                    }
+                    if (parts.size() >= 12 && !parts.get(11).trim().isEmpty()) {
+                        // product_item_id (カラム12, インデックス11)
+                        String productIdStr = parts.get(11).trim();
+                        livestockData.productItemId = "-1".equals(productIdStr) ? -1 : Integer.parseInt(productIdStr);
+                    }
+                    if (parts.size() >= 13 && !parts.get(12).trim().isEmpty()) {
+                        // product_interval (カラム13, インデックス12)
+                        livestockData.productInterval = Float.parseFloat(parts.get(12).trim());
+                    }
+                    if (parts.size() >= 14 && !parts.get(13).trim().isEmpty()) {
+                        // required_civilization_level (カラム14, インデックス13)
+                        livestockData.requiredCivilizationLevel = Integer.parseInt(parts.get(13).trim());
+                    }
+                    if (parts.size() >= 17) {
+                        // color_r, color_g, color_b (カラム15-17, インデックス14-16)
+                        if (!parts.get(14).trim().isEmpty() && !parts.get(15).trim().isEmpty() && !parts.get(16).trim().isEmpty()) {
+                            float r = Float.parseFloat(parts.get(14).trim());
+                            float g = Float.parseFloat(parts.get(15).trim());
+                            float b = Float.parseFloat(parts.get(16).trim());
+                            livestockData.setColor(r, g, b);
+                        }
+                    }
+                    
+                    // CSVにデータが存在しない場合は、デフォルト値を設定（後方互換性のため）
+                    if (livestockData.meatItemId == -1 && livestockData.productItemId == -1 && livestockData.productInterval == 0.0f) {
+                        setupLivestockAttributes(livestockData);
+                    }
                     
                 } catch (NumberFormatException e) {
                     Gdx.app.log("LivestockDataLoader", "Invalid number format in line: " + line + " - " + e.getMessage());
