@@ -205,9 +205,6 @@ public class GameInitializer {
         // 地形マネージャーを初期化
         result.terrainManager = new TerrainManager();
         
-        // アイテムマネージャーに地形マネージャーを設定（地形別採集用）
-        result.itemManager.setTerrainManager(result.terrainManager);
-        
         // 地形変換マネージャーを初期化
         result.terrainConversionManager = new TerrainConversionManager();
         result.terrainConversionManager.setTerrainManager(result.terrainManager);

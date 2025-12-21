@@ -14,7 +14,6 @@ public class GameSaveData {
     // アイテムマネージャーの状態
     public int collectedCount;
     public List<ItemData> items;
-    public List<String> generatedChunks;
     
     // 設定
     public boolean showGrid;
@@ -47,6 +46,5 @@ public class GameSaveData {
     public GameSaveData() {
         // JSONデシリアライズ用のデフォルトコンストラクタ
         this.items = new ArrayList<>();
-        this.generatedChunks = new ArrayList<>();
     }
 }

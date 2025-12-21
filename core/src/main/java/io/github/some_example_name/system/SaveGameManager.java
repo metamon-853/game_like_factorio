@@ -10,9 +10,7 @@ import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.utils.Json;
 
 import java.util.ArrayList;
-import java.util.HashSet;
 import java.util.List;
-import java.util.Set;
 
 /**
  * ゲームのセーブ/ロード機能を管理するクラス。
@@ -140,8 +138,6 @@ public class SaveGameManager {
                 }
             }
             
-            saveData.generatedChunks = new ArrayList<>(itemManager.getGeneratedChunks());
-            
             saveData.showGrid = showGrid;
             saveData.masterVolume = masterVolume;
             saveData.isMuted = isMuted;
@@ -199,9 +195,6 @@ public class SaveGameManager {
                 loadedItems.add(item);
             }
             itemManager.setItems(loadedItems);
-            
-            Set<String> chunks = new HashSet<>(saveData.generatedChunks);
-            itemManager.setGeneratedChunks(chunks);
             
             // 文明レベルを復元
             if (saveData.civilizationLevel > 0) {

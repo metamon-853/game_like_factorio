@@ -270,9 +270,6 @@ public class Main extends ApplicationAdapter {
         // 地形マネージャーを初期化
         terrainManager = new TerrainManager();
         
-        // アイテムマネージャーに地形マネージャーを設定（地形別採集用）
-        itemManager.setTerrainManager(terrainManager);
-        
         // 地形変換マネージャーを初期化
         terrainConversionManager = new TerrainConversionManager();
         terrainConversionManager.setTerrainManager(terrainManager);
