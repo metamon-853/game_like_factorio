@@ -18,6 +18,7 @@ import io.github.some_example_name.manager.ItemManager;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.LivestockManager;
 import io.github.some_example_name.manager.TerrainManager;
+import io.github.some_example_name.manager.TerrainConversionManager;
 import io.github.some_example_name.manager.TileDataLoader;
 import io.github.some_example_name.ui.UIRenderer;
 import io.github.some_example_name.ui.InventoryUI;
@@ -46,6 +47,7 @@ public class Main extends ApplicationAdapter {
     private FarmManager farmManager;
     private LivestockManager livestockManager;
     private TerrainManager terrainManager;
+    private TerrainConversionManager terrainConversionManager;
     
     // カメラとビューポート
     private OrthographicCamera camera;
@@ -194,12 +196,19 @@ public class Main extends ApplicationAdapter {
         // 地形マネージャーを初期化
         terrainManager = new TerrainManager();
         
+        // 地形変換マネージャーを初期化
+        terrainConversionManager = new TerrainConversionManager();
+        terrainConversionManager.setTerrainManager(terrainManager);
+        terrainConversionManager.setInventory(inventory);
+        terrainConversionManager.setItemDataLoader(itemManager.getItemDataLoader());
+        
         // 農地マネージャーに地形マネージャーを設定
         farmManager.setTerrainManager(terrainManager);
         
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
         inputHandler.setTerrainManager(terrainManager); // 地形マネージャーを設定
+        inputHandler.setTerrainConversionManager(terrainConversionManager); // 地形変換マネージャーを設定
         
         // プレイヤーに地形マネージャーを設定（タイルタイプに応じた足音のため）
         player.setTerrainManager(terrainManager);

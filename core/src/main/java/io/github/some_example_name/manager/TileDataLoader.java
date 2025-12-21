@@ -341,7 +341,7 @@ public class TileDataLoader {
         // MARSH
         TileData marsh = new TileData(TerrainTile.TerrainType.MARSH);
         marsh.setName("湿地");
-        marsh.setDescription("水は多いが排水が悪い土地。");
+        marsh.setDescription("水は多いが排水が悪い土地。耕作は困難ですが、適切な排水工事を行うことで水田に変換できます。");
         marsh.setColor(0.2f, 0.4f, 0.25f, 1.0f);
         marsh.setDecorationType(TileData.DecorationType.WATER_WAVES);
         marsh.setDecorationColor(0.25f, 0.45f, 0.3f, 0.5f);
@@ -351,6 +351,34 @@ public class TileDataLoader {
         marsh.setDrainage(0.1f);
         marsh.setTillageDifficulty(0.9f);
         tileDataMap.put(TerrainTile.TerrainType.MARSH, marsh);
+        
+        // DRAINED_MARSH
+        TileData drainedMarsh = new TileData(TerrainTile.TerrainType.DRAINED_MARSH);
+        drainedMarsh.setName("排水後湿地");
+        drainedMarsh.setDescription("排水工事が完了した湿地。まだ作物は植えられませんが、水田整備が可能です。");
+        drainedMarsh.setColor(0.25f, 0.42f, 0.28f, 1.0f);
+        drainedMarsh.setDecorationType(TileData.DecorationType.WATER_WAVES);
+        drainedMarsh.setDecorationColor(0.28f, 0.45f, 0.32f, 0.3f);
+        drainedMarsh.setDecorationCount(1);
+        drainedMarsh.setMoisture(0.6f);
+        drainedMarsh.setFertility(0.65f);
+        drainedMarsh.setDrainage(0.5f);
+        drainedMarsh.setTillageDifficulty(0.7f);
+        tileDataMap.put(TerrainTile.TerrainType.DRAINED_MARSH, drainedMarsh);
+        
+        // WATER_CHANNEL
+        TileData waterChannel = new TileData(TerrainTile.TerrainType.WATER_CHANNEL);
+        waterChannel.setName("水路");
+        waterChannel.setDescription("水を導くための人工水路。農地への灌漑に使用されます。");
+        waterChannel.setColor(0.25f, 0.45f, 0.65f, 1.0f);
+        waterChannel.setDecorationType(TileData.DecorationType.WATER_WAVES);
+        waterChannel.setDecorationColor(0.3f, 0.5f, 0.75f, 0.6f);
+        waterChannel.setDecorationCount(2);
+        waterChannel.setMoisture(1.0f);
+        waterChannel.setFertility(0.3f);
+        waterChannel.setDrainage(0.0f);
+        waterChannel.setTillageDifficulty(1.0f);
+        tileDataMap.put(TerrainTile.TerrainType.WATER_CHANNEL, waterChannel);
     }
     
     /**

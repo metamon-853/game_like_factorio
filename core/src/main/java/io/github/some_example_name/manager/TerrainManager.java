@@ -135,6 +135,9 @@ public class TerrainManager {
             if (moistureNoise > 0.65 && terrainNoise > 0.4) {
                 // 高湿度＋適度な地形ノイズ：森林エリア
                 return TerrainTile.TerrainType.FOREST;
+            } else if (moistureNoise > 0.75 && heightNoise < 0.5) {
+                // 非常に高湿度＋低地：湿地エリア
+                return TerrainTile.TerrainType.MARSH;
             } else if (moistureNoise < 0.35 || terrainNoise < 0.3) {
                 // 低湿度または低地形ノイズ：土エリア
                 return TerrainTile.TerrainType.DIRT;
@@ -323,6 +326,80 @@ public class TerrainManager {
             int checkY = tileY + dy[i];
             TerrainTile tile = getTerrainTile(checkX, checkY);
             if (tile != null && tile.getTerrainType() == TerrainTile.TerrainType.WATER) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 指定されたタイル位置の地形を変更します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @param newType 新しい地形タイプ
+     * @return 変更に成功した場合true
+     */
+    public boolean changeTerrainType(int tileX, int tileY, TerrainTile.TerrainType newType) {
+        String tileKey = tileX + "," + tileY;
+        TerrainTile tile = terrainTiles.get(tileKey);
+        
+        if (tile == null) {
+            // タイルが存在しない場合は新規作成
+            terrainTiles.put(tileKey, new TerrainTile(tileX, tileY, newType));
+            return true;
+        } else {
+            // 既存のタイルのタイプを変更
+            // TerrainTileクラスにsetterがない場合は、新しいインスタンスで置き換え
+            terrainTiles.put(tileKey, new TerrainTile(tileX, tileY, newType));
+            return true;
+        }
+    }
+    
+    /**
+     * 指定されたタイル位置が水源（WATER、WATER_CHANNEL、PADDY）に隣接しているかどうかを判定します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 水源に隣接している場合true
+     */
+    public boolean isNearWaterSource(int tileX, int tileY) {
+        // 周囲8方向をチェック
+        int[] dx = {-1, -1, -1, 0, 0, 1, 1, 1};
+        int[] dy = {-1, 0, 1, -1, 1, -1, 0, 1};
+        
+        for (int i = 0; i < dx.length; i++) {
+            int checkX = tileX + dx[i];
+            int checkY = tileY + dy[i];
+            TerrainTile tile = getTerrainTile(checkX, checkY);
+            if (tile != null) {
+                TerrainTile.TerrainType type = tile.getTerrainType();
+                if (type == TerrainTile.TerrainType.WATER ||
+                    type == TerrainTile.TerrainType.WATER_CHANNEL ||
+                    type == TerrainTile.TerrainType.PADDY) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 指定されたタイル位置が水路（WATER_CHANNEL）に接続されているかどうかを判定します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 水路に接続されている場合true
+     */
+    public boolean isConnectedToWaterChannel(int tileX, int tileY) {
+        // 周囲4方向（上下左右）をチェック
+        int[] dx = {-1, 0, 0, 1};
+        int[] dy = {0, -1, 1, 0};
+        
+        for (int i = 0; i < dx.length; i++) {
+            int checkX = tileX + dx[i];
+            int checkY = tileY + dy[i];
+            TerrainTile tile = getTerrainTile(checkX, checkY);
+            if (tile != null && tile.getTerrainType() == TerrainTile.TerrainType.WATER_CHANNEL) {
                 return true;
             }
         }

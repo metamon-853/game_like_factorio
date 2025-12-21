@@ -10,15 +10,17 @@ import io.github.some_example_name.manager.TileDataLoader;
 public class TerrainTile {
     // 地形タイプ
     public enum TerrainType {
-        GRASS,      // 草
-        DIRT,       // 土
-        SAND,       // 砂
-        WATER,      // 水
-        STONE,      // 岩
-        FOREST,     // 森
-        PADDY,      // 田（水田）
-        FARMLAND,   // 畑
-        MARSH       // 湿地
+        GRASS,          // 草
+        DIRT,           // 土
+        SAND,           // 砂
+        WATER,          // 水
+        STONE,          // 岩
+        FOREST,         // 森
+        PADDY,          // 田（水田）
+        FARMLAND,       // 畑
+        MARSH,          // 湿地
+        DRAINED_MARSH,  // 排水後湿地
+        WATER_CHANNEL   // 水路
     }
     
     private int tileX;

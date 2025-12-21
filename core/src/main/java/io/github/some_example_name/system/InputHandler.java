@@ -5,6 +5,7 @@ import io.github.some_example_name.entity.TerrainTile;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.LivestockManager;
 import io.github.some_example_name.manager.TerrainManager;
+import io.github.some_example_name.manager.TerrainConversionManager;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.Input;
@@ -17,12 +18,14 @@ public class InputHandler {
     private FarmManager farmManager;
     private LivestockManager livestockManager;
     private TerrainManager terrainManager;
+    private TerrainConversionManager terrainConversionManager;
     
     public InputHandler(Player player, FarmManager farmManager, LivestockManager livestockManager) {
         this.player = player;
         this.farmManager = farmManager;
         this.livestockManager = livestockManager;
         this.terrainManager = null; // 後で設定される
+        this.terrainConversionManager = null; // 後で設定される
     }
     
     /**
@@ -30,6 +33,13 @@ public class InputHandler {
      */
     public void setTerrainManager(TerrainManager terrainManager) {
         this.terrainManager = terrainManager;
+    }
+    
+    /**
+     * 地形変換マネージャーを設定します。
+     */
+    public void setTerrainConversionManager(TerrainConversionManager terrainConversionManager) {
+        this.terrainConversionManager = terrainConversionManager;
     }
     
     /**
@@ -52,6 +62,12 @@ public class InputHandler {
         if (Gdx.input.isKeyJustPressed(Input.Keys.K)) {
             handleKillLivestockAction();
             return; // 家畜を殺すアクション時は移動しない
+        }
+        
+        // Tキーで地形変換を行う（移動中でも可能）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.T)) {
+            handleTerrainConversionAction();
+            return; // 地形変換アクション時は移動しない
         }
         
         // 移動中は新しい入力を無視
@@ -178,6 +194,38 @@ public class InputHandler {
             Gdx.app.log("Livestock", "家畜を殺して肉を取得しました！");
         } else {
             Gdx.app.log("Livestock", "家畜がいません。");
+        }
+    }
+    
+    /**
+     * 地形変換アクションを処理します。
+     */
+    private void handleTerrainConversionAction() {
+        if (terrainConversionManager == null) {
+            Gdx.app.log("TerrainConversion", "地形変換マネージャーが設定されていません");
+            return;
+        }
+        
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int tileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int tileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        
+        // 使用可能な道具を検索
+        int toolId = terrainConversionManager.findUsableTool(tileX, tileY);
+        if (toolId == -1) {
+            Gdx.app.log("TerrainConversion", "この地形で使用できる道具がありません");
+            return;
+        }
+        
+        // 地形変換を試みる
+        if (terrainConversionManager.tryConvertTerrain(tileX, tileY, toolId)) {
+            Gdx.app.log("TerrainConversion", "地形を変換しました！");
+        } else {
+            Gdx.app.log("TerrainConversion", "地形変換に失敗しました");
         }
     }
     
