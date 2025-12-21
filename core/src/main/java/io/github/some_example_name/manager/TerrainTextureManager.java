@@ -70,6 +70,15 @@ public class TerrainTextureManager implements Disposable {
             case MARSH:
                 createMarshTexture(pixmap, size);
                 break;
+            case DRAINED_MARSH:
+                createDrainedMarshTexture(pixmap, size);
+                break;
+            case WATER_CHANNEL:
+                createWaterChannelTexture(pixmap, size);
+                break;
+            case BARREN:
+                createBarrenTexture(pixmap, size);
+                break;
         }
         
         return pixmap;
@@ -339,6 +348,101 @@ public class TerrainTextureManager implements Disposable {
                 0.7f
             );
             drawCircle(pixmap, x, y, radius, mudColor);
+        }
+    }
+    
+    /**
+     * 排水後湿地のテクスチャを生成します。
+     */
+    private void createDrainedMarshTexture(Pixmap pixmap, int size) {
+        // ベース色（湿地より乾燥した感じ、土に近い）
+        Color baseColor = new Color(0.35f, 0.45f, 0.3f, 1f);
+        fillPixmap(pixmap, baseColor);
+        
+        // 弱い波紋を追加（まだ少し水気がある）
+        for (int i = 0; i < 2; i++) {
+            int centerX = (int)(size * (0.3f + i * 0.4f));
+            int centerY = size / 2;
+            int radius = size / 6;
+            drawCircle(pixmap, centerX, centerY, radius, new Color(0.4f, 0.5f, 0.35f, 0.3f));
+        }
+        
+        // 土の質感を追加（排水されて土に近づいた感じ）
+        for (int i = 0; i < 12; i++) {
+            int x = (int)(size * (0.1f + (i % 4) * 0.25f));
+            int y = (int)(size * (0.15f + (i / 4) * 0.7f));
+            int radius = size / 25;
+            float brightness = 0.7f + (float)(Math.random() * 0.3f);
+            Color dirtColor = new Color(
+                baseColor.r * brightness,
+                baseColor.g * brightness,
+                baseColor.b * brightness,
+                0.8f
+            );
+            drawCircle(pixmap, x, y, radius, dirtColor);
+        }
+    }
+    
+    /**
+     * 水路のテクスチャを生成します。
+     */
+    private void createWaterChannelTexture(Pixmap pixmap, int size) {
+        // ベース色（水色、人工的な感じ）
+        Color baseColor = new Color(0.25f, 0.45f, 0.65f, 1f);
+        fillPixmap(pixmap, baseColor);
+        
+        // 規則的な波紋を追加（人工的な水路の感じ）
+        for (int i = 0; i < 3; i++) {
+            int centerX = size / 2;
+            int centerY = (int)(size * (0.2f + i * 0.3f));
+            int radius = size / 5;
+            drawCircle(pixmap, centerX, centerY, radius, new Color(0.3f, 0.5f, 0.75f, 0.4f));
+        }
+        
+        // 水路の縁を表現（少し暗く）
+        drawRect(pixmap, 0, 0, size, size / 12, new Color(0.2f, 0.4f, 0.6f, 0.8f));
+        drawRect(pixmap, 0, size - size / 12, size, size / 12, new Color(0.2f, 0.4f, 0.6f, 0.8f));
+        
+        // ハイライト（光の反射）
+        for (int i = 0; i < 2; i++) {
+            int x = (int)(size * (0.3f + i * 0.4f));
+            int y = (int)(size * (0.25f + i * 0.3f));
+            int radius = size / 18;
+            drawCircle(pixmap, x, y, radius, new Color(0.4f, 0.55f, 0.8f, 0.6f));
+        }
+    }
+    
+    /**
+     * 荒地のテクスチャを生成します。
+     */
+    private void createBarrenTexture(Pixmap pixmap, int size) {
+        // ベース色（灰色がかった茶色、荒廃した感じ）
+        Color baseColor = new Color(0.4f, 0.35f, 0.3f, 1f);
+        fillPixmap(pixmap, baseColor);
+        
+        // 荒廃した質感を追加（不規則な点）
+        for (int i = 0; i < 18; i++) {
+            int x = (int)(Math.random() * size);
+            int y = (int)(Math.random() * size);
+            int radius = size / 30;
+            float brightness = 0.5f + (float)(Math.random() * 0.4f);
+            Color barrenColor = new Color(
+                baseColor.r * brightness,
+                baseColor.g * brightness,
+                baseColor.b * brightness,
+                0.9f
+            );
+            drawCircle(pixmap, x, y, radius, barrenColor);
+        }
+        
+        // 亀裂のような線を追加
+        for (int i = 0; i < 2; i++) {
+            int startX = (int)(size * (0.1f + i * 0.4f));
+            int startY = (int)(size * (0.2f + i * 0.3f));
+            int endX = (int)(size * (0.7f + i * 0.1f));
+            int width = size / 40;
+            drawRect(pixmap, startX, startY, endX - startX, width, 
+                    new Color(0.3f, 0.25f, 0.2f, 0.7f));
         }
     }
     

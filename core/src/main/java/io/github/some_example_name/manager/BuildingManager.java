@@ -1,11 +1,9 @@
 package io.github.some_example_name.manager;
 
 import io.github.some_example_name.entity.TerrainTile;
-import io.github.some_example_name.entity.ItemData;
 import io.github.some_example_name.game.Inventory;
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
-import com.badlogic.gdx.graphics.Color;
 
 import java.util.HashMap;
 import java.util.Map;
@@ -31,9 +29,6 @@ public class BuildingManager {
     
     // 地形マネージャーへの参照
     private TerrainManager terrainManager;
-    
-    // 神殿のアイテムID（恒久建築物）
-    private static final int TEMPLE_ITEM_ID = 50;
     
     // 神殿の素材：鉄インゴット（ID: 37）5個、石（ID: 1）3個
     private static final int TEMPLE_IRON_INGOT_ID = 37;

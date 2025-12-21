@@ -47,7 +47,6 @@ public class Player {
     // 足音のタイミング管理
     private float footstepTimer = 0f;
     private static final float FOOTSTEP_INTERVAL = 0.1f; // 足音の間隔（秒）- 移動速度に合わせて調整
-    private boolean footstepPlayedThisMove = false; // この移動で足音を再生したか
     
     // 移動方向（最後に移動した方向を記録）
     private int lastMoveX = 0;
@@ -92,7 +91,6 @@ public class Player {
                     TerrainTile.TerrainType terrainType = getCurrentTerrainType();
                     soundManager.playFootstepSound(terrainType);
                     footstepTimer = 0f; // タイマーをリセット
-                    footstepPlayedThisMove = true;
                 }
             }
             
@@ -105,7 +103,6 @@ public class Player {
                 pixelY = playerTileY * PLAYER_TILE_SIZE;
                 isMoving = false;
                 footstepTimer = 0f; // 移動終了時にタイマーをリセット
-                footstepPlayedThisMove = false; // フラグをリセット
             } else {
                 // 移動中：線形補間でスムーズに移動
                 float startX = playerTileX * PLAYER_TILE_SIZE;
@@ -119,7 +116,6 @@ public class Player {
         } else {
             // 移動していない場合はタイマーをリセット
             footstepTimer = 0f;
-            footstepPlayedThisMove = false;
         }
     }
     
@@ -152,14 +148,12 @@ public class Player {
         isMoving = true;
         moveProgress = 0.0f;
         footstepTimer = 0f; // タイマーをリセット
-        footstepPlayedThisMove = false; // フラグをリセット
         
         // 移動開始時にすぐ足音を再生
         if (soundManager != null) {
             // 現在の位置のタイルタイプを取得して適切な足音を再生
             TerrainTile.TerrainType terrainType = getCurrentTerrainType();
             soundManager.playFootstepSound(terrainType);
-            footstepPlayedThisMove = true;
         }
         
         return true;

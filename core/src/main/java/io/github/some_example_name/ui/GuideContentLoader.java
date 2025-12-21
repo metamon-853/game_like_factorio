@@ -59,6 +59,14 @@ public class GuideContentLoader {
                 return "guide/TERRAIN.md";
             case OTHER_FEATURES:
                 return "guide/OTHER_FEATURES.md";
+            case BUILDINGS:
+                return "guide/BUILDINGS.md";
+            case ENDING:
+                return "guide/ENDING.md";
+            case GATHERING:
+                return "guide/GATHERING.md";
+            case MINING:
+                return "guide/MINING.md";
             default:
                 return null;
         }

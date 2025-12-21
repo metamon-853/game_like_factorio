@@ -26,7 +26,11 @@ public class HelpUI {
         FARMING,        // 農業
         LIVESTOCK,      // 家畜
         TERRAIN,        // 地形
-        OTHER_FEATURES  // その他の機能
+        OTHER_FEATURES, // その他の機能
+        BUILDINGS,      // 建造物
+        ENDING,         // エンディング
+        GATHERING,      // 採集
+        MINING          // 採掘
     }
     
     private ShapeRenderer shapeRenderer;
@@ -74,6 +78,10 @@ public class HelpUI {
     private Button livestockButton;
     private Button terrainButton;
     private Button otherFeaturesButton;
+    private Button buildingsButton;
+    private Button endingButton;
+    private Button gatheringButton;
+    private Button miningButton;
     
     // サウンドマネージャー
     private io.github.some_example_name.system.SoundManager soundManager;
@@ -85,6 +93,10 @@ public class HelpUI {
     private boolean lastLivestockButtonHovered = false;
     private boolean lastTerrainButtonHovered = false;
     private boolean lastOtherFeaturesButtonHovered = false;
+    private boolean lastBuildingsButtonHovered = false;
+    private boolean lastEndingButtonHovered = false;
+    private boolean lastGatheringButtonHovered = false;
+    private boolean lastMiningButtonHovered = false;
     
     public HelpUI(ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
                  OrthographicCamera uiCamera, int screenWidth, int screenHeight) {
@@ -117,30 +129,6 @@ public class HelpUI {
     public void onOpen() {
         resetScroll();
         currentState = GuideState.MENU; // メニュー画面に戻る
-    }
-    
-    /**
-     * 現在の状態を取得します。
-     */
-    public GuideState getCurrentState() {
-        return currentState;
-    }
-    
-    /**
-     * 状態を設定します。
-     */
-    public void setState(GuideState state) {
-        this.currentState = state;
-        resetScroll();
-    }
-    
-    /**
-     * 画面サイズを更新します。
-     */
-    public void updateScreenSize(int width, int height) {
-        this.screenWidth = width;
-        this.screenHeight = height;
-        updatePanelPosition();
     }
     
     /**
@@ -188,6 +176,10 @@ public class HelpUI {
         livestockButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 2, menuButtonWidth, menuButtonHeight);
         terrainButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 3, menuButtonWidth, menuButtonHeight);
         otherFeaturesButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 4, menuButtonWidth, menuButtonHeight);
+        buildingsButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 5, menuButtonWidth, menuButtonHeight);
+        endingButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 6, menuButtonWidth, menuButtonHeight);
+        gatheringButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 7, menuButtonWidth, menuButtonHeight);
+        miningButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 8, menuButtonWidth, menuButtonHeight);
     }
     
     /**
@@ -201,31 +193,82 @@ public class HelpUI {
         float uiY = screenHeight - screenY;
         
         if (currentState == GuideState.MENU) {
-            // メニュー画面でのクリック処理
-            if (controlsButton != null && controlsButton.contains((float)screenX, uiY)) {
-                currentState = GuideState.CONTROLS;
-                resetScroll();
-                return false;
+            // メニュー画面の場合、ボタンの位置をスクロールオフセットに応じて更新
+            float menuButtonHeight = 80;
+            float menuButtonSpacing = 20;
+            float menuStartY = headerY - 30 - menuButtonHeight;
+            
+            if (controlsButton != null) {
+                controlsButton.y = menuStartY + scrollOffset;
+                if (controlsButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.CONTROLS;
+                    resetScroll();
+                    return false;
+                }
             }
-            if (farmingButton != null && farmingButton.contains((float)screenX, uiY)) {
-                currentState = GuideState.FARMING;
-                resetScroll();
-                return false;
+            if (farmingButton != null) {
+                farmingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) + scrollOffset;
+                if (farmingButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.FARMING;
+                    resetScroll();
+                    return false;
+                }
             }
-            if (livestockButton != null && livestockButton.contains((float)screenX, uiY)) {
-                currentState = GuideState.LIVESTOCK;
-                resetScroll();
-                return false;
+            if (livestockButton != null) {
+                livestockButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 2 + scrollOffset;
+                if (livestockButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.LIVESTOCK;
+                    resetScroll();
+                    return false;
+                }
             }
-            if (terrainButton != null && terrainButton.contains((float)screenX, uiY)) {
-                currentState = GuideState.TERRAIN;
-                resetScroll();
-                return false;
+            if (terrainButton != null) {
+                terrainButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 3 + scrollOffset;
+                if (terrainButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.TERRAIN;
+                    resetScroll();
+                    return false;
+                }
             }
-            if (otherFeaturesButton != null && otherFeaturesButton.contains((float)screenX, uiY)) {
-                currentState = GuideState.OTHER_FEATURES;
-                resetScroll();
-                return false;
+            if (otherFeaturesButton != null) {
+                otherFeaturesButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 4 + scrollOffset;
+                if (otherFeaturesButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.OTHER_FEATURES;
+                    resetScroll();
+                    return false;
+                }
+            }
+            if (buildingsButton != null) {
+                buildingsButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 5 + scrollOffset;
+                if (buildingsButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.BUILDINGS;
+                    resetScroll();
+                    return false;
+                }
+            }
+            if (endingButton != null) {
+                endingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 6 + scrollOffset;
+                if (endingButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.ENDING;
+                    resetScroll();
+                    return false;
+                }
+            }
+            if (gatheringButton != null) {
+                gatheringButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 7 + scrollOffset;
+                if (gatheringButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.GATHERING;
+                    resetScroll();
+                    return false;
+                }
+            }
+            if (miningButton != null) {
+                miningButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 8 + scrollOffset;
+                if (miningButton.contains((float)screenX, uiY)) {
+                    currentState = GuideState.MINING;
+                    resetScroll();
+                    return false;
+                }
             }
             // メニュー画面での戻るボタンのクリック判定（ゲームガイドを閉じる）
             if (backButton != null && backButton.contains((float)screenX, uiY)) {
@@ -338,6 +381,12 @@ public class HelpUI {
      * コンテンツの高さを計算してスクロール範囲を設定します。
      */
     private void calculateContentHeight(LivestockDataLoader livestockDataLoader) {
+        if (currentState == GuideState.MENU) {
+            // メニュー画面の場合は別メソッドで計算
+            calculateMenuContentHeight();
+            return;
+        }
+        
         float lineSpacing = 35f;
         float totalHeight = 0;
         
@@ -347,6 +396,10 @@ public class HelpUI {
             case LIVESTOCK:
             case TERRAIN:
             case OTHER_FEATURES:
+            case BUILDINGS:
+            case ENDING:
+            case GATHERING:
+            case MINING:
                 // Markdownファイルから読み込んだ要素の高さを計算
                 List<GuideContentLoader.GuideElement> elements = GuideContentLoader.loadGuideContent(currentState, livestockDataLoader);
                 totalHeight = calculateGuideElementsHeight(elements, lineSpacing);
@@ -418,11 +471,32 @@ public class HelpUI {
      * メニュー画面を描画します。
      */
     private void renderMenu() {
+        // メニューのコンテンツの高さを計算
+        calculateMenuContentHeight();
+        
         float mouseX = Gdx.input.getX();
         float mouseY = screenHeight - Gdx.input.getY();
         
+        // クリッピング領域を設定（コンテンツエリアのみ描画）
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        batch.flush();
+        Rectangle scissors = new Rectangle();
+        Rectangle clipBounds = new Rectangle(
+            panelX, contentAreaY, panelWidth, contentAreaHeight
+        );
+        ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
+        boolean scissorsPushed = ScissorStack.pushScissors(scissors);
+        
+        // ボタンをスクロールオフセットに応じて描画
+        float menuButtonHeight = 80;
+        float menuButtonSpacing = 20;
+        float menuStartY = headerY - 30 - menuButtonHeight;
+        
         // 操作方法ボタン
         if (controlsButton != null) {
+            float buttonY = menuStartY + scrollOffset;
+            controlsButton.y = buttonY;
             boolean isHovered = controlsButton.contains(mouseX, mouseY);
             if (isHovered && !lastControlsButtonHovered && soundManager != null) {
                 soundManager.playHoverSound();
@@ -433,6 +507,8 @@ public class HelpUI {
         
         // 農業ボタン
         if (farmingButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) + scrollOffset;
+            farmingButton.y = buttonY;
             boolean isHovered = farmingButton.contains(mouseX, mouseY);
             if (isHovered && !lastFarmingButtonHovered && soundManager != null) {
                 soundManager.playHoverSound();
@@ -443,6 +519,8 @@ public class HelpUI {
         
         // 家畜ボタン
         if (livestockButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 2 + scrollOffset;
+            livestockButton.y = buttonY;
             boolean isHovered = livestockButton.contains(mouseX, mouseY);
             if (isHovered && !lastLivestockButtonHovered && soundManager != null) {
                 soundManager.playHoverSound();
@@ -453,6 +531,8 @@ public class HelpUI {
         
         // 地形ボタン
         if (terrainButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 3 + scrollOffset;
+            terrainButton.y = buttonY;
             boolean isHovered = terrainButton.contains(mouseX, mouseY);
             if (isHovered && !lastTerrainButtonHovered && soundManager != null) {
                 soundManager.playHoverSound();
@@ -463,12 +543,74 @@ public class HelpUI {
         
         // その他の機能ボタン
         if (otherFeaturesButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 4 + scrollOffset;
+            otherFeaturesButton.y = buttonY;
             boolean isHovered = otherFeaturesButton.contains(mouseX, mouseY);
             if (isHovered && !lastOtherFeaturesButtonHovered && soundManager != null) {
                 soundManager.playHoverSound();
             }
             lastOtherFeaturesButtonHovered = isHovered;
             drawButton(otherFeaturesButton, "その他の機能", isHovered);
+        }
+        
+        // 建造物ボタン
+        if (buildingsButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 5 + scrollOffset;
+            buildingsButton.y = buttonY;
+            boolean isHovered = buildingsButton.contains(mouseX, mouseY);
+            if (isHovered && !lastBuildingsButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastBuildingsButtonHovered = isHovered;
+            drawButton(buildingsButton, "建造物", isHovered);
+        }
+        
+        // エンディングボタン
+        if (endingButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 6 + scrollOffset;
+            endingButton.y = buttonY;
+            boolean isHovered = endingButton.contains(mouseX, mouseY);
+            if (isHovered && !lastEndingButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastEndingButtonHovered = isHovered;
+            drawButton(endingButton, "エンディング", isHovered);
+        }
+        
+        // 採集ボタン
+        if (gatheringButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 7 + scrollOffset;
+            gatheringButton.y = buttonY;
+            boolean isHovered = gatheringButton.contains(mouseX, mouseY);
+            if (isHovered && !lastGatheringButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastGatheringButtonHovered = isHovered;
+            drawButton(gatheringButton, "採集", isHovered);
+        }
+        
+        // 採掘ボタン
+        if (miningButton != null) {
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 8 + scrollOffset;
+            miningButton.y = buttonY;
+            boolean isHovered = miningButton.contains(mouseX, mouseY);
+            if (isHovered && !lastMiningButtonHovered && soundManager != null) {
+                soundManager.playHoverSound();
+            }
+            lastMiningButtonHovered = isHovered;
+            drawButton(miningButton, "採掘", isHovered);
+        }
+        
+        // クリッピングを解除
+        batch.flush();
+        if (scissorsPushed) {
+            ScissorStack.popScissors();
+        }
+        batch.end();
+        
+        // スクロール可能な場合、スクロールバーを描画
+        if (maxScrollOffset > 0) {
+            drawScrollBar();
         }
         
         // 戻るボタンを描画（フッター）
@@ -480,6 +622,19 @@ public class HelpUI {
             lastBackButtonHovered = isHovered;
             drawButton(backButton, "戻る", isHovered);
         }
+    }
+    
+    /**
+     * メニューのコンテンツの高さを計算します。
+     */
+    private void calculateMenuContentHeight() {
+        float menuButtonHeight = 80;
+        float menuButtonSpacing = 20;
+        float totalButtons = 9; // 操作方法、農業、家畜、地形、その他の機能、建造物、エンディング、採集、採掘
+        float totalHeight = totalButtons * menuButtonHeight + (totalButtons - 1) * menuButtonSpacing;
+        
+        totalContentHeight = totalHeight;
+        maxScrollOffset = Math.max(0, totalHeight - contentAreaHeight + 40);
     }
     
     /**
@@ -517,7 +672,6 @@ public class HelpUI {
         // コンテンツを描画
         float startX = panelX + 40;
         float startY = contentAreaY + contentAreaHeight - 20 + scrollOffset;
-        float currentY = startY;
         float lineSpacing = 35f;
         
         font.getData().setScale(0.7f);
@@ -525,7 +679,7 @@ public class HelpUI {
         
         // Markdownファイルからガイドコンテンツを読み込んで描画
         List<GuideContentLoader.GuideElement> elements = GuideContentLoader.loadGuideContent(currentState, livestockDataLoader);
-        currentY = renderGuideElements(batch, elements, startX, currentY, lineSpacing);
+        renderGuideElements(batch, elements, startX, startY, lineSpacing);
         
         font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
@@ -598,9 +752,8 @@ public class HelpUI {
      * @param startX 開始X座標
      * @param startY 開始Y座標
      * @param lineSpacing 行間隔
-     * @return 描画後のY座標
      */
-    private float renderGuideElements(SpriteBatch batch, List<GuideContentLoader.GuideElement> elements, 
+    private void renderGuideElements(SpriteBatch batch, List<GuideContentLoader.GuideElement> elements, 
                                      float startX, float startY, float lineSpacing) {
         float currentY = startY;
         
@@ -649,8 +802,6 @@ public class HelpUI {
                     break;
             }
         }
-        
-        return currentY;
     }
     
     /**

@@ -33,7 +33,6 @@ public class RenderContext {
     
     private boolean batchStartedByThisContext;
     private boolean shapeRendererStartedByThisContext;
-    private ShapeRenderer.ShapeType currentShapeType;
     
     /**
      * RenderContextを初期化します。
@@ -111,7 +110,6 @@ public class RenderContext {
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(shapeType);
         shapeRendererStartedByThisContext = true;
-        currentShapeType = shapeType;
         return true;
     }
     

@@ -131,11 +131,6 @@ public class Main extends ApplicationAdapter {
     
     // フォントスケール設定
     private static final float DEFAULT_FONT_SCALE = 2.0f;
-    private static final float CIVILIZATION_MESSAGE_FONT_SCALE = 1.0f;
-    
-    // 文明レベルアップメッセージの背景透明度
-    private static final float CIVILIZATION_MESSAGE_BG_ALPHA = 0.7f;
-    private static final float CIVILIZATION_MESSAGE_PADDING = 20f;
     
     // 画面サイズ
     private int screenWidth;
@@ -150,15 +145,6 @@ public class Main extends ApplicationAdapter {
     private static final float MIN_ZOOM = 0.3f; // 最小ズーム（縮小の限界）
     private static final float MAX_ZOOM = 3.0f; // 最大ズーム（拡大の限界）
     private static final float ZOOM_SPEED = 0.1f; // ズームの速度
-    
-        // 文明レベルアップメッセージ（GameControllerに移動されたが、後方互換性のため残す）
-    @Deprecated
-    private String civilizationLevelUpMessage = null;
-    @Deprecated
-    private float civilizationLevelUpMessageTimer = 0f;
-    @Deprecated
-    private static final float CIVILIZATION_MESSAGE_DURATION = 3.0f; // 3秒間表示
-    
     
     /**
      * ゲームの初期化処理を行います。
@@ -694,70 +680,6 @@ public class Main extends ApplicationAdapter {
         // このメソッドは後方互換性のため残していますが、
         // 通常はGameRendererが使用されるため呼び出されることはありません
         Gdx.app.log("Main", "Using fallback render method");
-    }
-    
-    /**
-     * 文明レベルアップメッセージを描画します。
-     * @deprecated GameRendererを使用してください
-     */
-    @Deprecated
-    private void drawCivilizationLevelUpMessage() {
-        if (civilizationLevelUpMessage == null || batch == null || shapeRenderer == null || font == null) {
-            return;
-        }
-        
-        // フォント設定を保存
-        float originalFontScale = font.getData().scaleX;
-        Color originalFontColor = font.getColor().cpy();
-        
-        try {
-            // テキストレイアウトを計算
-            font.getData().setScale(CIVILIZATION_MESSAGE_FONT_SCALE);
-            font.setColor(Color.WHITE);
-            com.badlogic.gdx.graphics.g2d.GlyphLayout layout = new com.badlogic.gdx.graphics.g2d.GlyphLayout(font, civilizationLevelUpMessage);
-            float x = (screenWidth - layout.width) / 2;
-            float y = screenHeight / 2;
-            
-            // 背景を描画（半透明の黒）
-            shapeRenderer.setProjectionMatrix(uiCamera.combined);
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            shapeRenderer.setColor(0f, 0f, 0f, CIVILIZATION_MESSAGE_BG_ALPHA);
-            shapeRenderer.rect(x - CIVILIZATION_MESSAGE_PADDING, y - layout.height - CIVILIZATION_MESSAGE_PADDING, 
-                    layout.width + CIVILIZATION_MESSAGE_PADDING * 2, layout.height + CIVILIZATION_MESSAGE_PADDING * 2);
-            shapeRenderer.end();
-            
-            // テキストを描画
-            batch.setProjectionMatrix(uiCamera.combined);
-            batch.begin();
-            font.draw(batch, civilizationLevelUpMessage, x, y);
-            batch.end();
-        } finally {
-            // フォント設定を復元
-            font.getData().setScale(originalFontScale);
-            font.setColor(originalFontColor);
-        }
-    }
-    
-    
-    
-    /**
-     * 文明レベルの進行をチェックします。
-     * @deprecated GameControllerを使用してください
-     */
-    @Deprecated
-    private void checkCivilizationLevelProgress() {
-        // このメソッドはGameControllerに移動されました
-        // 後方互換性のため残していますが、使用されません
-    }
-    
-    /**
-     * 文明レベルアップ時のメッセージを表示します。
-     * @deprecated GameControllerを使用してください
-     */
-    @Deprecated
-    private void showCivilizationLevelUpMessage(String levelName) {
-        // このメソッドはGameControllerに移動されました
-        // 後方互換性のため残していますが、使用されません
     }
     
     /**

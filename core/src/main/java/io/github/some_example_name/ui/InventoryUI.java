@@ -78,14 +78,12 @@ public class InventoryUI {
      */
     private static class SlotInfo {
         float x, y;
-        int itemId;
         ItemData itemData;
         int count;
         
-        SlotInfo(float x, float y, int itemId, ItemData itemData, int count) {
+        SlotInfo(float x, float y, ItemData itemData, int count) {
             this.x = x;
             this.y = y;
-            this.itemId = itemId;
             this.itemData = itemData;
             this.count = count;
         }
@@ -482,7 +480,7 @@ public class InventoryUI {
                 float slotY = currentY - row * (SLOT_SIZE + SLOT_PADDING);
                 
                 // スロット情報を保存（クリック判定用）
-                slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemId, itemData, count));
+                slotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemData, count));
                 
                 // ホバー中のアイテムかどうかで色を変える
                 boolean isHovered = selectedItemData != null && selectedItemData.id == itemId;
@@ -591,7 +589,7 @@ public class InventoryUI {
                 float slotY = currentY - row * (SLOT_SIZE + SLOT_PADDING);
                 
                 // スロット情報を保存（クリック判定用）
-                craftSlotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemData.id, itemData, 0));
+                craftSlotInfos.add(new SlotInfo(slotX, slotY - SLOT_SIZE, itemData, 0));
                 
                 // ホバー中のアイテムかどうかで色を変える
                 boolean isHovered = selectedItemData != null && selectedItemData.id == itemData.id;
