@@ -85,7 +85,7 @@ public class GuideContentLoader {
         try {
             String content = file.readString();
             // 改行コードを統一
-            content = content.replace("\r\n", "\n").replace("\r", "\n");
+            content = io.github.some_example_name.util.CSVParser.normalizeLineEndings(content);
             
             // 家畜リストのプレースホルダーを置換
             if (state == HelpUI.GuideState.LIVESTOCK && livestockDataLoader != null) {

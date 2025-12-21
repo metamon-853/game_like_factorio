@@ -55,7 +55,7 @@ public class TileDataLoader {
         try {
             String content = file.readString();
             // 改行コードを統一（\r\n -> \n）
-            content = content.replace("\r\n", "\n").replace("\r", "\n");
+            content = io.github.some_example_name.util.CSVParser.normalizeLineEndings(content);
             String[] lines = content.split("\n");
             
             TerrainTile.TerrainType currentType = null;
