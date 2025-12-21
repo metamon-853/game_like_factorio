@@ -14,6 +14,7 @@ import io.github.some_example_name.entity.Player;
 import io.github.some_example_name.game.CraftingSystem;
 import io.github.some_example_name.game.Inventory;
 import io.github.some_example_name.game.PreservedFoodManager;
+import io.github.some_example_name.manager.BuildingManager;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.ItemManager;
 import io.github.some_example_name.manager.LivestockManager;

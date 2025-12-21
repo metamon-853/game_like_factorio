@@ -19,6 +19,7 @@ import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.LivestockManager;
 import io.github.some_example_name.manager.TerrainManager;
 import io.github.some_example_name.manager.TerrainConversionManager;
+import io.github.some_example_name.manager.BuildingManager;
 import io.github.some_example_name.manager.TileDataLoader;
 import io.github.some_example_name.ui.UIRenderer;
 import io.github.some_example_name.ui.InventoryUI;
