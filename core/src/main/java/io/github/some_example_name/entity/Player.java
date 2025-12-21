@@ -3,6 +3,7 @@ package io.github.some_example_name.entity;
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import io.github.some_example_name.system.SoundManager;
+import io.github.some_example_name.manager.TerrainManager;
 
 /**
  * プレイヤーを表すクラス。タイルベースの移動を管理します。
@@ -40,6 +41,9 @@ public class Player {
     // サウンドマネージャーへの参照
     private SoundManager soundManager;
     
+    // 地形マネージャーへの参照（タイルタイプを取得するため）
+    private TerrainManager terrainManager;
+    
     // 足音のタイミング管理
     private float footstepTimer = 0f;
     private static final float FOOTSTEP_INTERVAL = 0.1f; // 足音の間隔（秒）- 移動速度に合わせて調整
@@ -66,6 +70,13 @@ public class Player {
     }
     
     /**
+     * 地形マネージャーを設定します。
+     */
+    public void setTerrainManager(TerrainManager terrainManager) {
+        this.terrainManager = terrainManager;
+    }
+    
+    /**
      * プレイヤーを更新します。
      * @param deltaTime 前フレームからの経過時間（秒）
      */
@@ -77,7 +88,9 @@ public class Player {
             if (soundManager != null) {
                 footstepTimer += deltaTime;
                 if (footstepTimer >= FOOTSTEP_INTERVAL) {
-                    soundManager.playFootstepSound();
+                    // 現在の位置のタイルタイプを取得して適切な足音を再生
+                    TerrainTile.TerrainType terrainType = getCurrentTerrainType();
+                    soundManager.playFootstepSound(terrainType);
                     footstepTimer = 0f; // タイマーをリセット
                     footstepPlayedThisMove = true;
                 }
@@ -143,7 +156,9 @@ public class Player {
         
         // 移動開始時にすぐ足音を再生
         if (soundManager != null) {
-            soundManager.playFootstepSound();
+            // 現在の位置のタイルタイプを取得して適切な足音を再生
+            TerrainTile.TerrainType terrainType = getCurrentTerrainType();
+            soundManager.playFootstepSound(terrainType);
             footstepPlayedThisMove = true;
         }
         
@@ -197,6 +212,29 @@ public class Player {
      */
     public float getPixelY() {
         return pixelY;
+    }
+    
+    /**
+     * 現在の位置のタイルタイプを取得します。
+     * @return タイルタイプ（取得できない場合はGRASSを返す）
+     */
+    private TerrainTile.TerrainType getCurrentTerrainType() {
+        if (terrainManager == null) {
+            return TerrainTile.TerrainType.GRASS; // デフォルトは草
+        }
+        
+        // 現在のマップ升座標を取得
+        int tileX = getTileX();
+        int tileY = getTileY();
+        
+        // 地形タイルを取得
+        TerrainTile tile = terrainManager.getTerrainTile(tileX, tileY);
+        if (tile != null) {
+            return tile.getTerrainType();
+        }
+        
+        // タイルが取得できない場合はデフォルトのGRASSを返す
+        return TerrainTile.TerrainType.GRASS;
     }
     
     /**

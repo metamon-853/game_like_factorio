@@ -4,6 +4,9 @@ import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.audio.Sound;
 import com.badlogic.gdx.files.FileHandle;
 import com.badlogic.gdx.utils.Disposable;
+import io.github.some_example_name.entity.TerrainTile;
+import java.util.HashMap;
+import java.util.Map;
 
 /**
  * サウンド効果を管理するクラス。
@@ -11,7 +14,8 @@ import com.badlogic.gdx.utils.Disposable;
 public class SoundManager implements Disposable {
     private Sound hoverSound;
     private Sound collectSound;
-    private Sound footstepSound;
+    private Sound footstepSound; // 後方互換性のため残す（デフォルト用）
+    private Map<TerrainTile.TerrainType, Sound> footstepSounds;
     private Sound craftSound;
     private SoundSettings soundSettings;
     private boolean isInitialized = false;
@@ -51,12 +55,27 @@ public class SoundManager implements Disposable {
             } else {
                 Gdx.app.log("SoundManager", "Collect sound created successfully");
             }
-            footstepSound = createFootstepSound();
-            if (footstepSound == null) {
-                Gdx.app.error("SoundManager", "Failed to create footstep sound");
-            } else {
-                Gdx.app.log("SoundManager", "Footstep sound created successfully");
+            
+            // 各タイルタイプ用の足音を初期化
+            footstepSounds = new HashMap<>();
+            for (TerrainTile.TerrainType type : TerrainTile.TerrainType.values()) {
+                Sound sound = createFootstepSoundForTerrain(type);
+                if (sound != null) {
+                    footstepSounds.put(type, sound);
+                    Gdx.app.log("SoundManager", "Footstep sound created for " + type);
+                } else {
+                    Gdx.app.error("SoundManager", "Failed to create footstep sound for " + type);
+                }
             }
+            
+            // 後方互換性のため、デフォルトの足音も作成（GRASS用）
+            footstepSound = footstepSounds.get(TerrainTile.TerrainType.GRASS);
+            if (footstepSound == null) {
+                Gdx.app.error("SoundManager", "Failed to create default footstep sound");
+            } else {
+                Gdx.app.log("SoundManager", "Default footstep sound created successfully");
+            }
+            
             craftSound = createCraftSound();
             if (craftSound == null) {
                 Gdx.app.error("SoundManager", "Failed to create craft sound");
@@ -255,10 +274,34 @@ public class SoundManager implements Disposable {
     }
     
     /**
-     * 足音をプログラムで生成してSoundオブジェクトとして返します。
-     * 「トン」という短い音を生成します。
+     * 指定されたタイルタイプ用の足音をプログラムで生成してSoundオブジェクトとして返します。
+     * @param terrainType タイルタイプ
+     * @return 生成されたSoundオブジェクト
      */
-    private Sound createFootstepSound() {
+    private Sound createFootstepSoundForTerrain(TerrainTile.TerrainType terrainType) {
+        switch (terrainType) {
+            case GRASS:
+                return createGrassFootstepSound();
+            case DIRT:
+                return createDirtFootstepSound();
+            case SAND:
+                return createSandFootstepSound();
+            case WATER:
+                return createWaterFootstepSound();
+            case STONE:
+                return createStoneFootstepSound();
+            case FOREST:
+                return createForestFootstepSound();
+            default:
+                return createGrassFootstepSound(); // デフォルトは草
+        }
+    }
+    
+    /**
+     * 草の足音をプログラムで生成してSoundオブジェクトとして返します。
+     * 柔らかく軽い音を生成します。
+     */
+    private Sound createGrassFootstepSound() {
         int sampleRate = 44100;
         float duration = 0.1f; // 100ミリ秒の短い音
         int numSamples = (int)(sampleRate * duration);
@@ -297,59 +340,424 @@ public class SoundManager implements Disposable {
         writeString(wavData, offset, "data"); offset += 4;
         writeInt(wavData, offset, dataSize); offset += 4;
         
-        // 音声サンプルを生成（リアルな足音の音）
+        // 音声サンプルを生成（柔らかく軽い草の足音）
         java.util.Random random = new java.util.Random(42); // 再現可能なランダム
         for (int i = 0; i < numSamples; i++) {
             double time = i / (double) sampleRate;
             
-            // 低めの周波数で「トン」という足音らしい音
-            double frequency1 = 100.0; // ベース周波数（低め）
-            double frequency2 = 200.0; // ハーモニック
-            double frequency3 = 400.0; // 高周波成分（控えめ）
+            // 柔らかい低周波数（草は柔らかいので音も柔らかく）
+            double frequency1 = 80.0; // ベース周波数（低めで柔らかく）
+            double frequency2 = 160.0; // ハーモニック（控えめ）
             double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
-            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.2;
-            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.05; // 高周波は非常に小さく
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.15;
             
-            // ノイズ成分を追加（地面を踏む音らしさを出す）
-            double noise = (random.nextDouble() - 0.5) * 0.1; // 小さなノイズ
+            // 小さなノイズ成分（草を踏む音）
+            double noise = (random.nextDouble() - 0.5) * 0.08;
             
-            double sample = (sample1 + sample2 + sample3 + noise) / 1.35; // 正規化
+            double sample = (sample1 + sample2 + noise) / 1.23;
             
-            // エンベロープを適用（急激なアタック、ゆっくりしたリリース）
+            // エンベロープを適用（柔らかいアタックとリリース）
             double envelope;
-            if (i < numSamples * 0.05) {
-                // 急激なフェードイン（最初の5%）
-                envelope = i / (numSamples * 0.05);
-            } else if (i > numSamples * 0.3) {
-                // ゆっくりしたフェードアウト（最後の70%）
-                envelope = (numSamples - i) / (numSamples * 0.7);
+            if (i < numSamples * 0.1) {
+                envelope = i / (numSamples * 0.1);
+            } else if (i > numSamples * 0.4) {
+                envelope = (numSamples - i) / (numSamples * 0.6);
             } else {
                 envelope = 1.0;
             }
             
-            // 音量を調整（0.25で控えめに）
-            sample *= envelope * 0.25;
+            sample *= envelope * 0.2; // 控えめな音量
             
-            // 16bit PCMとして書き込み（リトルエンディアン）
             short sampleValue = (short)(sample * Short.MAX_VALUE);
             wavData[offset++] = (byte)(sampleValue & 0xFF);
             wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
         }
         
-        // 音源ファイルをsoundsディレクトリに保存
         try {
-            FileHandle soundFile = Gdx.files.local("sounds/footstep_sound.wav");
+            FileHandle soundFile = Gdx.files.local("sounds/footstep_grass.wav");
             soundFile.writeBytes(wavData, false);
-            
             if (!soundFile.exists()) {
-                Gdx.app.error("SoundManager", "Failed to create footstep sound file");
+                Gdx.app.error("SoundManager", "Failed to create grass footstep sound file");
                 return null;
             }
-            
-            Sound sound = Gdx.audio.newSound(soundFile);
-            return sound;
+            return Gdx.audio.newSound(soundFile);
         } catch (Exception e) {
-            Gdx.app.error("SoundManager", "Failed to create footstep sound", e);
+            Gdx.app.error("SoundManager", "Failed to create grass footstep sound", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 土の足音をプログラムで生成してSoundオブジェクトとして返します。
+     * 中程度の重さの音を生成します。
+     */
+    private Sound createDirtFootstepSound() {
+        int sampleRate = 44100;
+        float duration = 0.12f; // 120ミリ秒
+        int numSamples = (int)(sampleRate * duration);
+        int dataSize = numSamples * 2;
+        int fileSize = 36 + dataSize;
+        byte[] wavData = new byte[44 + dataSize];
+        int offset = 0;
+        
+        writeString(wavData, offset, "RIFF"); offset += 4;
+        writeInt(wavData, offset, fileSize); offset += 4;
+        writeString(wavData, offset, "WAVE"); offset += 4;
+        writeString(wavData, offset, "fmt "); offset += 4;
+        writeInt(wavData, offset, 16); offset += 4;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeInt(wavData, offset, sampleRate); offset += 4;
+        writeInt(wavData, offset, sampleRate * 2); offset += 4;
+        writeShort(wavData, offset, (short)2); offset += 2;
+        writeShort(wavData, offset, (short)16); offset += 2;
+        writeString(wavData, offset, "data"); offset += 4;
+        writeInt(wavData, offset, dataSize); offset += 4;
+        
+        java.util.Random random = new java.util.Random(43);
+        for (int i = 0; i < numSamples; i++) {
+            double time = i / (double) sampleRate;
+            
+            // 中程度の周波数（土は少し重め）
+            double frequency1 = 110.0;
+            double frequency2 = 220.0;
+            double frequency3 = 350.0;
+            double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.25;
+            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.08;
+            
+            // ノイズ成分（土を踏む音）
+            double noise = (random.nextDouble() - 0.5) * 0.12;
+            
+            double sample = (sample1 + sample2 + sample3 + noise) / 1.45;
+            
+            double envelope;
+            if (i < numSamples * 0.06) {
+                envelope = i / (numSamples * 0.06);
+            } else if (i > numSamples * 0.35) {
+                envelope = (numSamples - i) / (numSamples * 0.65);
+            } else {
+                envelope = 1.0;
+            }
+            
+            sample *= envelope * 0.28;
+            
+            short sampleValue = (short)(sample * Short.MAX_VALUE);
+            wavData[offset++] = (byte)(sampleValue & 0xFF);
+            wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
+        }
+        
+        try {
+            FileHandle soundFile = Gdx.files.local("sounds/footstep_dirt.wav");
+            soundFile.writeBytes(wavData, false);
+            if (!soundFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create dirt footstep sound file");
+                return null;
+            }
+            return Gdx.audio.newSound(soundFile);
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create dirt footstep sound", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 砂の足音をプログラムで生成してSoundオブジェクトとして返します。
+     * サラサラした軽い音を生成します。
+     */
+    private Sound createSandFootstepSound() {
+        int sampleRate = 44100;
+        float duration = 0.11f; // 110ミリ秒
+        int numSamples = (int)(sampleRate * duration);
+        int dataSize = numSamples * 2;
+        int fileSize = 36 + dataSize;
+        byte[] wavData = new byte[44 + dataSize];
+        int offset = 0;
+        
+        writeString(wavData, offset, "RIFF"); offset += 4;
+        writeInt(wavData, offset, fileSize); offset += 4;
+        writeString(wavData, offset, "WAVE"); offset += 4;
+        writeString(wavData, offset, "fmt "); offset += 4;
+        writeInt(wavData, offset, 16); offset += 4;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeInt(wavData, offset, sampleRate); offset += 4;
+        writeInt(wavData, offset, sampleRate * 2); offset += 4;
+        writeShort(wavData, offset, (short)2); offset += 2;
+        writeShort(wavData, offset, (short)16); offset += 2;
+        writeString(wavData, offset, "data"); offset += 4;
+        writeInt(wavData, offset, dataSize); offset += 4;
+        
+        java.util.Random random = new java.util.Random(44);
+        for (int i = 0; i < numSamples; i++) {
+            double time = i / (double) sampleRate;
+            
+            // 高めの周波数でサラサラした音
+            double frequency1 = 120.0;
+            double frequency2 = 250.0;
+            double frequency3 = 500.0; // 高周波成分を多く（サラサラ感）
+            double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.2;
+            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.15; // 高周波を強調
+            
+            // ノイズ成分を多く（砂のサラサラ感）
+            double noise = (random.nextDouble() - 0.5) * 0.2;
+            
+            double sample = (sample1 + sample2 + sample3 + noise) / 1.55;
+            
+            double envelope;
+            if (i < numSamples * 0.08) {
+                envelope = i / (numSamples * 0.08);
+            } else if (i > numSamples * 0.4) {
+                envelope = (numSamples - i) / (numSamples * 0.6);
+            } else {
+                envelope = 1.0;
+            }
+            
+            sample *= envelope * 0.22;
+            
+            short sampleValue = (short)(sample * Short.MAX_VALUE);
+            wavData[offset++] = (byte)(sampleValue & 0xFF);
+            wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
+        }
+        
+        try {
+            FileHandle soundFile = Gdx.files.local("sounds/footstep_sand.wav");
+            soundFile.writeBytes(wavData, false);
+            if (!soundFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create sand footstep sound file");
+                return null;
+            }
+            return Gdx.audio.newSound(soundFile);
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create sand footstep sound", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 水の足音をプログラムで生成してSoundオブジェクトとして返します。
+     * 水を踏む音を生成します（実際には水は通過できないので使用されない可能性があります）。
+     */
+    private Sound createWaterFootstepSound() {
+        int sampleRate = 44100;
+        float duration = 0.13f; // 130ミリ秒
+        int numSamples = (int)(sampleRate * duration);
+        int dataSize = numSamples * 2;
+        int fileSize = 36 + dataSize;
+        byte[] wavData = new byte[44 + dataSize];
+        int offset = 0;
+        
+        writeString(wavData, offset, "RIFF"); offset += 4;
+        writeInt(wavData, offset, fileSize); offset += 4;
+        writeString(wavData, offset, "WAVE"); offset += 4;
+        writeString(wavData, offset, "fmt "); offset += 4;
+        writeInt(wavData, offset, 16); offset += 4;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeInt(wavData, offset, sampleRate); offset += 4;
+        writeInt(wavData, offset, sampleRate * 2); offset += 4;
+        writeShort(wavData, offset, (short)2); offset += 2;
+        writeShort(wavData, offset, (short)16); offset += 2;
+        writeString(wavData, offset, "data"); offset += 4;
+        writeInt(wavData, offset, dataSize); offset += 4;
+        
+        java.util.Random random = new java.util.Random(45);
+        for (int i = 0; i < numSamples; i++) {
+            double time = i / (double) sampleRate;
+            
+            // 水を踏む音（中〜高周波）
+            double frequency1 = 150.0;
+            double frequency2 = 300.0;
+            double frequency3 = 600.0;
+            double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.3;
+            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.2;
+            
+            // 水の音らしさを出すためのノイズ
+            double noise = (random.nextDouble() - 0.5) * 0.15;
+            
+            double sample = (sample1 + sample2 + sample3 + noise) / 1.65;
+            
+            double envelope;
+            if (i < numSamples * 0.05) {
+                envelope = i / (numSamples * 0.05);
+            } else if (i > numSamples * 0.3) {
+                envelope = (numSamples - i) / (numSamples * 0.7);
+            } else {
+                envelope = 1.0;
+            }
+            
+            sample *= envelope * 0.25;
+            
+            short sampleValue = (short)(sample * Short.MAX_VALUE);
+            wavData[offset++] = (byte)(sampleValue & 0xFF);
+            wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
+        }
+        
+        try {
+            FileHandle soundFile = Gdx.files.local("sounds/footstep_water.wav");
+            soundFile.writeBytes(wavData, false);
+            if (!soundFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create water footstep sound file");
+                return null;
+            }
+            return Gdx.audio.newSound(soundFile);
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create water footstep sound", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 岩の足音をプログラムで生成してSoundオブジェクトとして返します。
+     * 硬くカチカチした音を生成します。
+     */
+    private Sound createStoneFootstepSound() {
+        int sampleRate = 44100;
+        float duration = 0.1f; // 100ミリ秒
+        int numSamples = (int)(sampleRate * duration);
+        int dataSize = numSamples * 2;
+        int fileSize = 36 + dataSize;
+        byte[] wavData = new byte[44 + dataSize];
+        int offset = 0;
+        
+        writeString(wavData, offset, "RIFF"); offset += 4;
+        writeInt(wavData, offset, fileSize); offset += 4;
+        writeString(wavData, offset, "WAVE"); offset += 4;
+        writeString(wavData, offset, "fmt "); offset += 4;
+        writeInt(wavData, offset, 16); offset += 4;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeInt(wavData, offset, sampleRate); offset += 4;
+        writeInt(wavData, offset, sampleRate * 2); offset += 4;
+        writeShort(wavData, offset, (short)2); offset += 2;
+        writeShort(wavData, offset, (short)16); offset += 2;
+        writeString(wavData, offset, "data"); offset += 4;
+        writeInt(wavData, offset, dataSize); offset += 4;
+        
+        java.util.Random random = new java.util.Random(46);
+        for (int i = 0; i < numSamples; i++) {
+            double time = i / (double) sampleRate;
+            
+            // 硬い高周波成分（岩は硬いのでカチカチした音）
+            double frequency1 = 130.0;
+            double frequency2 = 260.0;
+            double frequency3 = 520.0;
+            double frequency4 = 800.0; // 高周波成分を追加
+            double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.3;
+            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.2;
+            double sample4 = Math.sin(2 * Math.PI * frequency4 * time) * 0.1;
+            
+            // ノイズ成分（控えめ）
+            double noise = (random.nextDouble() - 0.5) * 0.08;
+            
+            double sample = (sample1 + sample2 + sample3 + sample4 + noise) / 1.88;
+            
+            // 急激なアタックとリリース（硬い音）
+            double envelope;
+            if (i < numSamples * 0.03) {
+                envelope = i / (numSamples * 0.03);
+            } else if (i > numSamples * 0.25) {
+                envelope = (numSamples - i) / (numSamples * 0.75);
+            } else {
+                envelope = 1.0;
+            }
+            
+            sample *= envelope * 0.3; // 少し大きめの音量
+            
+            short sampleValue = (short)(sample * Short.MAX_VALUE);
+            wavData[offset++] = (byte)(sampleValue & 0xFF);
+            wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
+        }
+        
+        try {
+            FileHandle soundFile = Gdx.files.local("sounds/footstep_stone.wav");
+            soundFile.writeBytes(wavData, false);
+            if (!soundFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create stone footstep sound file");
+                return null;
+            }
+            return Gdx.audio.newSound(soundFile);
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create stone footstep sound", e);
+            return null;
+        }
+    }
+    
+    /**
+     * 森の足音をプログラムで生成してSoundオブジェクトとして返します。
+     * 草に似ているが少し重めで、葉っぱの音も含む音を生成します。
+     */
+    private Sound createForestFootstepSound() {
+        int sampleRate = 44100;
+        float duration = 0.12f; // 120ミリ秒
+        int numSamples = (int)(sampleRate * duration);
+        int dataSize = numSamples * 2;
+        int fileSize = 36 + dataSize;
+        byte[] wavData = new byte[44 + dataSize];
+        int offset = 0;
+        
+        writeString(wavData, offset, "RIFF"); offset += 4;
+        writeInt(wavData, offset, fileSize); offset += 4;
+        writeString(wavData, offset, "WAVE"); offset += 4;
+        writeString(wavData, offset, "fmt "); offset += 4;
+        writeInt(wavData, offset, 16); offset += 4;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeShort(wavData, offset, (short)1); offset += 2;
+        writeInt(wavData, offset, sampleRate); offset += 4;
+        writeInt(wavData, offset, sampleRate * 2); offset += 4;
+        writeShort(wavData, offset, (short)2); offset += 2;
+        writeShort(wavData, offset, (short)16); offset += 2;
+        writeString(wavData, offset, "data"); offset += 4;
+        writeInt(wavData, offset, dataSize); offset += 4;
+        
+        java.util.Random random = new java.util.Random(47);
+        for (int i = 0; i < numSamples; i++) {
+            double time = i / (double) sampleRate;
+            
+            // 草に似ているが少し重め
+            double frequency1 = 90.0; // ベース周波数（草より少し低め）
+            double frequency2 = 180.0;
+            double frequency3 = 360.0;
+            double frequency4 = 450.0; // 葉っぱの音らしさ（高周波）
+            double sample1 = Math.sin(2 * Math.PI * frequency1 * time);
+            double sample2 = Math.sin(2 * Math.PI * frequency2 * time) * 0.22;
+            double sample3 = Math.sin(2 * Math.PI * frequency3 * time) * 0.12;
+            double sample4 = Math.sin(2 * Math.PI * frequency4 * time) * 0.1; // 葉っぱの音
+            
+            // ノイズ成分（葉っぱや枝を踏む音）
+            double noise = (random.nextDouble() - 0.5) * 0.12;
+            
+            double sample = (sample1 + sample2 + sample3 + sample4 + noise) / 1.56;
+            
+            double envelope;
+            if (i < numSamples * 0.08) {
+                envelope = i / (numSamples * 0.08);
+            } else if (i > numSamples * 0.4) {
+                envelope = (numSamples - i) / (numSamples * 0.6);
+            } else {
+                envelope = 1.0;
+            }
+            
+            sample *= envelope * 0.24;
+            
+            short sampleValue = (short)(sample * Short.MAX_VALUE);
+            wavData[offset++] = (byte)(sampleValue & 0xFF);
+            wavData[offset++] = (byte)((sampleValue >> 8) & 0xFF);
+        }
+        
+        try {
+            FileHandle soundFile = Gdx.files.local("sounds/footstep_forest.wav");
+            soundFile.writeBytes(wavData, false);
+            if (!soundFile.exists()) {
+                Gdx.app.error("SoundManager", "Failed to create forest footstep sound file");
+                return null;
+            }
+            return Gdx.audio.newSound(soundFile);
+        } catch (Exception e) {
+            Gdx.app.error("SoundManager", "Failed to create forest footstep sound", e);
             return null;
         }
     }
@@ -511,10 +919,18 @@ public class SoundManager implements Disposable {
     }
     
     /**
-     * 足音を再生します。
+     * 足音を再生します（後方互換性のため、デフォルトの足音を再生）。
      */
     public void playFootstepSound() {
-        if (!isInitialized || footstepSound == null || soundSettings.isMuted()) {
+        playFootstepSound(TerrainTile.TerrainType.GRASS); // デフォルトは草
+    }
+    
+    /**
+     * 指定されたタイルタイプに応じた足音を再生します。
+     * @param terrainType タイルタイプ
+     */
+    public void playFootstepSound(TerrainTile.TerrainType terrainType) {
+        if (!isInitialized || soundSettings.isMuted()) {
             return;
         }
         
@@ -524,9 +940,20 @@ public class SoundManager implements Disposable {
             return;
         }
         
+        // タイルタイプに応じた足音を取得
+        Sound sound = footstepSounds != null ? footstepSounds.get(terrainType) : null;
+        if (sound == null) {
+            // フォールバック：デフォルトの足音を使用
+            sound = footstepSound;
+        }
+        
+        if (sound == null) {
+            return;
+        }
+        
         float volume = soundSettings.getMasterVolume();
         if (volume > 0) {
-            footstepSound.play(volume * 0.25f); // 足音は控えめに
+            sound.play(volume * 0.25f); // 足音は控えめに
             lastFootstepSoundTime = currentTime;
         }
     }
@@ -568,6 +995,15 @@ public class SoundManager implements Disposable {
         if (footstepSound != null) {
             footstepSound.dispose();
             footstepSound = null;
+        }
+        if (footstepSounds != null) {
+            for (Sound sound : footstepSounds.values()) {
+                if (sound != null) {
+                    sound.dispose();
+                }
+            }
+            footstepSounds.clear();
+            footstepSounds = null;
         }
         if (craftSound != null) {
             craftSound.dispose();

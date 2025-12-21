@@ -197,6 +197,9 @@ public class Main extends ApplicationAdapter {
         inputHandler = new InputHandler(player, farmManager, livestockManager);
         inputHandler.setTerrainManager(terrainManager); // 地形マネージャーを設定
         
+        // プレイヤーに地形マネージャーを設定（タイルタイプに応じた足音のため）
+        player.setTerrainManager(terrainManager);
+        
         // UIコンポーネントにSoundManagerを設定
         inventoryUI.setSoundManager(soundManager);
         encyclopediaUI.setSoundManager(soundManager);
