@@ -3,6 +3,7 @@ package io.github.some_example_name.manager;
 import io.github.some_example_name.entity.Item;
 import io.github.some_example_name.entity.ItemData;
 import io.github.some_example_name.entity.Player;
+import io.github.some_example_name.entity.TerrainTile;
 import io.github.some_example_name.game.CivilizationLevel;
 import io.github.some_example_name.game.Inventory;
 import io.github.some_example_name.system.SoundManager;
@@ -12,6 +13,7 @@ import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.utils.Array;
 
 import java.util.Iterator;
+import java.util.Random;
 
 /**
  * アイテムの生成、更新、描画を管理するクラス。
@@ -41,6 +43,12 @@ public class ItemManager {
     // サウンドマネージャーへの参照
     private SoundManager soundManager;
     
+    // 地形マネージャーへの参照（地形別採集用）
+    private TerrainManager terrainManager;
+    
+    // ランダムジェネレーター
+    private Random random;
+    
     public ItemManager() {
         this.items = new Array<>();
         this.spawnTimer = 0f;
@@ -50,6 +58,8 @@ public class ItemManager {
         this.itemDataLoader = new ItemDataLoader();
         this.civilizationLevel = new CivilizationLevel(1); // 初期はレベル1
         this.inventory = null; // 後で設定される
+        this.terrainManager = null; // 後で設定される
+        this.random = new Random();
     }
     
     /**
@@ -64,6 +74,13 @@ public class ItemManager {
      */
     public void setSoundManager(SoundManager soundManager) {
         this.soundManager = soundManager;
+    }
+    
+    /**
+     * 地形マネージャーを設定します。
+     */
+    public void setTerrainManager(TerrainManager terrainManager) {
+        this.terrainManager = terrainManager;
     }
     
     /**
@@ -196,15 +213,75 @@ public class ItemManager {
         }
         
         if (!positionOccupied) {
-            // 現在の文明レベルで利用可能なアイテムからランダムに選択
+            // 地形に応じたアイテムを生成
+            ItemData selectedItemData = getItemForTerrain(tileX, tileY);
+            if (selectedItemData != null) {
+                items.add(new Item(tileX, tileY, selectedItemData));
+            }
+        }
+    }
+    
+    /**
+     * 指定された地形タイプに応じたアイテムを取得します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 生成するアイテムデータ（生成しない場合はnull）
+     */
+    private ItemData getItemForTerrain(int tileX, int tileY) {
+        if (terrainManager == null) {
+            // 地形マネージャーが設定されていない場合は従来の方法を使用
             Array<ItemData> availableItems = itemDataLoader.getAvailableItems(civilizationLevel.getLevel());
             if (availableItems.size > 0) {
-                ItemData selectedItemData = availableItems.random();
-                items.add(new Item(tileX, tileY, selectedItemData));
-            } else {
-                // フォールバック：旧システムを使用
-                items.add(new Item(tileX, tileY));
+                return availableItems.random();
             }
+            return null;
+        }
+        
+        TerrainTile tile = terrainManager.getTerrainTile(tileX, tileY);
+        if (tile == null) {
+            return null;
+        }
+        
+        TerrainTile.TerrainType terrainType = tile.getTerrainType();
+        
+        // 地形別のドロップテーブル
+        switch (terrainType) {
+            case GRASS:
+                // 草 → 種（低確率：10%）
+                if (random.nextFloat() < 0.1f) {
+                    return itemDataLoader.getItemData(8); // 種
+                }
+                return null; // 何も生成しない
+                
+            case FOREST:
+                // 森 → 木材（確率：30%）
+                if (random.nextFloat() < 0.3f) {
+                    return itemDataLoader.getItemData(7); // 木材
+                }
+                return null;
+                
+            case STONE:
+                // 岩 → 石（確率：20%）
+                if (random.nextFloat() < 0.2f) {
+                    return itemDataLoader.getItemData(1); // 石
+                }
+                return null;
+                
+            case SAND:
+                // 砂 → 何もなし
+                return null;
+                
+            case BARREN:
+                // 荒地 → 採集不可
+                return null;
+                
+            default:
+                // その他の地形 → 従来の方法
+                Array<ItemData> availableItems = itemDataLoader.getAvailableItems(civilizationLevel.getLevel());
+                if (availableItems.size > 0 && random.nextFloat() < 0.1f) {
+                    return availableItems.random();
+                }
+                return null;
         }
     }
     

@@ -74,6 +74,7 @@ public class Main extends ApplicationAdapter {
     private LivestockManager livestockManager;
     private TerrainManager terrainManager;
     private TerrainConversionManager terrainConversionManager;
+    private BuildingManager buildingManager;
     
     // カメラとビューポート
     private OrthographicCamera camera;
@@ -268,6 +269,9 @@ public class Main extends ApplicationAdapter {
         // 地形マネージャーを初期化
         terrainManager = new TerrainManager();
         
+        // アイテムマネージャーに地形マネージャーを設定（地形別採集用）
+        itemManager.setTerrainManager(terrainManager);
+        
         // 地形変換マネージャーを初期化
         terrainConversionManager = new TerrainConversionManager();
         terrainConversionManager.setTerrainManager(terrainManager);
@@ -283,10 +287,17 @@ public class Main extends ApplicationAdapter {
         livestockManager.setTerrainManager(terrainManager); // 地形マネージャーを設定
         livestockManager.setCivilizationLevel(itemManager.getCivilizationLevel()); // 文明レベルを設定
         
+        // 建物マネージャーを初期化
+        buildingManager = new BuildingManager();
+        buildingManager.setInventory(inventory);
+        buildingManager.setItemDataLoader(itemManager.getItemDataLoader());
+        buildingManager.setTerrainManager(terrainManager);
+        
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
         inputHandler.setTerrainManager(terrainManager); // 地形マネージャーを設定
         inputHandler.setTerrainConversionManager(terrainConversionManager); // 地形変換マネージャーを設定
+        inputHandler.setBuildingManager(buildingManager); // 建物マネージャーを設定
         
         // プレイヤーに地形マネージャーを設定（タイルタイプに応じた足音のため）
         player.setTerrainManager(terrainManager);
@@ -357,14 +368,17 @@ public class Main extends ApplicationAdapter {
         // GameRendererを初期化
         gameRenderer = new GameRenderer(shapeRenderer, batch, font, camera, uiCamera, viewport, 
             screenWidth, screenHeight);
-        gameRenderer.setManagers(terrainManager, itemManager, farmManager, livestockManager, player);
+        gameRenderer.setManagers(terrainManager, itemManager, farmManager, livestockManager, buildingManager, player);
         gameRenderer.setUIComponents(uiRenderer, inventoryUI, encyclopediaUI, menuSystem);
         gameRenderer.setShowGrid(showGrid);
         
         // GameControllerを初期化
         gameController = new GameController();
         gameController.setGameObjects(player, terrainManager, itemManager, farmManager, 
-            livestockManager, preservedFoodManager, camera);
+            livestockManager, buildingManager, preservedFoodManager, camera);
+        
+        // GameRendererにGameControllerを設定（エンディング画面用）
+        gameRenderer.setGameController(gameController);
         
         // パフォーマンスプロファイラーを初期化（デフォルトでは無効）
         performanceProfiler = PerformanceProfiler.getInstance();

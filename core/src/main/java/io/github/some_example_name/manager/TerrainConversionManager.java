@@ -4,6 +4,7 @@ import io.github.some_example_name.entity.TerrainTile;
 import io.github.some_example_name.entity.ItemData;
 import io.github.some_example_name.game.Inventory;
 import com.badlogic.gdx.Gdx;
+import java.util.Random;
 
 /**
  * 地形変換を管理するクラス。
@@ -12,8 +13,10 @@ public class TerrainConversionManager {
     private TerrainManager terrainManager;
     private Inventory inventory;
     private ItemDataLoader itemDataLoader;
+    private Random random;
     
     public TerrainConversionManager() {
+        this.random = new Random();
     }
     
     /**
@@ -209,5 +212,161 @@ public class TerrainConversionManager {
         }
         
         return -1;
+    }
+    
+    /**
+     * 指定されたタイル位置で採掘を試みます。
+     * STONEタイルから石や鉱石を取得し、BARRENに変換します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 採掘に成功した場合true
+     */
+    public boolean tryMine(int tileX, int tileY) {
+        if (terrainManager == null || inventory == null || itemDataLoader == null) {
+            return false;
+        }
+        
+        // 現在の地形を取得
+        TerrainTile currentTile = terrainManager.getTerrainTile(tileX, tileY);
+        if (currentTile == null) {
+            return false;
+        }
+        
+        TerrainTile.TerrainType currentType = currentTile.getTerrainType();
+        
+        // STONEタイルのみ採掘可能
+        if (currentType != TerrainTile.TerrainType.STONE) {
+            Gdx.app.log("Mining", "採掘できるのは岩（STONE）タイルのみです");
+            return false;
+        }
+        
+        // 採掘結果を決定（確率ベース）
+        // 石: 80%、銅鉱石: 10%、鉄鉱石: 5%、錫鉱石: 5%
+        float roll = random.nextFloat();
+        int itemId = 1; // デフォルトは石
+        
+        if (roll < 0.8f) {
+            itemId = 1; // 石
+        } else if (roll < 0.9f) {
+            itemId = 3; // 銅鉱石
+        } else if (roll < 0.95f) {
+            itemId = 5; // 鉄鉱石
+        } else {
+            itemId = 6; // 錫鉱石
+        }
+        
+        // アイテムをインベントリに追加
+        ItemData itemData = itemDataLoader.getItemData(itemId);
+        if (itemData != null) {
+            inventory.addItem(itemData);
+            Gdx.app.log("Mining", itemData.name + "を採掘しました");
+        }
+        
+        // 地形をBARRENに変換
+        if (terrainManager.changeTerrainType(tileX, tileY, TerrainTile.TerrainType.BARREN)) {
+            Gdx.app.log("Mining", "地形を荒地（BARREN）に変換しました");
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 指定されたタイル位置で採掘可能かどうかを判定します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 採掘可能な場合true
+     */
+    public boolean canMine(int tileX, int tileY) {
+        if (terrainManager == null) {
+            return false;
+        }
+        
+        TerrainTile tile = terrainManager.getTerrainTile(tileX, tileY);
+        if (tile == null) {
+            return false;
+        }
+        
+        return tile.getTerrainType() == TerrainTile.TerrainType.STONE;
+    }
+    
+    /**
+     * 指定されたタイル位置で荒地の回復を試みます。
+     * 土アイテム（ID: 2）を消費してBARREN→DIRT→GRASSに回復します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 回復に成功した場合true
+     */
+    public boolean tryRestoreBarren(int tileX, int tileY) {
+        if (terrainManager == null || inventory == null) {
+            return false;
+        }
+        
+        // 現在の地形を取得
+        TerrainTile currentTile = terrainManager.getTerrainTile(tileX, tileY);
+        if (currentTile == null) {
+            return false;
+        }
+        
+        TerrainTile.TerrainType currentType = currentTile.getTerrainType();
+        
+        // BARRENまたはDIRTのみ回復可能
+        if (currentType != TerrainTile.TerrainType.BARREN && 
+            currentType != TerrainTile.TerrainType.DIRT) {
+            Gdx.app.log("Restore", "回復できるのは荒地（BARREN）または土（DIRT）タイルのみです");
+            return false;
+        }
+        
+        // 土アイテム（ID: 2）が必要
+        int clayItemId = 2;
+        if (inventory.getItemCount(clayItemId) <= 0) {
+            Gdx.app.log("Restore", "土アイテムが必要です");
+            return false;
+        }
+        
+        // 地形を回復
+        TerrainTile.TerrainType newType;
+        if (currentType == TerrainTile.TerrainType.BARREN) {
+            newType = TerrainTile.TerrainType.DIRT;
+        } else { // DIRT
+            newType = TerrainTile.TerrainType.GRASS;
+        }
+        
+        // 地形を変更
+        if (terrainManager.changeTerrainType(tileX, tileY, newType)) {
+            // 土アイテムを1個消費
+            inventory.removeItem(clayItemId, 1);
+            Gdx.app.log("Restore", "地形を回復しました: " + currentType + " → " + newType);
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 指定されたタイル位置で荒地回復可能かどうかを判定します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 回復可能な場合true
+     */
+    public boolean canRestoreBarren(int tileX, int tileY) {
+        if (terrainManager == null || inventory == null) {
+            return false;
+        }
+        
+        TerrainTile tile = terrainManager.getTerrainTile(tileX, tileY);
+        if (tile == null) {
+            return false;
+        }
+        
+        TerrainTile.TerrainType type = tile.getTerrainType();
+        
+        // BARRENまたはDIRTで、土アイテムを持っている場合のみ回復可能
+        if ((type == TerrainTile.TerrainType.BARREN || type == TerrainTile.TerrainType.DIRT) &&
+            inventory.getItemCount(2) > 0) {
+            return true;
+        }
+        
+        return false;
     }
 }

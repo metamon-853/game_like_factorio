@@ -85,9 +85,10 @@ public class CivilizationLevel {
      * @param targetLevel 目標の文明レベル
      * @param preservedFoodManager 保存食マネージャー（nullの場合は保存食条件をスキップ）
      * @param totalLivestockProducts 畜産物の累計生産数（nullの場合は畜産物条件をスキップ）
+     * @param templeCount 神殿の数（nullの場合は神殿条件をスキップ）
      * @return 進行可能な場合true
      */
-    public boolean canProgressToLevel(int targetLevel, PreservedFoodManager preservedFoodManager, Integer totalLivestockProducts) {
+    public boolean canProgressToLevel(int targetLevel, PreservedFoodManager preservedFoodManager, Integer totalLivestockProducts, Integer templeCount) {
         if (targetLevel <= level || targetLevel > MAX_LEVEL) {
             return false;
         }
@@ -116,7 +117,13 @@ public class CivilizationLevel {
             }
         }
         
-        // レベル5以降の条件は今後追加
+        // レベル5への進行条件：神殿を1つ以上建設
+        if (targetLevel == 5) {
+            if (templeCount != null) {
+                return templeCount >= 1;
+            }
+        }
+        
         return true;
     }
     
@@ -127,6 +134,17 @@ public class CivilizationLevel {
      * @return 進行可能な場合true
      */
     public boolean canProgressToLevel(int targetLevel, PreservedFoodManager preservedFoodManager) {
-        return canProgressToLevel(targetLevel, preservedFoodManager, null);
+        return canProgressToLevel(targetLevel, preservedFoodManager, null, null);
+    }
+    
+    /**
+     * 指定された文明レベルに進行できるかどうかを判定します（後方互換性のため）。
+     * @param targetLevel 目標の文明レベル
+     * @param preservedFoodManager 保存食マネージャー（nullの場合は保存食条件をスキップ）
+     * @param totalLivestockProducts 畜産物の累計生産数（nullの場合は畜産物条件をスキップ）
+     * @return 進行可能な場合true
+     */
+    public boolean canProgressToLevel(int targetLevel, PreservedFoodManager preservedFoodManager, Integer totalLivestockProducts) {
+        return canProgressToLevel(targetLevel, preservedFoodManager, totalLivestockProducts, null);
     }
 }

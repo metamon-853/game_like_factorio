@@ -2,6 +2,7 @@ package io.github.some_example_name.system;
 
 import io.github.some_example_name.entity.Player;
 import io.github.some_example_name.entity.TerrainTile;
+import io.github.some_example_name.manager.BuildingManager;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.LivestockManager;
 import io.github.some_example_name.manager.TerrainManager;
@@ -19,6 +20,7 @@ public class InputHandler {
     private LivestockManager livestockManager;
     private TerrainManager terrainManager;
     private TerrainConversionManager terrainConversionManager;
+    private BuildingManager buildingManager;
     
     public InputHandler(Player player, FarmManager farmManager, LivestockManager livestockManager) {
         this.player = player;
@@ -26,6 +28,7 @@ public class InputHandler {
         this.livestockManager = livestockManager;
         this.terrainManager = null; // 後で設定される
         this.terrainConversionManager = null; // 後で設定される
+        this.buildingManager = null; // 後で設定される
     }
     
     /**
@@ -40,6 +43,13 @@ public class InputHandler {
      */
     public void setTerrainConversionManager(TerrainConversionManager terrainConversionManager) {
         this.terrainConversionManager = terrainConversionManager;
+    }
+    
+    /**
+     * 建物マネージャーを設定します。
+     */
+    public void setBuildingManager(BuildingManager buildingManager) {
+        this.buildingManager = buildingManager;
     }
     
     /**
@@ -68,6 +78,24 @@ public class InputHandler {
         if (Gdx.input.isKeyJustPressed(Input.Keys.T)) {
             handleTerrainConversionAction();
             return; // 地形変換アクション時は移動しない
+        }
+        
+        // Mキーで採掘を行う（移動中でも可能）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+            handleMiningAction();
+            return; // 採掘アクション時は移動しない
+        }
+        
+        // Rキーで荒地回復を行う（移動中でも可能）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.R)) {
+            handleRestoreAction();
+            return; // 回復アクション時は移動しない
+        }
+        
+        // Bキーで神殿を建てる（移動中でも可能）
+        if (Gdx.input.isKeyJustPressed(Input.Keys.B)) {
+            handleBuildTempleAction();
+            return; // 建設アクション時は移動しない
         }
         
         // 移動中は新しい入力を無視
@@ -226,6 +254,81 @@ public class InputHandler {
             Gdx.app.log("TerrainConversion", "地形を変換しました！");
         } else {
             Gdx.app.log("TerrainConversion", "地形変換に失敗しました");
+        }
+    }
+    
+    /**
+     * 採掘アクションを処理します。
+     */
+    private void handleMiningAction() {
+        if (terrainConversionManager == null) {
+            Gdx.app.log("Mining", "地形変換マネージャーが設定されていません");
+            return;
+        }
+        
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int tileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int tileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        
+        // 採掘を試みる
+        if (terrainConversionManager.tryMine(tileX, tileY)) {
+            Gdx.app.log("Mining", "採掘に成功しました！");
+        } else {
+            Gdx.app.log("Mining", "採掘できません。岩（STONE）タイルの上に立ってください。");
+        }
+    }
+    
+    /**
+     * 荒地回復アクションを処理します。
+     */
+    private void handleRestoreAction() {
+        if (terrainConversionManager == null) {
+            Gdx.app.log("Restore", "地形変換マネージャーが設定されていません");
+            return;
+        }
+        
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int tileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int tileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        
+        // 荒地回復を試みる
+        if (terrainConversionManager.tryRestoreBarren(tileX, tileY)) {
+            Gdx.app.log("Restore", "荒地を回復しました！");
+        } else {
+            Gdx.app.log("Restore", "回復できません。荒地（BARREN）または土（DIRT）タイルの上に立ち、土アイテムを持っている必要があります。");
+        }
+    }
+    
+    /**
+     * 神殿建設アクションを処理します。
+     */
+    private void handleBuildTempleAction() {
+        if (buildingManager == null) {
+            Gdx.app.log("Building", "建物マネージャーが設定されていません");
+            return;
+        }
+        
+        // プレイヤーの中心座標を取得
+        float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
+        float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
+        
+        // プレイヤーの中心がどのマップ升内にあるかを計算
+        int tileX = (int)Math.floor(playerCenterX / Player.MAP_TILE_SIZE);
+        int tileY = (int)Math.floor(playerCenterY / Player.MAP_TILE_SIZE);
+        
+        // 神殿を建てる
+        if (buildingManager.buildTemple(tileX, tileY)) {
+            Gdx.app.log("Building", "神殿を建設しました！");
+        } else {
+            Gdx.app.log("Building", "神殿を建設できません。荒地（BARREN）または岩（STONE）の上に立ち、鉄インゴット5個と石3個が必要です。");
         }
     }
     

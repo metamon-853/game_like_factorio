@@ -20,7 +20,8 @@ public class TerrainTile {
         FARMLAND,       // 畑
         MARSH,          // 湿地
         DRAINED_MARSH,  // 排水後湿地
-        WATER_CHANNEL   // 水路
+        WATER_CHANNEL,  // 水路
+        BARREN          // 荒地（採掘後の地形）
     }
     
     private int tileX;

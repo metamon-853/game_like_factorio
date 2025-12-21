@@ -10,6 +10,7 @@ import com.badlogic.gdx.utils.ScreenUtils;
 import com.badlogic.gdx.utils.viewport.Viewport;
 
 import io.github.some_example_name.entity.Player;
+import io.github.some_example_name.manager.BuildingManager;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.ItemManager;
 import io.github.some_example_name.manager.LivestockManager;
@@ -46,10 +47,12 @@ public class GameRenderer {
     private ItemManager itemManager;
     private FarmManager farmManager;
     private LivestockManager livestockManager;
+    private BuildingManager buildingManager;
     private Player player;
     private InventoryUI inventoryUI;
     private ItemEncyclopediaUI encyclopediaUI;
     private MenuSystem menuSystem;
+    private GameController gameController;
     
     private int screenWidth;
     private int screenHeight;
@@ -92,11 +95,12 @@ public class GameRenderer {
      */
     public void setManagers(TerrainManager terrainManager, ItemManager itemManager,
                            FarmManager farmManager, LivestockManager livestockManager,
-                           Player player) {
+                           BuildingManager buildingManager, Player player) {
         this.terrainManager = terrainManager;
         this.itemManager = itemManager;
         this.farmManager = farmManager;
         this.livestockManager = livestockManager;
+        this.buildingManager = buildingManager;
         this.player = player;
     }
     
@@ -177,6 +181,9 @@ public class GameRenderer {
         // 文明レベルアップメッセージを描画
         renderCivilizationLevelUpMessage();
         
+        // エンディング画面を描画（最前面）
+        renderEndingScreen();
+        
         // ポーズメニューを描画
         renderMenu(isPaused);
     }
@@ -240,6 +247,11 @@ public class GameRenderer {
             // 畜産タイルを描画
             if (livestockManager != null) {
                 livestockManager.render(shapeRenderer);
+            }
+            
+            // 建物を描画
+            if (buildingManager != null) {
+                buildingManager.render(shapeRenderer);
             }
             
             // アイテムを描画
@@ -366,6 +378,31 @@ public class GameRenderer {
             font.getData().setScale(originalFontScale);
             font.setColor(originalFontColor);
         }
+    }
+    
+    /**
+     * エンディング画面を描画します。
+     */
+    private void renderEndingScreen() {
+        if (gameController == null) {
+            return;
+        }
+        
+        EndingScreen endingScreen = gameController.getEndingScreen();
+        if (endingScreen != null && endingScreen.isActive()) {
+            try {
+                endingScreen.render(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+            } catch (Exception e) {
+                Gdx.app.error("GameRenderer", "Error rendering ending screen: " + e.getMessage(), e);
+            }
+        }
+    }
+    
+    /**
+     * GameControllerを設定します。
+     */
+    public void setGameController(GameController gameController) {
+        this.gameController = gameController;
     }
     
     /**

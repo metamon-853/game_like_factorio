@@ -6,6 +6,7 @@ import com.badlogic.gdx.graphics.OrthographicCamera;
 import io.github.some_example_name.entity.Player;
 import io.github.some_example_name.game.CivilizationLevel;
 import io.github.some_example_name.game.PreservedFoodManager;
+import io.github.some_example_name.manager.BuildingManager;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.ItemManager;
 import io.github.some_example_name.manager.LivestockManager;
@@ -31,8 +32,10 @@ public class GameController {
     private ItemManager itemManager;
     private FarmManager farmManager;
     private LivestockManager livestockManager;
+    private BuildingManager buildingManager;
     private PreservedFoodManager preservedFoodManager;
     private OrthographicCamera camera;
+    private EndingScreen endingScreen;
     
     // 文明レベルアップメッセージ関連
     private String civilizationLevelUpMessage;
@@ -45,6 +48,7 @@ public class GameController {
     public GameController() {
         this.civilizationLevelUpMessage = null;
         this.civilizationLevelUpMessageTimer = 0f;
+        this.endingScreen = new EndingScreen();
     }
     
     /**
@@ -52,7 +56,7 @@ public class GameController {
      */
     public void setGameObjects(Player player, TerrainManager terrainManager,
                               ItemManager itemManager, FarmManager farmManager,
-                              LivestockManager livestockManager,
+                              LivestockManager livestockManager, BuildingManager buildingManager,
                               PreservedFoodManager preservedFoodManager,
                               OrthographicCamera camera) {
         this.player = player;
@@ -60,6 +64,7 @@ public class GameController {
         this.itemManager = itemManager;
         this.farmManager = farmManager;
         this.livestockManager = livestockManager;
+        this.buildingManager = buildingManager;
         this.preservedFoodManager = preservedFoodManager;
         this.camera = camera;
     }
@@ -94,6 +99,16 @@ public class GameController {
             // 畜産マネージャーを更新
             if (livestockManager != null) {
                 livestockManager.update(deltaTime);
+            }
+            
+            // エンディング画面を更新
+            if (endingScreen != null) {
+                endingScreen.update(deltaTime);
+            }
+            
+            // エンディング中は他の更新をスキップ
+            if (endingScreen != null && endingScreen.isActive()) {
+                return;
             }
             
             // 文明レベル進行チェック
@@ -174,7 +189,22 @@ public class GameController {
                     }
                 }
             }
-            // レベル4以降の進行条件は今後追加
+            // レベル4からレベル5への進行条件：神殿を1つ以上建設
+            else if (currentLevel == 4) {
+                int templeCount = buildingManager != null ? buildingManager.getTempleCount() : 0;
+                if (civLevel.canProgressToLevel(5, preservedFoodManager, totalLivestockProducts, templeCount)) {
+                    if (civLevel.levelUp()) {
+                        Gdx.app.log("Civilization", "Civilization level increased to " + 
+                            civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
+                        showCivilizationLevelUpMessage(civLevel.getLevelName());
+                        
+                        // エンディングを開始
+                        if (endingScreen != null) {
+                            endingScreen.start();
+                        }
+                    }
+                }
+            }
         } catch (Exception e) {
             Gdx.app.error("GameController", "Error checking civilization level progress: " + 
                 e.getMessage(), e);
@@ -212,5 +242,13 @@ public class GameController {
      */
     public String getCivilizationLevelUpMessage() {
         return civilizationLevelUpMessage;
+    }
+    
+    /**
+     * エンディング画面を取得します。
+     * @return エンディング画面
+     */
+    public EndingScreen getEndingScreen() {
+        return endingScreen;
     }
 }

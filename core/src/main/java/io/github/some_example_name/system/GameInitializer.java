@@ -70,6 +70,7 @@ public class GameInitializer {
         public ItemManager itemManager;
         public FarmManager farmManager;
         public LivestockManager livestockManager;
+        public BuildingManager buildingManager;
         public TerrainManager terrainManager;
         public TerrainConversionManager terrainConversionManager;
         public UIRenderer uiRenderer;
@@ -203,6 +204,9 @@ public class GameInitializer {
         // 地形マネージャーを初期化
         result.terrainManager = new TerrainManager();
         
+        // アイテムマネージャーに地形マネージャーを設定（地形別採集用）
+        result.itemManager.setTerrainManager(result.terrainManager);
+        
         // 地形変換マネージャーを初期化
         result.terrainConversionManager = new TerrainConversionManager();
         result.terrainConversionManager.setTerrainManager(result.terrainManager);
@@ -217,6 +221,12 @@ public class GameInitializer {
         result.livestockManager.setInventory(result.inventory);
         result.livestockManager.setTerrainManager(result.terrainManager);
         result.livestockManager.setCivilizationLevel(result.itemManager.getCivilizationLevel());
+        
+        // 建物マネージャーを初期化
+        result.buildingManager = new BuildingManager();
+        result.buildingManager.setInventory(result.inventory);
+        result.buildingManager.setItemDataLoader(result.itemManager.getItemDataLoader());
+        result.buildingManager.setTerrainManager(result.terrainManager);
         
         // プレイヤーに地形マネージャーを設定
         result.player.setTerrainManager(result.terrainManager);
@@ -255,6 +265,7 @@ public class GameInitializer {
             result.livestockManager);
         result.inputHandler.setTerrainManager(result.terrainManager);
         result.inputHandler.setTerrainConversionManager(result.terrainConversionManager);
+        result.inputHandler.setBuildingManager(result.buildingManager);
         
         // MenuSystemのコールバック実装
         MenuSystem.MenuCallbacks menuCallbacks = new MenuSystem.MenuCallbacks() {

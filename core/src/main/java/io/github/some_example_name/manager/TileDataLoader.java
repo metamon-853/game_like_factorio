@@ -379,6 +379,18 @@ public class TileDataLoader {
         waterChannel.setDrainage(0.0f);
         waterChannel.setTillageDifficulty(1.0f);
         tileDataMap.put(TerrainTile.TerrainType.WATER_CHANNEL, waterChannel);
+        
+        // BARREN
+        TileData barren = new TileData(TerrainTile.TerrainType.BARREN);
+        barren.setName("荒地");
+        barren.setDescription("採掘によって荒廃した土地。農業や畜産には適さないが、建築には使用できる。");
+        barren.setColor(0.4f, 0.35f, 0.3f, 1.0f);
+        barren.setDecorationType(TileData.DecorationType.NONE);
+        barren.setMoisture(0.1f);
+        barren.setFertility(0.0f);
+        barren.setDrainage(0.9f);
+        barren.setTillageDifficulty(1.0f);
+        tileDataMap.put(TerrainTile.TerrainType.BARREN, barren);
     }
     
     /**
