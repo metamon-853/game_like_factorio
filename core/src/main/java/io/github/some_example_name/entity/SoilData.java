@@ -1,5 +1,7 @@
 package io.github.some_example_name.entity;
 
+import io.github.some_example_name.manager.TileDataLoader;
+
 /**
  * 土壌のパラメータを保持するクラス。
  * 水分量、肥沃度、排水性、耕作難度の4つのパラメータを持つ。
@@ -42,28 +44,18 @@ public class SoilData {
      * 地形タイプから初期土壌パラメータを設定します。
      */
     public static SoilData fromTerrainType(TerrainTile.TerrainType terrainType) {
-        switch (terrainType) {
-            case GRASS:
-                // 草原：バランス型
-                return new SoilData(0.5f, 0.6f, 0.6f, 0.3f);
-            case DIRT:
-                // 土：肥沃度が高い
-                return new SoilData(0.5f, 0.7f, 0.5f, 0.4f);
-            case SAND:
-                // 砂：排水性が高いが肥沃度が低い
-                return new SoilData(0.3f, 0.3f, 0.9f, 0.2f);
-            case FOREST:
-                // 森：肥沃度が高いが耕作難度が高い
-                return new SoilData(0.6f, 0.8f, 0.4f, 0.7f);
-            case WATER:
-                // 水：水分量が非常に高い（通常は農地にできない）
-                return new SoilData(1.0f, 0.2f, 0.0f, 1.0f);
-            case STONE:
-                // 岩：耕作難度が非常に高い
-                return new SoilData(0.2f, 0.1f, 0.8f, 1.0f);
-            default:
-                return new SoilData(0.5f, 0.5f, 0.5f, 0.5f);
+        TileDataLoader loader = TileDataLoader.getInstance();
+        TileData tileData = loader.getTileData(terrainType);
+        if (tileData != null) {
+            return new SoilData(
+                tileData.getMoisture(),
+                tileData.getFertility(),
+                tileData.getDrainage(),
+                tileData.getTillageDifficulty()
+            );
         }
+        // フォールバック（デフォルト値）
+        return new SoilData(0.5f, 0.5f, 0.5f, 0.5f);
     }
     
     public float getMoisture() {

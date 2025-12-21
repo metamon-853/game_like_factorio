@@ -2,6 +2,7 @@ package io.github.some_example_name.entity;
 
 import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import io.github.some_example_name.manager.TileDataLoader;
 
 /**
  * 地形タイルを表すクラス。
@@ -60,72 +61,78 @@ public class TerrainTile {
      * 地形タイプに応じた色を返します。
      */
     private Color getTerrainColor() {
-        switch (terrainType) {
-            case GRASS:
-                return new Color(0.3f, 0.6f, 0.2f, 1f); // 緑色
-            case DIRT:
-                return new Color(0.5f, 0.4f, 0.3f, 1f); // 茶色
-            case SAND:
-                return new Color(0.9f, 0.85f, 0.7f, 1f); // 砂色
-            case WATER:
-                return new Color(0.2f, 0.4f, 0.7f, 1f); // 青色
-            case STONE:
-                return new Color(0.5f, 0.5f, 0.5f, 1f); // 灰色
-            case FOREST:
-                return new Color(0.2f, 0.5f, 0.15f, 1f); // 濃い緑
-            default:
-                return Color.WHITE;
+        TileDataLoader loader = TileDataLoader.getInstance();
+        TileData tileData = loader.getTileData(terrainType);
+        if (tileData != null) {
+            return tileData.getColor();
         }
+        // フォールバック（デフォルト値）
+        return Color.WHITE;
     }
     
     /**
      * 地形タイプに応じた装飾を描画します。
      */
     private void renderDecoration(ShapeRenderer shapeRenderer, float pixelX, float pixelY) {
-        switch (terrainType) {
-            case GRASS:
+        TileDataLoader loader = TileDataLoader.getInstance();
+        TileData tileData = loader.getTileData(terrainType);
+        if (tileData == null) {
+            return;
+        }
+        
+        TileData.DecorationType decorationType = tileData.getDecorationType();
+        
+        switch (decorationType) {
+            case GRASS_DOTS:
                 // 草の小さな点を描画
-                shapeRenderer.setColor(new Color(0.2f, 0.5f, 0.1f, 0.5f));
-                for (int i = 0; i < 3; i++) {
+                shapeRenderer.setColor(tileData.getDecorationColor());
+                int grassCount = tileData.getDecorationCount();
+                for (int i = 0; i < grassCount; i++) {
                     float x = pixelX + Player.TILE_SIZE * (0.2f + i * 0.3f);
                     float y = pixelY + Player.TILE_SIZE * (0.3f + (i % 2) * 0.4f);
                     shapeRenderer.circle(x, y, Player.TILE_SIZE * 0.05f);
                 }
                 break;
-            case FOREST:
+            case TREE:
                 // 木を描画
-                shapeRenderer.setColor(new Color(0.3f, 0.2f, 0.1f, 1f)); // 茶色（幹）
+                shapeRenderer.setColor(tileData.getTrunkColor());
                 float trunkX = pixelX + Player.TILE_SIZE * 0.45f;
                 float trunkY = pixelY + Player.TILE_SIZE * 0.3f;
                 shapeRenderer.rect(trunkX, trunkY, Player.TILE_SIZE * 0.1f, Player.TILE_SIZE * 0.4f);
                 
-                shapeRenderer.setColor(new Color(0.1f, 0.4f, 0.1f, 1f)); // 濃い緑（葉）
+                shapeRenderer.setColor(tileData.getLeafColor());
                 float leafX = pixelX + Player.TILE_SIZE * 0.3f;
                 float leafY = pixelY + Player.TILE_SIZE * 0.5f;
                 shapeRenderer.circle(leafX, leafY, Player.TILE_SIZE * 0.25f);
                 break;
-            case STONE:
+            case STONE_PATTERN:
                 // 岩の模様を描画
-                shapeRenderer.setColor(new Color(0.4f, 0.4f, 0.4f, 1f));
+                shapeRenderer.setColor(tileData.getDecorationColor());
                 shapeRenderer.circle(pixelX + Player.TILE_SIZE * 0.5f, pixelY + Player.TILE_SIZE * 0.5f, Player.TILE_SIZE * 0.2f);
                 break;
-            case WATER:
+            case WATER_WAVES:
                 // 水の波紋を描画
-                shapeRenderer.setColor(new Color(0.3f, 0.5f, 0.8f, 0.5f));
-                for (int i = 0; i < 2; i++) {
+                shapeRenderer.setColor(tileData.getDecorationColor());
+                int waveCount = tileData.getDecorationCount();
+                for (int i = 0; i < waveCount; i++) {
                     float waveX = pixelX + Player.TILE_SIZE * (0.2f + i * 0.6f);
                     float waveY = pixelY + Player.TILE_SIZE * 0.5f;
                     shapeRenderer.circle(waveX, waveY, Player.TILE_SIZE * 0.15f);
                 }
                 break;
-            case SAND:
+            case SAND_DOTS:
                 // 砂の小さな点を描画
-                shapeRenderer.setColor(new Color(0.8f, 0.75f, 0.6f, 0.6f));
-                for (int i = 0; i < 4; i++) {
+                shapeRenderer.setColor(tileData.getDecorationColor());
+                int sandCount = tileData.getDecorationCount();
+                for (int i = 0; i < sandCount; i++) {
                     float x = pixelX + Player.TILE_SIZE * (0.15f + (i % 2) * 0.5f);
                     float y = pixelY + Player.TILE_SIZE * (0.2f + (i / 2) * 0.6f);
                     shapeRenderer.circle(x, y, Player.TILE_SIZE * 0.03f);
                 }
+                break;
+            case NONE:
+            default:
+                // 装飾なし
                 break;
         }
     }

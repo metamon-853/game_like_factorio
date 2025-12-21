@@ -18,6 +18,7 @@ import io.github.some_example_name.manager.ItemManager;
 import io.github.some_example_name.manager.FarmManager;
 import io.github.some_example_name.manager.LivestockManager;
 import io.github.some_example_name.manager.TerrainManager;
+import io.github.some_example_name.manager.TileDataLoader;
 import io.github.some_example_name.ui.UIRenderer;
 import io.github.some_example_name.ui.InventoryUI;
 import io.github.some_example_name.ui.ItemEncyclopediaUI;
@@ -133,6 +134,9 @@ public class Main extends ApplicationAdapter {
         
         shapeRenderer = new ShapeRenderer();
         batch = new SpriteBatch();
+        
+        // タイルデータローダーを初期化（他のマネージャーより先に初期化）
+        TileDataLoader.initialize();
         
         // フォントマネージャーを初期化
         fontManager = new FontManager();
