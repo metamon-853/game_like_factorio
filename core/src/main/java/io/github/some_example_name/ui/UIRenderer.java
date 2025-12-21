@@ -140,6 +140,8 @@ public class UIRenderer {
             }
         }
         
+        batch.end();
+        
         // ゲームガイドボタンを描画
         float rightX = screenWidth - padding;
         float buttonWidth = 150;
@@ -155,12 +157,8 @@ public class UIRenderer {
         float mouseY = screenHeight - Gdx.input.getY();
         boolean isHovered = guideButton.contains(mouseX, mouseY);
         
-        batch.end();
-        
         // ボタンを描画（drawButton内でbatchの開始/終了を管理）
         drawButton(buttonX, buttonY, buttonWidth, buttonHeight, "ゲームガイド", isHovered);
-        
-        batch.end();
     }
     
     /**
