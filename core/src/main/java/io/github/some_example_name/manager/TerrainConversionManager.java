@@ -68,6 +68,21 @@ public class TerrainConversionManager {
         }
         
         TerrainTile.TerrainType currentType = currentTile.getTerrainType();
+        
+        // 水路は畑や水田の上には掘れない
+        if (currentType == TerrainTile.TerrainType.FARMLAND ||
+            currentType == TerrainTile.TerrainType.PADDY) {
+            Gdx.app.log("TerrainConversion", "畑や水田の上には水路を掘れません。まず畑や水田を壊してください。");
+            return false;
+        }
+        
+        // 水路はSTONEやWATERの上には掘れない
+        if (currentType == TerrainTile.TerrainType.STONE ||
+            currentType == TerrainTile.TerrainType.WATER) {
+            Gdx.app.log("TerrainConversion", "岩や水の上には水路を掘れません。");
+            return false;
+        }
+        
         TerrainTile.TerrainType newType = null;
         
         // 道具のIDに基づいて変換先を決定
@@ -80,12 +95,20 @@ public class TerrainConversionManager {
                 return false;
             }
         }
-        // 排水シャベル (54-56): MARSH → DRAINED_MARSH
+        // 排水シャベル (54-56): MARSH → DRAINED_MARSH または DIRT/GRASS/DRAINED_MARSH → WATER_CHANNEL
         else if (toolItemId >= 54 && toolItemId <= 56) {
-            if (currentType == TerrainTile.TerrainType.MARSH) {
+            // 水路の掘削（DIRT、GRASS、DRAINED_MARSHをCHANNELに変換）
+            if (currentType == TerrainTile.TerrainType.DIRT ||
+                currentType == TerrainTile.TerrainType.GRASS ||
+                currentType == TerrainTile.TerrainType.DRAINED_MARSH) {
+                // 水路は畑や水田の上には掘れない（既にチェック済み）
+                newType = TerrainTile.TerrainType.WATER_CHANNEL;
+            }
+            // 湿地の排水（MARSH → DRAINED_MARSH）
+            else if (currentType == TerrainTile.TerrainType.MARSH) {
                 newType = TerrainTile.TerrainType.DRAINED_MARSH;
             } else {
-                Gdx.app.log("TerrainConversion", "排水シャベルは湿地（MARSH）にのみ使用できます");
+                Gdx.app.log("TerrainConversion", "排水シャベルは土（DIRT）、草（GRASS）、排水後湿地（DRAINED_MARSH）、または湿地（MARSH）にのみ使用できます");
                 return false;
             }
         }
@@ -150,16 +173,35 @@ public class TerrainConversionManager {
                     return toolId;
                 }
             }
-        } else if (currentType == TerrainTile.TerrainType.MARSH) {
-            // 排水シャベルを検索（高級なものから）
+            // 鍬がない場合は水路掘削用の排水シャベルを検索
+            for (int toolId = 56; toolId >= 54; toolId--) {
+                if (inventory.getItemCount(toolId) > 0) {
+                    return toolId;
+                }
+            }
+        } else if (currentType == TerrainTile.TerrainType.GRASS) {
+            // 水路掘削用の排水シャベルを検索（高級なものから）
             for (int toolId = 56; toolId >= 54; toolId--) {
                 if (inventory.getItemCount(toolId) > 0) {
                     return toolId;
                 }
             }
         } else if (currentType == TerrainTile.TerrainType.DRAINED_MARSH) {
-            // 区画整理具を検索（高級なものから）
+            // まず区画整理具を検索（高級なものから）
             for (int toolId = 59; toolId >= 57; toolId--) {
+                if (inventory.getItemCount(toolId) > 0) {
+                    return toolId;
+                }
+            }
+            // 区画整理具がない場合は水路掘削用の排水シャベルを検索
+            for (int toolId = 56; toolId >= 54; toolId--) {
+                if (inventory.getItemCount(toolId) > 0) {
+                    return toolId;
+                }
+            }
+        } else if (currentType == TerrainTile.TerrainType.MARSH) {
+            // 排水シャベルを検索（高級なものから）
+            for (int toolId = 56; toolId >= 54; toolId--) {
                 if (inventory.getItemCount(toolId) > 0) {
                     return toolId;
                 }

@@ -347,18 +347,28 @@ public class TerrainManager {
         
         if (tile == null) {
             // タイルが存在しない場合は新規作成
-            terrainTiles.put(tileKey, new TerrainTile(tileX, tileY, newType));
-            return true;
+            tile = new TerrainTile(tileX, tileY, newType);
+            terrainTiles.put(tileKey, tile);
         } else {
             // 既存のタイルのタイプを変更
             // TerrainTileクラスにsetterがない場合は、新しいインスタンスで置き換え
-            terrainTiles.put(tileKey, new TerrainTile(tileX, tileY, newType));
-            return true;
+            tile = new TerrainTile(tileX, tileY, newType);
+            terrainTiles.put(tileKey, tile);
         }
+        
+        // CHANNELが作成された場合、通水状態を更新
+        if (newType == TerrainTile.TerrainType.WATER_CHANNEL) {
+            updateChannelWateredStateAround(tileX, tileY);
+        } else {
+            // 他の地形に変更された場合も、周囲のCHANNELの通水状態を更新
+            updateChannelWateredStateAround(tileX, tileY);
+        }
+        
+        return true;
     }
     
     /**
-     * 指定されたタイル位置が水源（WATER、WATER_CHANNEL、PADDY）に隣接しているかどうかを判定します。
+     * 指定されたタイル位置が水源（WATER、通水CHANNEL、PADDY）に隣接しているかどうかを判定します。
      * @param tileX タイルX座標
      * @param tileY タイルY座標
      * @return 水源に隣接している場合true
@@ -375,8 +385,11 @@ public class TerrainManager {
             if (tile != null) {
                 TerrainTile.TerrainType type = tile.getTerrainType();
                 if (type == TerrainTile.TerrainType.WATER ||
-                    type == TerrainTile.TerrainType.WATER_CHANNEL ||
                     type == TerrainTile.TerrainType.PADDY) {
+                    return true;
+                }
+                // 通水しているCHANNELも水源として扱う
+                if (type == TerrainTile.TerrainType.WATER_CHANNEL && tile.isWatered()) {
                     return true;
                 }
             }
@@ -406,5 +419,76 @@ public class TerrainManager {
         }
         
         return false;
+    }
+    
+    /**
+     * 指定された水路タイルが通水しているかどうかを判定します。
+     * 隣接8方向にWATERまたは通水しているCHANNELがあれば通水と判定します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 通水している場合true
+     */
+    public boolean isChannelWatered(int tileX, int tileY) {
+        TerrainTile tile = getTerrainTile(tileX, tileY);
+        if (tile == null || tile.getTerrainType() != TerrainTile.TerrainType.WATER_CHANNEL) {
+            return false;
+        }
+        
+        // 周囲8方向をチェック
+        int[] dx = {-1, -1, -1, 0, 0, 1, 1, 1};
+        int[] dy = {-1, 0, 1, -1, 1, -1, 0, 1};
+        
+        for (int i = 0; i < dx.length; i++) {
+            int checkX = tileX + dx[i];
+            int checkY = tileY + dy[i];
+            TerrainTile neighborTile = getTerrainTile(checkX, checkY);
+            if (neighborTile != null) {
+                TerrainTile.TerrainType neighborType = neighborTile.getTerrainType();
+                // WATERに隣接している場合は通水
+                if (neighborType == TerrainTile.TerrainType.WATER) {
+                    return true;
+                }
+                // 通水しているCHANNELに隣接している場合も通水
+                if (neighborType == TerrainTile.TerrainType.WATER_CHANNEL && neighborTile.isWatered()) {
+                    return true;
+                }
+            }
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 指定された水路タイルの通水状態を更新します。
+     * 地形変更時に呼び出して、通水状態を再計算します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     */
+    public void updateChannelWateredState(int tileX, int tileY) {
+        TerrainTile tile = getTerrainTile(tileX, tileY);
+        if (tile == null || tile.getTerrainType() != TerrainTile.TerrainType.WATER_CHANNEL) {
+            return;
+        }
+        
+        boolean watered = isChannelWatered(tileX, tileY);
+        tile.setWatered(watered);
+    }
+    
+    /**
+     * 指定された位置とその周囲の水路タイルの通水状態を更新します。
+     * 地形変更時に呼び出して、影響を受ける水路の通水状態を再計算します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     */
+    public void updateChannelWateredStateAround(int tileX, int tileY) {
+        // 周囲8方向と自分自身をチェック
+        int[] dx = {-1, -1, -1, 0, 0, 1, 1, 1, 0};
+        int[] dy = {-1, 0, 1, -1, 1, -1, 0, 1, 0};
+        
+        for (int i = 0; i < dx.length; i++) {
+            int checkX = tileX + dx[i];
+            int checkY = tileY + dy[i];
+            updateChannelWateredState(checkX, checkY);
+        }
     }
 }

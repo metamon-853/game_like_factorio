@@ -277,6 +277,13 @@ public class FarmTile {
     }
     
     /**
+     * 収穫量の倍率を設定します。
+     */
+    public void setYieldMultiplier(float multiplier) {
+        this.yieldMultiplier = multiplier;
+    }
+    
+    /**
      * 現在植えられている種のIDを取得します。
      */
     public Integer getPlantedSeedId() {

@@ -27,10 +27,14 @@ public class TerrainTile {
     private int tileY;
     private TerrainType terrainType;
     
+    // 水路（CHANNEL）の通水状態（WATER_CHANNELの場合のみ使用）
+    private boolean isWatered;
+    
     public TerrainTile(int tileX, int tileY, TerrainType terrainType) {
         this.tileX = tileX;
         this.tileY = tileY;
         this.terrainType = terrainType;
+        this.isWatered = false; // デフォルトは非通水
     }
     
     public int getTileX() {
@@ -43,6 +47,22 @@ public class TerrainTile {
     
     public TerrainType getTerrainType() {
         return terrainType;
+    }
+    
+    /**
+     * 水路の通水状態を取得します（WATER_CHANNELの場合のみ有効）。
+     * @return 通水している場合true
+     */
+    public boolean isWatered() {
+        return isWatered;
+    }
+    
+    /**
+     * 水路の通水状態を設定します（WATER_CHANNELの場合のみ有効）。
+     * @param watered 通水状態
+     */
+    public void setWatered(boolean watered) {
+        this.isWatered = watered;
     }
     
     /**

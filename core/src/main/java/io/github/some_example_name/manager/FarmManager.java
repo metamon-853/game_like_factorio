@@ -123,6 +123,19 @@ public class FarmManager {
             return false; // 種がない
         }
         
+        // 現在の地形を取得
+        TerrainTile currentTerrain = null;
+        if (terrainManager != null) {
+            currentTerrain = terrainManager.getTerrainTile(tileX, tileY);
+        }
+        
+        // 米（ID 11）はPADDYのみに植えられる
+        if (seedItemId == 11) {
+            if (currentTerrain == null || currentTerrain.getTerrainType() != TerrainTile.TerrainType.PADDY) {
+                return false; // 米は水田（PADDY）にのみ植えられる
+            }
+        }
+        
         // 種のデータを取得して水条件をチェック
         if (itemDataLoader != null) {
             ItemData seedData = itemDataLoader.getItemData(seedItemId);
@@ -163,8 +176,36 @@ public class FarmManager {
             }
         }
         
+        // 芋（ID 10）の場合は地形チェック（DIRTまたはFARMLANDのみ）
+        if (seedItemId == 10) {
+            if (currentTerrain == null) {
+                return false;
+            }
+            TerrainTile.TerrainType terrainType = currentTerrain.getTerrainType();
+            if (terrainType != TerrainTile.TerrainType.DIRT && 
+                terrainType != TerrainTile.TerrainType.FARMLAND) {
+                return false; // 芋はDIRTまたはFARMLANDにのみ植えられる
+            }
+        }
+        
         // 種を植える（土壌条件チェック付き）
         if (farmTile.plantSeed(seedItemId, soilRequirements)) {
+            // 芋（ID 10）の場合は地形に応じて収穫量倍率を調整
+            if (seedItemId == 10 && currentTerrain != null) {
+                TerrainTile.TerrainType terrainType = currentTerrain.getTerrainType();
+                float terrainYieldMultiplier = 1.0f;
+                if (terrainType == TerrainTile.TerrainType.DIRT) {
+                    // DIRTでは収穫量が少ない（0.5倍）
+                    terrainYieldMultiplier = 0.5f;
+                } else if (terrainType == TerrainTile.TerrainType.FARMLAND) {
+                    // FARMLANDでは収穫量が普通（1.0倍）
+                    terrainYieldMultiplier = 1.0f;
+                }
+                // 既存の収穫量倍率に地形倍率を掛ける
+                float currentYieldMultiplier = farmTile.getYieldMultiplier();
+                farmTile.setYieldMultiplier(currentYieldMultiplier * terrainYieldMultiplier);
+            }
+            
             // インベントリから種を1個消費
             inventory.removeItem(seedItemId, 1);
             return true;
