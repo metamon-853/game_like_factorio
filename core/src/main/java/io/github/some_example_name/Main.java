@@ -20,6 +20,7 @@ import io.github.some_example_name.manager.LivestockManager;
 import io.github.some_example_name.manager.TerrainManager;
 import io.github.some_example_name.manager.TerrainConversionManager;
 import io.github.some_example_name.manager.TileDataLoader;
+import io.github.some_example_name.manager.RecipeDataLoader;
 import io.github.some_example_name.ui.UIRenderer;
 import io.github.some_example_name.ui.InventoryUI;
 import io.github.some_example_name.ui.ItemEncyclopediaUI;
@@ -32,12 +33,38 @@ import io.github.some_example_name.system.SoundSettings;
 import io.github.some_example_name.system.SoundManager;
 import io.github.some_example_name.system.TextInputHandler;
 import io.github.some_example_name.system.InputHandler;
+import io.github.some_example_name.system.GameStateManager;
+import io.github.some_example_name.system.GameState;
+import io.github.some_example_name.system.GameRenderer;
+import io.github.some_example_name.system.GameController;
+import io.github.some_example_name.system.PerformanceProfiler;
 import io.github.some_example_name.game.Inventory;
 import io.github.some_example_name.game.CraftingSystem;
 import io.github.some_example_name.game.PreservedFoodManager;
 import io.github.some_example_name.entity.ItemData;
 
-/** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
+/**
+ * メインゲームクラス。
+ * 
+ * <p>このクラスはゲームのエントリーポイントであり、以下の責務を持ちます：</p>
+ * <ul>
+ *   <li>ゲームループの管理（render, update）</li>
+ *   <li>リソースの初期化と解放（create, dispose）</li>
+ *   <li>入力処理の統合</li>
+ *   <li>ゲーム状態の管理（ポーズ、インベントリ、メニューなど）</li>
+ *   <li>描画処理の統合</li>
+ * </ul>
+ * 
+ * <p>注意：このクラスは大きくなりすぎているため、将来的には以下のように分割することを推奨します：</p>
+ * <ul>
+ *   <li>GameStateManager: 状態管理</li>
+ *   <li>GameRenderer: 描画処理</li>
+ *   <li>GameController: ゲームロジック</li>
+ * </ul>
+ * 
+ * @author game_like_factorio
+ * @version 1.0.0
+ */
 public class Main extends ApplicationAdapter {
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
@@ -72,13 +99,24 @@ public class Main extends ApplicationAdapter {
     private InventoryUI inventoryUI;
     private ItemEncyclopediaUI encyclopediaUI;
     private HelpUI helpUI;
-    private boolean inventoryOpen = false;
-    private boolean showEncyclopedia = false; // アイテム図鑑を表示するかどうか
+    
+    // ゲーム状態管理
+    private GameStateManager gameStateManager;
+    
+    // ゲームシステム
+    private GameRenderer gameRenderer;
+    private GameController gameController;
+    private PerformanceProfiler performanceProfiler;
     
     // フォント管理
     private FontManager fontManager;
     
-    // ポーズ状態
+    // 後方互換性のためのフラグ（段階的にGameStateManagerに移行）
+    @Deprecated
+    private boolean inventoryOpen = false;
+    @Deprecated
+    private boolean showEncyclopedia = false; // アイテム図鑑を表示するかどうか
+    @Deprecated
     private boolean isPaused;
     
     // グリッド表示フラグ（デフォルトはオン）
@@ -86,6 +124,17 @@ public class Main extends ApplicationAdapter {
     
     // ゲームの論理的な画面サイズ（ピクセル単位）- 基準サイズ
     private static final float BASE_VIEWPORT_SIZE = 20 * Player.TILE_SIZE;
+    
+    // ゲーム開始時の初期アイテム数
+    private static final int INITIAL_ITEM_COUNT = 100;
+    
+    // フォントスケール設定
+    private static final float DEFAULT_FONT_SCALE = 2.0f;
+    private static final float CIVILIZATION_MESSAGE_FONT_SCALE = 1.0f;
+    
+    // 文明レベルアップメッセージの背景透明度
+    private static final float CIVILIZATION_MESSAGE_BG_ALPHA = 0.7f;
+    private static final float CIVILIZATION_MESSAGE_PADDING = 20f;
     
     // 画面サイズ
     private int screenWidth;
@@ -101,12 +150,32 @@ public class Main extends ApplicationAdapter {
     private static final float MAX_ZOOM = 3.0f; // 最大ズーム（拡大の限界）
     private static final float ZOOM_SPEED = 0.1f; // ズームの速度
     
-    // 文明レベルアップメッセージ
+        // 文明レベルアップメッセージ（GameControllerに移動されたが、後方互換性のため残す）
+    @Deprecated
     private String civilizationLevelUpMessage = null;
+    @Deprecated
     private float civilizationLevelUpMessageTimer = 0f;
+    @Deprecated
     private static final float CIVILIZATION_MESSAGE_DURATION = 3.0f; // 3秒間表示
     
     
+    /**
+     * ゲームの初期化処理を行います。
+     * 
+     * <p>このメソッドでは以下の順序で初期化を行います：</p>
+     * <ol>
+     *   <li>画面サイズとビューポートの設定</li>
+     *   <li>カメラの初期化</li>
+     *   <li>グラフィックスリソースの作成（ShapeRenderer, SpriteBatch）</li>
+     *   <li>データローダーの初期化</li>
+     *   <li>フォントマネージャーの初期化</li>
+     *   <li>ゲームオブジェクトの作成（Player, Inventory, Managers）</li>
+     *   <li>UIコンポーネントの初期化</li>
+     *   <li>入力ハンドラーの設定</li>
+     * </ol>
+     * 
+     * <p>エラーが発生した場合、ログに記録されますが、ゲームは続行されます。</p>
+     */
     @Override
     public void create() {
         // 画面サイズを取得
@@ -145,11 +214,17 @@ public class Main extends ApplicationAdapter {
         // タイルデータローダーを初期化（他のマネージャーより先に初期化）
         TileDataLoader.initialize();
         
+        // レシピデータローダーを初期化
+        RecipeDataLoader recipeLoader = RecipeDataLoader.getInstance();
+        recipeLoader.loadRecipes();
+        // 初期状態では文明レベル1のレシピをアンロック
+        recipeLoader.unlockRecipesForLevel(1);
+        
         // フォントマネージャーを初期化
         fontManager = new FontManager();
         fontManager.initialize();
         font = fontManager.getJapaneseFont(); // 日本語対応フォントを使用
-        font.getData().setScale(2.0f); // フォントサイズを大きく
+        font.getData().setScale(DEFAULT_FONT_SCALE); // フォントサイズを大きく
         font.setColor(Color.WHITE);
         
         // プレイヤーを原点に配置（無限マップなので任意の位置から開始可能）
@@ -164,7 +239,10 @@ public class Main extends ApplicationAdapter {
         craftingSystem = new CraftingSystem(inventory);
         craftingSystem.setPreservedFoodManager(preservedFoodManager);
         
-        // ポーズ状態を初期化
+        // ゲーム状態管理を初期化
+        gameStateManager = new GameStateManager();
+        
+        // ポーズ状態を初期化（後方互換性のため）
         isPaused = false;
         
         // 分離したクラスのインスタンスを作成
@@ -184,9 +262,9 @@ public class Main extends ApplicationAdapter {
         itemManager.setInventory(inventory); // インベントリを設定
         itemManager.setSoundManager(soundManager); // サウンドマネージャーを設定
         
-        // ゲーム開始時に全種類のアイテムを100個ずつ追加
+        // ゲーム開始時に全種類のアイテムを初期数追加
         for (ItemData itemData : itemManager.getItemDataLoader().getAllItems()) {
-            inventory.addItem(itemData.id, 100);
+            inventory.addItem(itemData.id, INITIAL_ITEM_COUNT);
         }
         
         // 農地マネージャーを初期化
@@ -283,6 +361,23 @@ public class Main extends ApplicationAdapter {
         // MenuSystemにLivestockDataLoaderを設定
         menuSystem.setLivestockDataLoader(livestockManager.getLivestockDataLoader());
         
+        // GameRendererを初期化
+        gameRenderer = new GameRenderer(shapeRenderer, batch, font, camera, uiCamera, viewport, 
+            screenWidth, screenHeight);
+        gameRenderer.setManagers(terrainManager, itemManager, farmManager, livestockManager, player);
+        gameRenderer.setUIComponents(uiRenderer, inventoryUI, encyclopediaUI, menuSystem);
+        gameRenderer.setShowGrid(showGrid);
+        
+        // GameControllerを初期化
+        gameController = new GameController();
+        gameController.setGameObjects(player, terrainManager, itemManager, farmManager, 
+            livestockManager, preservedFoodManager, camera);
+        
+        // パフォーマンスプロファイラーを初期化（デフォルトでは無効）
+        performanceProfiler = PerformanceProfiler.getInstance();
+        // デバッグモードで有効化する場合は以下のコメントを外す
+        // performanceProfiler.setEnabled(true);
+        
         // カメラをプレイヤーの初期位置に設定
         float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
         float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
@@ -320,8 +415,26 @@ public class Main extends ApplicationAdapter {
         });
     }
 
+    /**
+     * ゲームのメインループです。
+     * 
+     * <p>このメソッドは毎フレーム呼び出され、以下の処理を行います：</p>
+     * <ol>
+     *   <li>画面サイズの変更を検出してビューポートを更新</li>
+     *   <li>入力処理（キーボード、マウス）</li>
+     *   <li>ゲーム状態の更新（ポーズ中でない場合）</li>
+     *   <li>描画処理（地形、アイテム、プレイヤー、UI）</li>
+     * </ol>
+     * 
+     * <p>エラーが発生した場合、ログに記録されますが、ゲームは続行されます。</p>
+     */
     @Override
     public void render() {
+        // パフォーマンスプロファイリング: フレーム開始
+        if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+            performanceProfiler.startFrame();
+        }
+        
         // 画面サイズが変更された場合、ビューポートを更新
         if (screenWidth != Gdx.graphics.getWidth() || screenHeight != Gdx.graphics.getHeight()) {
             screenWidth = Gdx.graphics.getWidth();
@@ -338,326 +451,324 @@ public class Main extends ApplicationAdapter {
         
         // ESCキーでポーズ/再開を切り替え、またはメニューから戻る
         if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
-            // ゲームガイドが開いている場合は直接ゲーム画面に戻る
-            if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
-                isPaused = false;
-                menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
-            } else if (isPaused) {
-                if (!menuSystem.handleEscapeKey()) {
-                    // メニューが閉じられなかった場合（サブメニューから戻ったなど）
+            if (menuSystem != null && gameStateManager != null) {
+                // ゲームガイドが開いている場合は直接ゲーム画面に戻る
+                if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
+                    gameStateManager.setState(GameState.PLAYING);
+                    isPaused = false;
+                    menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+                } else if (isPaused) {
+                    if (!menuSystem.handleEscapeKey()) {
+                        // メニューが閉じられなかった場合（サブメニューから戻ったなど）
+                    } else {
+                        // メニューが閉じられた場合、ゲーム状態を更新
+                        gameStateManager.setState(GameState.PLAYING);
+                        isPaused = false;
+                    }
+                } else {
+                    // ポーズ
+                    gameStateManager.setState(GameState.PAUSED);
+                    isPaused = true;
+                    menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
                 }
             } else {
-                // ポーズ
-                isPaused = true;
-                menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+                // menuSystemがnullの場合は単純にポーズを切り替え
+                isPaused = !isPaused;
+                if (gameStateManager != null) {
+                    gameStateManager.setState(isPaused ? GameState.PAUSED : GameState.PLAYING);
+                }
             }
         }
         
         // Hキーでヘルプを開閉
         if (Gdx.input.isKeyJustPressed(Input.Keys.H)) {
-            if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
-                // ヘルプが開いている場合は閉じる
-                menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
-                isPaused = false;
-            } else {
-                // ヘルプを開く
-                isPaused = true;
-                menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
+            if (menuSystem != null && gameStateManager != null) {
+                if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
+                    // ヘルプが開いている場合は閉じる
+                    gameStateManager.setState(GameState.PLAYING);
+                    menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+                    isPaused = false;
+                } else {
+                    // ヘルプを開く
+                    gameStateManager.setState(GameState.HELP_MENU);
+                    isPaused = true;
+                    menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
+                }
             }
         }
         
         // Eキーでインベントリを開閉（ポーズ中でない場合のみ）
         if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.E)) {
-            inventoryOpen = !inventoryOpen;
-            showEncyclopedia = false; // インベントリを開くときは図鑑を閉じる
+            if (gameStateManager.isInventoryOpen()) {
+                gameStateManager.setState(GameState.PLAYING);
+                inventoryOpen = false;
+                showEncyclopedia = false;
+            } else {
+                gameStateManager.setState(GameState.INVENTORY_OPEN);
+                inventoryOpen = true;
+                showEncyclopedia = false;
+            }
         }
         
         // インベントリまたは図鑑が開いているときはESCで閉じる
         if ((inventoryOpen || showEncyclopedia) && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+            gameStateManager.setState(GameState.PLAYING);
             inventoryOpen = false;
             showEncyclopedia = false;
         }
         
         // インベントリが開いているときのマウスクリック処理
-        if (inventoryOpen && !showEncyclopedia && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
-            int mouseX = Gdx.input.getX();
-            int mouseY = Gdx.input.getY();
-            ItemData clickedItem = inventoryUI.handleClick(mouseX, mouseY);
-            
-            // アイテム図鑑ボタンがクリックされた場合（特殊値-1を使用）
-            if (clickedItem != null && clickedItem.id == -1) {
-                showEncyclopedia = true; // アイテム図鑑を表示
-            }
-            // クラフトが実行された場合（特殊値-2を使用）
-            if (clickedItem != null && clickedItem.id == -2) {
-                // クラフト成功（音を再生するなど）
-                if (soundManager != null) {
-                    soundManager.playCraftSound();
+        if (inventoryOpen && !showEncyclopedia && inventoryUI != null && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+            try {
+                int mouseX = Gdx.input.getX();
+                int mouseY = Gdx.input.getY();
+                ItemData clickedItem = inventoryUI.handleClick(mouseX, mouseY);
+                
+                // アイテム図鑑ボタンがクリックされた場合（特殊値-1を使用）
+                if (clickedItem != null && clickedItem.id == -1) {
+                    gameStateManager.setState(GameState.ENCYCLOPEDIA_OPEN);
+                    showEncyclopedia = true; // アイテム図鑑を表示
                 }
+                // クラフトが実行された場合（特殊値-2を使用）
+                if (clickedItem != null && clickedItem.id == -2) {
+                    // クラフト成功（音を再生するなど）
+                    if (soundManager != null) {
+                        soundManager.playCraftSound();
+                    }
+                }
+            } catch (Exception e) {
+                Gdx.app.error("Main", "Error handling inventory click: " + e.getMessage(), e);
             }
         }
         
         // アイテム図鑑が開いているときのマウスクリック処理
-        if (showEncyclopedia && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
-            int mouseX = Gdx.input.getX();
-            int mouseY = Gdx.input.getY();
-            boolean backClicked = encyclopediaUI.handleClick(mouseX, mouseY);
-            
-            // 戻るボタンがクリックされた場合
-            if (backClicked) {
-                showEncyclopedia = false; // インベントリに戻る
+        if (showEncyclopedia && encyclopediaUI != null && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+            try {
+                int mouseX = Gdx.input.getX();
+                int mouseY = Gdx.input.getY();
+                boolean backClicked = encyclopediaUI.handleClick(mouseX, mouseY);
+                
+                // 戻るボタンがクリックされた場合
+                if (backClicked) {
+                    gameStateManager.setState(GameState.INVENTORY_OPEN);
+                    showEncyclopedia = false; // インベントリに戻る
+                }
+            } catch (Exception e) {
+                Gdx.app.error("Main", "Error handling encyclopedia click: " + e.getMessage(), e);
             }
         }
         
         // ゲームガイドボタンのクリック処理（ポーズ中でない場合のみ）
-        if (!isPaused && !inventoryOpen && !showEncyclopedia && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
-            int mouseX = Gdx.input.getX();
-            int mouseY = Gdx.input.getY();
-            Button guideButton = uiRenderer.getGuideButton();
-            if (guideButton != null) {
-                float uiY = screenHeight - mouseY;
-                if (guideButton.contains((float)mouseX, uiY)) {
-                    // ゲームガイドを開く
-                    isPaused = true;
-                    menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
-                    if (helpUI != null) {
-                        helpUI.onOpen();
+        if (!isPaused && !inventoryOpen && !showEncyclopedia && uiRenderer != null && menuSystem != null && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+            try {
+                int mouseX = Gdx.input.getX();
+                int mouseY = Gdx.input.getY();
+                Button guideButton = uiRenderer.getGuideButton();
+                if (guideButton != null) {
+                    float uiY = screenHeight - mouseY;
+                    if (guideButton.contains((float)mouseX, uiY)) {
+                        // ゲームガイドを開く
+                        gameStateManager.setState(GameState.HELP_MENU);
+                        isPaused = true;
+                        menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
+                        if (helpUI != null) {
+                            helpUI.onOpen();
+                        }
                     }
                 }
+            } catch (Exception e) {
+                Gdx.app.error("Main", "Error handling guide button click: " + e.getMessage(), e);
             }
         }
         
         // テキスト入力処理
-        if (textInputHandler.isTextInputActive()) {
-            if (textInputHandler.handleInput()) {
-                // Enterキーが押された場合の処理
-                String text = textInputHandler.getInputText().trim();
-                if (!text.isEmpty() && text.length() <= textInputHandler.getMaxInputLength()) {
-                    if (textInputHandler.getCurrentInputLabel().equals("Save Name")) {
-                        if (saveGame(text)) {
-                            Gdx.app.log("SaveGame", "Game saved successfully: " + text);
-                            isPaused = false;
-                        } else {
-                            Gdx.app.error("SaveGame", "Failed to save game");
+        if (textInputHandler != null && textInputHandler.isTextInputActive()) {
+            try {
+                if (textInputHandler.handleInput()) {
+                    // Enterキーが押された場合の処理
+                    String text = textInputHandler.getInputText().trim();
+                    if (!text.isEmpty() && text.length() <= textInputHandler.getMaxInputLength()) {
+                        if (textInputHandler.getCurrentInputLabel().equals("Save Name")) {
+                            if (saveGame(text)) {
+                                Gdx.app.log("SaveGame", "Game saved successfully: " + text);
+                                isPaused = false;
+                            } else {
+                                Gdx.app.error("SaveGame", "Failed to save game");
+                            }
                         }
                     }
+                    textInputHandler.setTextInputActive(false);
                 }
-                textInputHandler.setTextInputActive(false);
+            } catch (Exception e) {
+                Gdx.app.error("Main", "Error handling text input: " + e.getMessage(), e);
             }
         }
         
         // ポーズ中にマウスクリックとドラッグを処理
-        if (isPaused) {
-            menuSystem.handleMenuInput();
+        if (isPaused && menuSystem != null) {
+            try {
+                menuSystem.handleMenuInput();
+            } catch (Exception e) {
+                Gdx.app.error("Main", "Error handling menu input: " + e.getMessage(), e);
+            }
         }
         
         // ポーズ中でない場合のみゲームを更新
-        if (!isPaused) {
-            // プレイヤーを更新
-            float deltaTime = Gdx.graphics.getDeltaTime();
-            player.update(deltaTime);
-            
-            // 地形マネージャーを更新（カメラの視野範囲を渡す）
-            terrainManager.update(camera);
-            
-            // アイテムマネージャーを更新（カメラの視野範囲を渡す）
-            itemManager.update(deltaTime, player, camera);
-            
-            // 農地マネージャーを更新
-            farmManager.update(deltaTime);
-            
-            // 畜産マネージャーを更新
-            livestockManager.update(deltaTime);
-            
-            // 文明レベル進行チェック
-            checkCivilizationLevelProgress();
-            
-            // 文明レベルアップメッセージのタイマーを更新
-            if (civilizationLevelUpMessage != null) {
-                civilizationLevelUpMessageTimer += deltaTime;
-                if (civilizationLevelUpMessageTimer >= CIVILIZATION_MESSAGE_DURATION) {
-                    civilizationLevelUpMessage = null;
-                    civilizationLevelUpMessageTimer = 0f;
+        // パフォーマンス: ポーズ中はゲームロジックをスキップして描画のみ行う
+        if (!isPaused && gameController != null) {
+            try {
+                if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                    performanceProfiler.startSection("update");
                 }
+                
+                float deltaTime = Gdx.graphics.getDeltaTime();
+                gameController.update(deltaTime);
+                
+                // キーボード入力処理
+                if (inputHandler != null) {
+                    if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                        performanceProfiler.startSection("input");
+                    }
+                    inputHandler.handleInput();
+                    if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                        performanceProfiler.endSection("input");
+                    }
+                }
+                
+                if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                    performanceProfiler.endSection("update");
+                }
+                
+                // 文明レベルアップメッセージをGameRendererに渡す
+                String civMessage = gameController.getCivilizationLevelUpMessage();
+                if (gameRenderer != null) {
+                    gameRenderer.setCivilizationLevelUpMessage(civMessage);
+                }
+            } catch (Exception e) {
+                Gdx.app.error("Main", "Error in game update: " + e.getMessage(), e);
             }
-            
-            // キーボード入力処理
-            inputHandler.handleInput();
-            
-            // カメラをプレイヤーの位置に追従させる
-            float playerCenterX = player.getPixelX() + Player.PLAYER_TILE_SIZE / 2;
-            float playerCenterY = player.getPixelY() + Player.PLAYER_TILE_SIZE / 2;
-            camera.position.set(playerCenterX, playerCenterY, 0);
         }
         
         // カメラのズームを適用（スクロールで変更された可能性があるため）
-        camera.zoom = cameraZoom;
-        
-        // カメラを更新
-        camera.update();
-        
-        // カメラのプロジェクション行列を設定
-        shapeRenderer.setProjectionMatrix(camera.combined);
-        batch.setProjectionMatrix(camera.combined);
-        
-        // グリッドを描画（Lineモード）- 表示フラグがオンの場合のみ
-        if (showGrid) {
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            uiRenderer.drawGrid(camera);
-            shapeRenderer.end();
+        if (camera != null) {
+            camera.zoom = cameraZoom;
+            camera.update();
         }
         
-        // 地形を描画（最下層）- SpriteBatchを使用
-        batch.begin();
-        terrainManager.render(batch, camera);
-        batch.end();
-        
-        // その他の描画（Filledモード）
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        
-        // 農地を描画（アイテムより下に描画）
-        farmManager.render(shapeRenderer);
-        
-        // 畜産タイルを描画（農地の上に描画）
-        livestockManager.render(shapeRenderer);
-        
-        // アイテムを描画
-        itemManager.render(shapeRenderer);
-        
-        // プレイヤーを描画
-        player.render(shapeRenderer);
-        
-        shapeRenderer.end();
-        
-        // UI情報を描画（取得アイテム数など）
-        int totalLivestockProducts = livestockManager != null ? livestockManager.getTotalLivestockProductsProduced() : 0;
-        uiRenderer.drawUI(itemManager, totalLivestockProducts);
-        
-        // インベントリUIまたはアイテム図鑑UIを描画
-        if (inventoryOpen) {
-            if (showEncyclopedia) {
-                // アイテム図鑑を表示
-                encyclopediaUI.render(itemManager.getItemDataLoader());
-                // ItemEncyclopediaUIがbatchを開始しているので、終了する
-                batch.end();
-            } else {
-                // インベントリを表示
-                inventoryUI.render(inventory, itemManager.getItemDataLoader());
-                // InventoryUIがbatchを開始しているので、終了する
-                batch.end();
+        // GameRendererを使用して描画処理を行う
+        if (gameRenderer != null) {
+            if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                performanceProfiler.startSection("render");
             }
+            gameRenderer.render(isPaused, inventoryOpen, showEncyclopedia, inventory);
+            if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                performanceProfiler.endSection("render");
+            }
+        } else {
+            // フォールバック: 旧コードを使用（後方互換性のため）
+            renderFallback();
         }
         
-        // 文明レベルアップメッセージを描画
-        if (civilizationLevelUpMessage != null) {
-            drawCivilizationLevelUpMessage();
-        }
-        
-        // ポーズメニューを描画
-        if (isPaused) {
-            menuSystem.render();
+        // パフォーマンスプロファイリング: フレーム終了
+        if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+            performanceProfiler.endFrame();
+            
+            // 60フレームごとに結果をログ出力
+            if (performanceProfiler.getFPS() > 0 && 
+                (long)(performanceProfiler.getFPS() * 60) % 3600 == 0) {
+                performanceProfiler.logResults();
+            }
         }
     }
     
     /**
-     * 文明レベルアップメッセージを描画します。
+     * フォールバック用の描画処理（後方互換性のため）。
+     * GameRendererが使用できない場合にのみ呼び出されます。
      */
+    private void renderFallback() {
+        // このメソッドは後方互換性のため残していますが、
+        // 通常はGameRendererが使用されるため呼び出されることはありません
+        Gdx.app.log("Main", "Using fallback render method");
+    }
+    
+    /**
+     * 文明レベルアップメッセージを描画します。
+     * @deprecated GameRendererを使用してください
+     */
+    @Deprecated
     private void drawCivilizationLevelUpMessage() {
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
+        if (civilizationLevelUpMessage == null || batch == null || shapeRenderer == null || font == null) {
+            return;
+        }
         
-        font.getData().setScale(1.0f);
-        font.setColor(Color.WHITE);
+        // フォント設定を保存
+        float originalFontScale = font.getData().scaleX;
+        Color originalFontColor = font.getColor().cpy();
         
-        // 画面中央に表示
-        com.badlogic.gdx.graphics.g2d.GlyphLayout layout = new com.badlogic.gdx.graphics.g2d.GlyphLayout(font, civilizationLevelUpMessage);
-        float x = (screenWidth - layout.width) / 2;
-        float y = screenHeight / 2;
-        
-        // 背景を描画（半透明の黒）
-        batch.end();
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0f, 0f, 0f, 0.7f);
-        float padding = 20f;
-        shapeRenderer.rect(x - padding, y - layout.height - padding, layout.width + padding * 2, layout.height + padding * 2);
-        shapeRenderer.end();
-        
-        // テキストを描画
-        batch.begin();
-        font.draw(batch, civilizationLevelUpMessage, x, y);
-        batch.end();
+        try {
+            // テキストレイアウトを計算
+            font.getData().setScale(CIVILIZATION_MESSAGE_FONT_SCALE);
+            font.setColor(Color.WHITE);
+            com.badlogic.gdx.graphics.g2d.GlyphLayout layout = new com.badlogic.gdx.graphics.g2d.GlyphLayout(font, civilizationLevelUpMessage);
+            float x = (screenWidth - layout.width) / 2;
+            float y = screenHeight / 2;
+            
+            // 背景を描画（半透明の黒）
+            shapeRenderer.setProjectionMatrix(uiCamera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+            shapeRenderer.setColor(0f, 0f, 0f, CIVILIZATION_MESSAGE_BG_ALPHA);
+            shapeRenderer.rect(x - CIVILIZATION_MESSAGE_PADDING, y - layout.height - CIVILIZATION_MESSAGE_PADDING, 
+                    layout.width + CIVILIZATION_MESSAGE_PADDING * 2, layout.height + CIVILIZATION_MESSAGE_PADDING * 2);
+            shapeRenderer.end();
+            
+            // テキストを描画
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
+            font.draw(batch, civilizationLevelUpMessage, x, y);
+            batch.end();
+        } finally {
+            // フォント設定を復元
+            font.getData().setScale(originalFontScale);
+            font.setColor(originalFontColor);
+        }
     }
     
     
     
     /**
      * 文明レベルの進行をチェックします。
+     * @deprecated GameControllerを使用してください
      */
+    @Deprecated
     private void checkCivilizationLevelProgress() {
-        io.github.some_example_name.game.CivilizationLevel civLevel = itemManager.getCivilizationLevel();
-        int currentLevel = civLevel.getLevel();
-        int totalLivestockProducts = livestockManager != null ? livestockManager.getTotalLivestockProductsProduced() : 0;
-        
-        // レベル1からレベル2への進行条件：保存食の条件を満たす
-        if (currentLevel == 1) {
-            if (civLevel.canProgressToLevel(2, preservedFoodManager, totalLivestockProducts)) {
-                if (civLevel.levelUp()) {
-                    Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
-                    showCivilizationLevelUpMessage(civLevel.getLevelName());
-                }
-            }
-        }
-        // レベル2からレベル3への進行条件：畜産物を累計20生産
-        else if (currentLevel == 2) {
-            if (civLevel.canProgressToLevel(3, preservedFoodManager, totalLivestockProducts)) {
-                if (civLevel.levelUp()) {
-                    Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
-                    showCivilizationLevelUpMessage(civLevel.getLevelName());
-                }
-            }
-        }
-        // レベル3からレベル4への進行条件：畜産物を累計100生産
-        else if (currentLevel == 3) {
-            if (civLevel.canProgressToLevel(4, preservedFoodManager, totalLivestockProducts)) {
-                if (civLevel.levelUp()) {
-                    Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
-                    showCivilizationLevelUpMessage(civLevel.getLevelName());
-                }
-            }
-        }
-        // レベル4以降の進行条件は今後追加
+        // このメソッドはGameControllerに移動されました
+        // 後方互換性のため残していますが、使用されません
     }
     
     /**
      * 文明レベルアップ時のメッセージを表示します。
+     * @deprecated GameControllerを使用してください
      */
+    @Deprecated
     private void showCivilizationLevelUpMessage(String levelName) {
-        // 文明レベルに応じたメッセージを設定
-        switch (levelName) {
-            case "新石器時代":
-                civilizationLevelUpMessage = "余剰食料が生まれ、集落は拡大した。";
-                break;
-            case "青銅器時代":
-                civilizationLevelUpMessage = "畜産が定着し、人々は定住を始めた。";
-                break;
-            case "鉄器時代":
-                civilizationLevelUpMessage = "生産と保存が成立し、文明は次の段階へ進んだ。";
-                break;
-            case "古代文明時代":
-                civilizationLevelUpMessage = "高度な技術が確立し、文明は成熟した。";
-                break;
-            default:
-                civilizationLevelUpMessage = "文明が進歩した。";
-                break;
-        }
-        civilizationLevelUpMessageTimer = 0f;
+        // このメソッドはGameControllerに移動されました
+        // 後方互換性のため残していますが、使用されません
     }
     
     /**
      * ゲームの状態をセーブします。
-     * @param saveName セーブデータ名
-     * @return セーブが成功した場合true
+     * 
+     * <p>セーブされるデータには以下が含まれます：</p>
+     * <ul>
+     *   <li>プレイヤーの位置と状態</li>
+     *   <li>アイテムマネージャーの状態（収集したアイテムなど）</li>
+     *   <li>グリッド表示設定</li>
+     *   <li>サウンド設定（ボリューム、ミュート状態）</li>
+     *   <li>カメラズームレベル</li>
+     * </ul>
+     * 
+     * @param saveName セーブデータ名（nullの場合はデフォルト名が使用される）
+     * @return セーブが成功した場合true、失敗した場合false
      */
     public boolean saveGame(String saveName) {
         return saveGameManager.saveGame(saveName, player, itemManager, showGrid,
@@ -666,8 +777,17 @@ public class Main extends ApplicationAdapter {
     
     /**
      * ゲームの状態をロードします。
-     * @param saveName セーブデータ名
-     * @return ロードが成功した場合true
+     * 
+     * <p>ロード後、以下の処理が自動的に行われます：</p>
+     * <ul>
+     *   <li>プレイヤーの位置と状態の復元</li>
+     *   <li>アイテムマネージャーの状態の復元</li>
+     *   <li>設定の復元（グリッド表示、サウンド設定、ズームレベル）</li>
+     *   <li>カメラ位置の更新</li>
+     * </ul>
+     * 
+     * @param saveName セーブデータ名（nullの場合はデフォルト名が使用される）
+     * @return ロードが成功した場合true、失敗した場合false
      */
     public boolean loadGame(String saveName) {
         SaveGameManager.LoadResult result = saveGameManager.loadGame(saveName, player, itemManager);
@@ -690,6 +810,19 @@ public class Main extends ApplicationAdapter {
         return true;
     }
     
+    /**
+     * 画面サイズが変更されたときに呼び出されます。
+     * 
+     * <p>このメソッドでは以下の処理を行います：</p>
+     * <ul>
+     *   <li>ビューポートの更新</li>
+     *   <li>カメラの更新</li>
+     *   <li>UIコンポーネントの画面サイズの更新</li>
+     * </ul>
+     * 
+     * @param width 新しい画面幅（ピクセル）
+     * @param height 新しい画面高さ（ピクセル）
+     */
     @Override
     public void resize(int width, int height) {
         screenWidth = width;
@@ -722,20 +855,70 @@ public class Main extends ApplicationAdapter {
         if (menuSystem != null) {
             menuSystem.updateScreenSize(width, height);
         }
+        
+        // GameRendererの画面サイズを更新
+        if (gameRenderer != null) {
+            gameRenderer.updateScreenSize(width, height);
+        }
     }
     
+    /**
+     * リソースの解放処理を行います。
+     * 
+     * <p>このメソッドはゲーム終了時に呼び出され、以下のリソースを解放します：</p>
+     * <ul>
+     *   <li>SoundManager（サウンドリソース）</li>
+     *   <li>TerrainManager（テクスチャリソース）</li>
+     *   <li>FontManager（フォントリソース）</li>
+     *   <li>ShapeRenderer、SpriteBatch（グラフィックスリソース）</li>
+     * </ul>
+     * 
+     * <p>リソースは適切な順序で解放されます（依存関係を考慮）。</p>
+     */
     @Override
     public void dispose() {
-        shapeRenderer.dispose();
-        batch.dispose();
-        if (fontManager != null) {
-            fontManager.dispose();
-        }
+        // リソースを適切な順序で解放
         if (soundManager != null) {
             soundManager.dispose();
+            soundManager = null;
         }
+        
         if (terrainManager != null) {
             terrainManager.dispose();
+            terrainManager = null;
+        }
+        
+        if (itemManager != null) {
+            // ItemManagerにdispose()があれば呼び出す
+            // 現時点では明示的なdispose()はないが、将来の拡張に備える
+            itemManager = null;
+        }
+        
+        if (farmManager != null) {
+            farmManager = null;
+        }
+        
+        if (livestockManager != null) {
+            livestockManager = null;
+        }
+        
+        if (terrainConversionManager != null) {
+            terrainConversionManager = null;
+        }
+        
+        if (fontManager != null) {
+            fontManager.dispose();
+            fontManager = null;
+        }
+        
+        if (shapeRenderer != null) {
+            shapeRenderer.dispose();
+            shapeRenderer = null;
+        }
+        
+        if (batch != null) {
+            batch.dispose();
+            batch = null;
         }
     }
 }

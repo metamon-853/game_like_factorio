@@ -212,12 +212,29 @@ public class ItemEncyclopediaUI {
      * アイテム図鑑UIを描画します。
      * @param itemDataLoader アイテムデータローダー
      */
+    /**
+     * アイテム図鑑UIを描画します。
+     * 
+     * <p>このメソッドはbatchを開始し、終了します。
+     * 呼び出し元でbatchを管理する必要はありません。</p>
+     * 
+     * @param itemDataLoader アイテムデータローダー
+     */
     public void render(ItemDataLoader itemDataLoader) {
         if (itemDataLoader == null) {
             return;
         }
         
-        // パネルの背景を描画（batchは既に終了している前提）
+        // batchが既に開始されているかチェック
+        boolean batchWasActive = batch.isDrawing();
+        
+        // パネルの背景を描画
+        if (batchWasActive) {
+        // batchを終了（元々開始されていなかった場合は終了しない）
+        if (!batchWasActive) {
+            batch.end();
+        }
+    }
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
@@ -230,7 +247,7 @@ public class ItemEncyclopediaUI {
         shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
         shapeRenderer.end();
         
-        // batchを開始
+        // batchを開始（元々開始されていた場合は再度開始）
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         

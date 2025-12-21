@@ -1,0 +1,4 @@
+id,result_item_id,result_amount,name,description,required_civilization_level,category
+1,47,1,パンを作る,小麦粉からパンを作成する,2,食品
+2,48,1,干し肉を作る,生肉から干し肉を作成する,2,食品
+3,49,1,乾燥作物を作る,作物を乾燥させて保存食にする,2,食品

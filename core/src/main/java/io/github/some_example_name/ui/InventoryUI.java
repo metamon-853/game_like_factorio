@@ -247,12 +247,27 @@ public class InventoryUI {
      * @param inventory インベントリ
      * @param itemDataLoader アイテムデータローダー
      */
+    /**
+     * インベントリUIを描画します。
+     * 
+     * <p>このメソッドはbatchを開始し、終了します。
+     * 呼び出し元でbatchを管理する必要はありません。</p>
+     * 
+     * @param inventory インベントリ
+     * @param itemDataLoader アイテムデータローダー
+     */
     public void render(Inventory inventory, ItemDataLoader itemDataLoader) {
         if (inventory == null) {
             return;
         }
         
-        // パネルの背景を描画（batchは既に終了している前提）
+        // batchが既に開始されているかチェック
+        boolean batchWasActive = batch.isDrawing();
+        
+        // パネルの背景を描画
+        if (batchWasActive) {
+            batch.end();
+        }
         shapeRenderer.setProjectionMatrix(uiCamera.combined);
         shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
@@ -265,7 +280,7 @@ public class InventoryUI {
         shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
         shapeRenderer.end();
         
-        // batchを開始
+        // batchを開始（元々開始されていた場合は再度開始）
         batch.begin();
         batch.setProjectionMatrix(uiCamera.combined);
         
@@ -342,14 +357,28 @@ public class InventoryUI {
         }
         
         font.getData().setScale(0.825f);
+        
+        // batchを終了（元々開始されていなかった場合は終了しない）
+        // 注意: renderTabs()やrenderInventoryTab()などでbatch.end()が呼ばれる可能性があるため、
+        // ここでbatchが開始されているかチェックする
+        if (!batchWasActive && batch.isDrawing()) {
+            batch.end();
+        }
     }
     
     /**
      * タブボタンを描画します。
+     * 注意: このメソッドはbatchが開始されていることを前提とし、内部でbatch.end()を呼び出します。
      */
     private void renderTabs() {
         float mouseX = Gdx.input.getX();
         float mouseY = screenHeight - Gdx.input.getY();
+        
+        // batchが開始されていることを確認
+        if (!batch.isDrawing()) {
+            batch.begin();
+            batch.setProjectionMatrix(uiCamera.combined);
+        }
         
         batch.end();
         

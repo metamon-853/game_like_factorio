@@ -6,11 +6,12 @@ import com.badlogic.gdx.graphics.Color;
 import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator;
 import com.badlogic.gdx.graphics.g2d.freetype.FreeTypeFontGenerator.FreeTypeFontParameter;
+import com.badlogic.gdx.utils.Disposable;
 
 /**
  * 日本語対応フォントを管理するクラス。
  */
-public class FontManager {
+public class FontManager implements Disposable {
     private BitmapFont japaneseFont;
     private BitmapFont defaultFont;
     
