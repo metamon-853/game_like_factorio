@@ -20,7 +20,6 @@ import io.github.some_example_name.manager.LivestockManager;
 import io.github.some_example_name.manager.TerrainManager;
 import io.github.some_example_name.manager.TerrainConversionManager;
 import io.github.some_example_name.manager.TileDataLoader;
-import io.github.some_example_name.manager.RecipeDataLoader;
 import io.github.some_example_name.ui.UIRenderer;
 import io.github.some_example_name.ui.InventoryUI;
 import io.github.some_example_name.ui.ItemEncyclopediaUI;
@@ -213,12 +212,6 @@ public class Main extends ApplicationAdapter {
         
         // タイルデータローダーを初期化（他のマネージャーより先に初期化）
         TileDataLoader.initialize();
-        
-        // レシピデータローダーを初期化
-        RecipeDataLoader recipeLoader = RecipeDataLoader.getInstance();
-        recipeLoader.loadRecipes();
-        // 初期状態では文明レベル1のレシピをアンロック
-        recipeLoader.unlockRecipesForLevel(1);
         
         // フォントマネージャーを初期化
         fontManager = new FontManager();
