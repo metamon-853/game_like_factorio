@@ -132,12 +132,13 @@ public class TerrainManager {
             return TerrainTile.TerrainType.STONE;
         } else {
             // 中地帯：湿度と地形ノイズに基づいて決定
-            if (moistureNoise > 0.65 && terrainNoise > 0.4) {
+            // まず湿地をチェック（水場の近くに生成されるように優先度を上げる）
+            if (heightNoise < 0.45 && moistureNoise > 0.6) {
+                // 低地＋高湿度：湿地エリア（水場の近くに生成）
+                return TerrainTile.TerrainType.MARSH;
+            } else if (moistureNoise > 0.65 && terrainNoise > 0.4) {
                 // 高湿度＋適度な地形ノイズ：森林エリア
                 return TerrainTile.TerrainType.FOREST;
-            } else if (moistureNoise > 0.75 && heightNoise < 0.5) {
-                // 非常に高湿度＋低地：湿地エリア
-                return TerrainTile.TerrainType.MARSH;
             } else if (moistureNoise < 0.35 || terrainNoise < 0.3) {
                 // 低湿度または低地形ノイズ：土エリア
                 return TerrainTile.TerrainType.DIRT;
