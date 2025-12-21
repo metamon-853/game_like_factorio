@@ -54,7 +54,6 @@ public class ItemDataLoader {
                 // CSVのパース（引用符を考慮したカンマ区切り）
                 List<String> parts = io.github.some_example_name.util.CSVParser.parseCSVLine(line);
                 if (parts.size() < 4) {
-                    Gdx.app.log("ItemDataLoader", "Skipping invalid line: " + line);
                     continue;
                 }
                 
@@ -68,7 +67,6 @@ public class ItemDataLoader {
                 try {
                     itemData.id = Integer.parseInt(parts.get(0).trim());
                 } catch (NumberFormatException e) {
-                    Gdx.app.log("ItemDataLoader", "Invalid item ID: " + parts.get(0));
                     continue;
                 }
                 itemData.category = category;
@@ -103,7 +101,7 @@ public class ItemDataLoader {
                         int durability = Integer.parseInt(parts.get(7).trim());
                         itemData.setToolDurability(durability);
                     } catch (NumberFormatException e) {
-                        Gdx.app.log("ItemDataLoader", "Invalid tool durability: " + parts.get(7));
+                        // 無効な耐久値は無視
                     }
                 }
                 
@@ -113,7 +111,7 @@ public class ItemDataLoader {
                         float efficiency = Float.parseFloat(parts.get(8).trim());
                         itemData.setToolEfficiency(efficiency);
                     } catch (NumberFormatException e) {
-                        Gdx.app.log("ItemDataLoader", "Invalid tool efficiency: " + parts.get(8));
+                        // 無効な効率値は無視
                     }
                 }
                 
@@ -135,10 +133,7 @@ public class ItemDataLoader {
             }
         } catch (Exception e) {
             Gdx.app.error("ItemDataLoader", "Error loading entity.csv: " + e.getMessage());
-            e.printStackTrace();
         }
-        
-        Gdx.app.log("ItemDataLoader", "Loaded " + itemDataMap.size() + " items");
     }
     
     /**
@@ -193,7 +188,6 @@ public class ItemDataLoader {
             // コロンで分割
             String[] parts = pair.split(":");
             if (parts.length != 2) {
-                Gdx.app.log("ItemDataLoader", "Invalid material format: " + pair);
                 continue;
             }
             
@@ -204,7 +198,7 @@ public class ItemDataLoader {
                     materials.put(itemId, amount);
                 }
             } catch (NumberFormatException e) {
-                Gdx.app.log("ItemDataLoader", "Invalid material ID or amount: " + pair);
+                // 無効な素材IDまたは数量は無視
             }
         }
         
@@ -237,7 +231,6 @@ public class ItemDataLoader {
             // コロンで分割
             String[] parts = pair.split(":");
             if (parts.length != 2) {
-                Gdx.app.log("ItemDataLoader", "Invalid requirement format: " + pair);
                 continue;
             }
             
@@ -246,7 +239,7 @@ public class ItemDataLoader {
                 int itemId = Integer.parseInt(parts[1].trim());
                 requirements.put(type, itemId);
             } catch (NumberFormatException e) {
-                Gdx.app.log("ItemDataLoader", "Invalid requirement type or item ID: " + pair);
+                // 無効な要求条件タイプまたはアイテムIDは無視
             }
         }
         

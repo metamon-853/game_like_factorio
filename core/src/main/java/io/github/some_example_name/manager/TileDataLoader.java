@@ -144,20 +144,17 @@ public class TileDataLoader {
                     
                     tileDataMap.put(terrainType, data);
                 } catch (IllegalArgumentException e) {
-                    Gdx.app.log("TileDataLoader", "Unknown terrain type: " + terrainTypeName);
+                    // 未知の地形タイプは無視
                 } catch (Exception e) {
-                    Gdx.app.log("TileDataLoader", "Error parsing tile data for " + terrainTypeName + ": " + e.getMessage());
+                    // パースエラーは無視
                 }
             }
             
         } catch (Exception e) {
             Gdx.app.error("TileDataLoader", "Error loading tiles.json: " + e.getMessage());
-            e.printStackTrace();
             // エラー時はデフォルトデータを設定
             createDefaultTileData();
         }
-        
-        Gdx.app.log("TileDataLoader", "Loaded " + tileDataMap.size() + " tile types");
     }
     
     /**

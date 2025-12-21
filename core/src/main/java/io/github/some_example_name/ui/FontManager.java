@@ -28,7 +28,6 @@ public class FontManager implements Disposable {
         japaneseFont = createJapaneseFont();
         
         if (japaneseFont == null) {
-            Gdx.app.log("FontManager", "Japanese font creation failed, using default font");
             japaneseFont = defaultFont;
         }
     }
@@ -50,7 +49,6 @@ public class FontManager implements Disposable {
             for (String fontPath : fontPaths) {
                 FileHandle fontFile = Gdx.files.absolute(fontPath);
                 if (fontFile.exists()) {
-                    Gdx.app.log("FontManager", "Loading font from: " + fontPath);
                     return generateFontFromFile(fontFile);
                 }
             }
@@ -58,16 +56,13 @@ public class FontManager implements Disposable {
             // アセットフォルダ内のフォントを試行
             FileHandle assetFont = Gdx.files.internal("fonts/japanese.ttf");
             if (assetFont.exists()) {
-                Gdx.app.log("FontManager", "Loading font from assets");
                 return generateFontFromFile(assetFont);
             }
             
             // フォントが見つからない場合はデフォルトフォントを使用
-            Gdx.app.log("FontManager", "No Japanese font found, using default");
             return null;
         } catch (Exception e) {
             Gdx.app.error("FontManager", "Error creating Japanese font: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }
@@ -128,11 +123,9 @@ public class FontManager implements Disposable {
             BitmapFont font = generator.generateFont(parameter);
             generator.dispose();
             
-            Gdx.app.log("FontManager", "Japanese font generated successfully");
             return font;
         } catch (Exception e) {
             Gdx.app.error("FontManager", "Error generating font from file: " + e.getMessage());
-            e.printStackTrace();
             return null;
         }
     }

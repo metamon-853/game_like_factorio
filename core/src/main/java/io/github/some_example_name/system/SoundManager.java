@@ -52,8 +52,6 @@ public class SoundManager implements Disposable {
             collectSound = createCollectSound();
             if (collectSound == null) {
                 Gdx.app.error("SoundManager", "Failed to create collect sound");
-            } else {
-                Gdx.app.log("SoundManager", "Collect sound created successfully");
             }
             
             // 各タイルタイプ用の足音を初期化
@@ -62,7 +60,6 @@ public class SoundManager implements Disposable {
                 Sound sound = createFootstepSoundForTerrain(type);
                 if (sound != null) {
                     footstepSounds.put(type, sound);
-                    Gdx.app.log("SoundManager", "Footstep sound created for " + type);
                 } else {
                     Gdx.app.error("SoundManager", "Failed to create footstep sound for " + type);
                 }
@@ -72,15 +69,11 @@ public class SoundManager implements Disposable {
             footstepSound = footstepSounds.get(TerrainTile.TerrainType.GRASS);
             if (footstepSound == null) {
                 Gdx.app.error("SoundManager", "Failed to create default footstep sound");
-            } else {
-                Gdx.app.log("SoundManager", "Default footstep sound created successfully");
             }
             
             craftSound = createCraftSound();
             if (craftSound == null) {
                 Gdx.app.error("SoundManager", "Failed to create craft sound");
-            } else {
-                Gdx.app.log("SoundManager", "Craft sound created successfully");
             }
             isInitialized = true;
         } catch (Exception e) {
@@ -265,7 +258,6 @@ public class SoundManager implements Disposable {
             }
             
             Sound sound = Gdx.audio.newSound(soundFile);
-            Gdx.app.log("SoundManager", "Collect sound file created: " + soundFile.path());
             return sound;
         } catch (Exception e) {
             Gdx.app.error("SoundManager", "Failed to create collect sound", e);
@@ -901,15 +893,7 @@ public class SoundManager implements Disposable {
      * アイテム取得音を再生します。
      */
     public void playCollectSound() {
-        if (!isInitialized) {
-            Gdx.app.log("SoundManager", "playCollectSound: not initialized");
-            return;
-        }
-        if (collectSound == null) {
-            Gdx.app.error("SoundManager", "playCollectSound: collectSound is null");
-            return;
-        }
-        if (soundSettings.isMuted()) {
+        if (!isInitialized || collectSound == null || soundSettings.isMuted()) {
             return;
         }
         
@@ -923,7 +907,6 @@ public class SoundManager implements Disposable {
         if (volume > 0) {
             collectSound.play(volume * 0.5f); // 取得音は少し大きめに
             lastCollectSoundTime = currentTime;
-            Gdx.app.log("SoundManager", "playCollectSound: played successfully");
         }
     }
     

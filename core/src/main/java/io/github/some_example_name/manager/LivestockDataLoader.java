@@ -54,7 +54,6 @@ public class LivestockDataLoader {
                 // CSVのパース（引用符を考慮したカンマ区切り）
                 List<String> parts = io.github.some_example_name.util.CSVParser.parseCSVLine(line);
                 if (parts.size() < 5) {
-                    Gdx.app.log("LivestockDataLoader", "Skipping invalid line (need at least 5 columns): " + line);
                     continue;
                 }
                 
@@ -104,7 +103,7 @@ public class LivestockDataLoader {
                     }
                     
                 } catch (NumberFormatException e) {
-                    Gdx.app.log("LivestockDataLoader", "Invalid number format in line: " + line + " - " + e.getMessage());
+                    // 無効な数値フォーマットの行はスキップ
                     continue;
                 }
                 
@@ -113,10 +112,7 @@ public class LivestockDataLoader {
             }
         } catch (Exception e) {
             Gdx.app.error("LivestockDataLoader", "Error loading entity.csv: " + e.getMessage());
-            e.printStackTrace();
         }
-        
-        Gdx.app.log("LivestockDataLoader", "Loaded " + livestockDataMap.size() + " livestock types");
     }
     
     /**
@@ -188,7 +184,6 @@ public class LivestockDataLoader {
                 livestockData.productInterval = 8.0f;
                 livestockData.requiredCivilizationLevel = 1;
                 livestockData.setColor(1.0f, 1.0f, 1.0f);
-                Gdx.app.log("LivestockDataLoader", "Unknown livestock ID: " + livestockData.id + ", using default values");
                 break;
         }
     }

@@ -23,6 +23,13 @@ allprojects {
       testOutputDir = file('build/classes/java/test')
     }
   }
+
+  // Eclipse の出力ディレクトリ設定を追加
+  eclipse {
+    classpath {
+      defaultOutputDir = file('build/classes/java/main')
+    }
+  }
 }
 
 configure(subprojects) {
