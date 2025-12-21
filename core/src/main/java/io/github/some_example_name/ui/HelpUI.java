@@ -1,7 +1,6 @@
 package io.github.some_example_name.ui;
 
 import io.github.some_example_name.manager.LivestockDataLoader;
-import io.github.some_example_name.entity.LivestockData;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.graphics.Color;
@@ -11,7 +10,6 @@ import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
-import com.badlogic.gdx.utils.Array;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
 import java.util.List;
 
@@ -616,7 +614,9 @@ public class HelpUI {
                     break;
                     
                 case HEADING_2:
-                    font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
+                    // 作物名に応じて色を変更
+                    Color heading2Color = getHeading2Color(element.text);
+                    font.setColor(heading2Color);
                     font.getData().setScale(0.75f);
                     font.draw(batch, element.text, startX, currentY);
                     currentY -= lineSpacing;
@@ -651,6 +651,25 @@ public class HelpUI {
         }
         
         return currentY;
+    }
+    
+    /**
+     * HEADING_2のテキストに応じた色を取得します。
+     * 作物名の場合は専用の色を返します。
+     * @param text 見出しテキスト
+     * @return 色
+     */
+    private Color getHeading2Color(String text) {
+        // 作物名をチェック
+        if (text.contains("米") || text.contains("稲作")) {
+            return new Color(0.2f, 0.4f, 0.7f, 1f); // 青色
+        } else if (text.contains("麦") || text.contains("小麦")) {
+            return new Color(0.9f, 0.8f, 0.3f, 1f); // 黄色
+        } else if (text.contains("芋") || text.contains("サツマイモ")) {
+            return new Color(0.8f, 0.5f, 0.2f, 1f); // オレンジ色
+        }
+        // デフォルトの色
+        return new Color(0.8f, 0.9f, 1.0f, 1f);
     }
     
     /**
