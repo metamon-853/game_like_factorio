@@ -79,4 +79,29 @@ public class CivilizationLevel {
     public boolean isItemAvailable(int itemCivilizationLevel) {
         return itemCivilizationLevel <= level;
     }
+    
+    /**
+     * 指定された文明レベルに進行できるかどうかを判定します。
+     * @param targetLevel 目標の文明レベル
+     * @param preservedFoodManager 保存食マネージャー（nullの場合は保存食条件をスキップ）
+     * @return 進行可能な場合true
+     */
+    public boolean canProgressToLevel(int targetLevel, PreservedFoodManager preservedFoodManager) {
+        if (targetLevel <= level || targetLevel > MAX_LEVEL) {
+            return false;
+        }
+        
+        // レベル2への進行条件：パンを100保存、干し肉を50保存
+        if (targetLevel == 2) {
+            if (preservedFoodManager != null) {
+                // パン（ID: 47）を100保存
+                // 干し肉（ID: 48）を50保存
+                return preservedFoodManager.hasPreservedFood(47, 100) &&
+                       preservedFoodManager.hasPreservedFood(48, 50);
+            }
+        }
+        
+        // レベル3以降の条件は今後追加
+        return true;
+    }
 }

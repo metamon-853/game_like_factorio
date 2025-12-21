@@ -32,6 +32,7 @@ import io.github.some_example_name.system.TextInputHandler;
 import io.github.some_example_name.system.InputHandler;
 import io.github.some_example_name.game.Inventory;
 import io.github.some_example_name.game.CraftingSystem;
+import io.github.some_example_name.game.PreservedFoodManager;
 import io.github.some_example_name.entity.ItemData;
 
 /** {@link com.badlogic.gdx.ApplicationListener} implementation shared by all platforms. */
@@ -64,6 +65,7 @@ public class Main extends ApplicationAdapter {
     // インベントリシステム
     private Inventory inventory;
     private CraftingSystem craftingSystem;
+    private PreservedFoodManager preservedFoodManager;
     private InventoryUI inventoryUI;
     private ItemEncyclopediaUI encyclopediaUI;
     private HelpUI helpUI;
@@ -144,8 +146,12 @@ public class Main extends ApplicationAdapter {
         // インベントリを初期化
         inventory = new Inventory();
         
+        // 保存食マネージャーを初期化
+        preservedFoodManager = new PreservedFoodManager();
+        
         // クラフトシステムを初期化
         craftingSystem = new CraftingSystem(inventory);
+        craftingSystem.setPreservedFoodManager(preservedFoodManager);
         
         // ポーズ状態を初期化
         isPaused = false;
@@ -175,6 +181,7 @@ public class Main extends ApplicationAdapter {
         // 農地マネージャーを初期化
         farmManager = new FarmManager();
         farmManager.setInventory(inventory); // インベントリを設定
+        farmManager.setItemDataLoader(itemManager.getItemDataLoader()); // アイテムデータローダーを設定
         
         // 畜産マネージャーを初期化
         livestockManager = new LivestockManager();
@@ -182,6 +189,9 @@ public class Main extends ApplicationAdapter {
         
         // 地形マネージャーを初期化
         terrainManager = new TerrainManager();
+        
+        // 農地マネージャーに地形マネージャーを設定
+        farmManager.setTerrainManager(terrainManager);
         
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
@@ -519,10 +529,12 @@ public class Main extends ApplicationAdapter {
     private void checkCivilizationLevelProgress() {
         io.github.some_example_name.game.CivilizationLevel civLevel = itemManager.getCivilizationLevel();
         
-        // レベル1からレベル2への進行条件：アイテムを10個収集
-        if (civLevel.getLevel() == 1 && itemManager.getCollectedCount() >= 10) {
-            if (civLevel.levelUp()) {
-                Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
+        // レベル1からレベル2への進行条件：保存食の条件を満たす
+        if (civLevel.getLevel() == 1) {
+            if (civLevel.canProgressToLevel(2, preservedFoodManager)) {
+                if (civLevel.levelUp()) {
+                    Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
+                }
             }
         }
         // レベル2以降の進行条件は今後追加

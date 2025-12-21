@@ -306,4 +306,27 @@ public class TerrainManager {
     public void setGeneratedChunks(java.util.Set<String> chunks) {
         this.generatedChunks = chunks != null ? chunks : new java.util.HashSet<>();
     }
+    
+    /**
+     * 指定されたタイル位置が水辺（水タイルに隣接）かどうかを判定します。
+     * @param tileX タイルX座標
+     * @param tileY タイルY座標
+     * @return 水辺の場合true
+     */
+    public boolean isNearWater(int tileX, int tileY) {
+        // 周囲8方向をチェック
+        int[] dx = {-1, -1, -1, 0, 0, 1, 1, 1};
+        int[] dy = {-1, 0, 1, -1, 1, -1, 0, 1};
+        
+        for (int i = 0; i < dx.length; i++) {
+            int checkX = tileX + dx[i];
+            int checkY = tileY + dy[i];
+            TerrainTile tile = getTerrainTile(checkX, checkY);
+            if (tile != null && tile.getTerrainType() == TerrainTile.TerrainType.WATER) {
+                return true;
+            }
+        }
+        
+        return false;
+    }
 }

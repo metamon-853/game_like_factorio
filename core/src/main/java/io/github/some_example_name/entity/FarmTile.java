@@ -28,12 +28,20 @@ public class FarmTile {
     // 最大成長段階
     private static final int MAX_STAGE = 3;
     
+    // 農具関連
+    private Integer equippedToolId; // 装着されている農具のID（nullは未装着）
+    private int toolDurability; // 現在の農具の耐久値
+    private float toolEfficiency; // 現在の農具の効率
+    
     public FarmTile(int tileX, int tileY) {
         this.tileX = tileX;
         this.tileY = tileY;
         this.hasSeed = false;
         this.growthStage = 0;
         this.growthTimer = 0f;
+        this.equippedToolId = null;
+        this.toolDurability = 0;
+        this.toolEfficiency = 1.0f;
     }
     
     /**
@@ -80,11 +88,77 @@ public class FarmTile {
             return false; // まだ収穫できない
         }
         
+        // 農具の耐久値を減らす（装着されている場合）
+        if (equippedToolId != null && toolDurability > 0) {
+            toolDurability--;
+            // 耐久値が0になったら農具を外す
+            if (toolDurability <= 0) {
+                equippedToolId = null;
+                toolDurability = 0;
+                toolEfficiency = 1.0f;
+            }
+        }
+        
         // 収穫後、農地をリセット
         hasSeed = false;
         growthStage = 0;
         growthTimer = 0f;
         return true;
+    }
+    
+    /**
+     * 農具を装着します。
+     * @param toolId 農具のID
+     * @param durability 農具の耐久値
+     * @param efficiency 農具の効率
+     * @return 装着に成功した場合true
+     */
+    public boolean equipTool(int toolId, int durability, float efficiency) {
+        // 既に農具が装着されている場合は失敗
+        if (equippedToolId != null) {
+            return false;
+        }
+        
+        this.equippedToolId = toolId;
+        this.toolDurability = durability;
+        this.toolEfficiency = efficiency;
+        return true;
+    }
+    
+    /**
+     * 農具を外します。
+     * @return 外した農具のID（装着されていない場合はnull）
+     */
+    public Integer unequipTool() {
+        Integer removedToolId = equippedToolId;
+        equippedToolId = null;
+        toolDurability = 0;
+        toolEfficiency = 1.0f;
+        return removedToolId;
+    }
+    
+    /**
+     * 装着されている農具のIDを取得します。
+     * @return 農具のID（装着されていない場合はnull）
+     */
+    public Integer getEquippedToolId() {
+        return equippedToolId;
+    }
+    
+    /**
+     * 現在の農具の効率を取得します。
+     * @return 効率（農具が装着されていない場合は1.0）
+     */
+    public float getToolEfficiency() {
+        return toolEfficiency;
+    }
+    
+    /**
+     * 農具が装着されているかどうかを返します。
+     * @return 装着されている場合true
+     */
+    public boolean hasTool() {
+        return equippedToolId != null && toolDurability > 0;
     }
     
     /**

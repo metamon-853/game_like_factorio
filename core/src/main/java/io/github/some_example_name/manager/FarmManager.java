@@ -1,6 +1,7 @@
 package io.github.some_example_name.manager;
 
 import io.github.some_example_name.entity.FarmTile;
+import io.github.some_example_name.entity.ItemData;
 import io.github.some_example_name.game.Inventory;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -17,15 +18,17 @@ public class FarmManager {
     // インベントリへの参照
     private Inventory inventory;
     
-    // 種のアイテムID（仮の値、実際のアイテムIDに合わせて調整可能）
-    private static final int SEED_ITEM_ID = 1; // 仮のID
+    // アイテムデータローダーへの参照
+    private ItemDataLoader itemDataLoader;
     
-    // 作物のアイテムID（収穫時に獲得）
-    private static final int CROP_ITEM_ID = 2; // 仮のID
+    // 地形マネージャーへの参照
+    private TerrainManager terrainManager;
     
     public FarmManager() {
         this.farmTiles = new HashMap<>();
         this.inventory = null;
+        this.itemDataLoader = null;
+        this.terrainManager = null;
     }
     
     /**
@@ -33,6 +36,20 @@ public class FarmManager {
      */
     public void setInventory(Inventory inventory) {
         this.inventory = inventory;
+    }
+    
+    /**
+     * アイテムデータローダーを設定します。
+     */
+    public void setItemDataLoader(ItemDataLoader itemDataLoader) {
+        this.itemDataLoader = itemDataLoader;
+    }
+    
+    /**
+     * 地形マネージャーを設定します。
+     */
+    public void setTerrainManager(TerrainManager terrainManager) {
+        this.terrainManager = terrainManager;
     }
     
     /**
@@ -46,15 +63,73 @@ public class FarmManager {
     }
     
     /**
-     * 指定されたタイル位置に種を植えます。
+     * 指定されたタイル位置に種を植えます（インベントリから自動的に種を探します）。
      * @param tileX タイルX座標（マップ升単位）
      * @param tileY タイルY座標（マップ升単位）
      * @return 種を植えられた場合true
      */
     public boolean plantSeed(int tileX, int tileY) {
+        if (inventory == null || itemDataLoader == null) {
+            return false;
+        }
+        
+        // インベントリから種を探す
+        Map<Integer, Integer> allItems = inventory.getAllItems();
+        for (Map.Entry<Integer, Integer> entry : allItems.entrySet()) {
+            int itemId = entry.getKey();
+            int count = entry.getValue();
+            
+            if (count <= 0) {
+                continue;
+            }
+            
+            // アイテムデータを取得
+            ItemData itemData = itemDataLoader.getItemData(itemId);
+            if (itemData == null) {
+                continue;
+            }
+            
+            // 種かどうかをチェック（カテゴリが「植物」で名前に「種」が含まれる、またはIDが8）
+            boolean isSeed = false;
+            if (itemId == 8) {
+                // 基本的な種
+                isSeed = true;
+            } else if ("植物".equals(itemData.category) && itemData.name != null && itemData.name.contains("種")) {
+                // 植物カテゴリで名前に「種」が含まれる
+                isSeed = true;
+            }
+            
+            if (isSeed) {
+                // 種が見つかったので、3引数のメソッドを呼び出す
+                return plantSeed(tileX, tileY, itemId);
+            }
+        }
+        
+        return false; // 種が見つからなかった
+    }
+    
+    /**
+     * 指定されたタイル位置に種を植えます。
+     * @param tileX タイルX座標（マップ升単位）
+     * @param tileY タイルY座標（マップ升単位）
+     * @param seedItemId 種のアイテムID
+     * @return 種を植えられた場合true
+     */
+    public boolean plantSeed(int tileX, int tileY, int seedItemId) {
         // インベントリに種があるかチェック
-        if (inventory == null || inventory.getItemCount(SEED_ITEM_ID) <= 0) {
+        if (inventory == null || inventory.getItemCount(seedItemId) <= 0) {
             return false; // 種がない
+        }
+        
+        // 種のデータを取得して水条件をチェック
+        if (itemDataLoader != null) {
+            ItemData seedData = itemDataLoader.getItemData(seedItemId);
+            if (seedData != null && seedData.requiresWater()) {
+                // 水辺必須の場合は水辺チェック
+                if (terrainManager == null || !terrainManager.isNearWater(tileX, tileY)) {
+                    return false; // 水辺にいない
+                }
+            }
         }
         
         String key = tileX + "," + tileY;
@@ -69,7 +144,7 @@ public class FarmManager {
         // 種を植える
         if (farmTile.plantSeed()) {
             // インベントリから種を1個消費
-            inventory.removeItem(SEED_ITEM_ID, 1);
+            inventory.removeItem(seedItemId, 1);
             return true;
         }
         
@@ -77,12 +152,24 @@ public class FarmManager {
     }
     
     /**
-     * 指定されたタイル位置の作物を収穫します。
+     * 指定されたタイル位置の作物を収穫します（デフォルトの作物IDを使用）。
      * @param tileX タイルX座標（マップ升単位）
      * @param tileY タイルY座標（マップ升単位）
      * @return 収穫できた場合true
      */
     public boolean harvest(int tileX, int tileY) {
+        // デフォルトの作物ID（9）を使用
+        return harvest(tileX, tileY, 9);
+    }
+    
+    /**
+     * 指定されたタイル位置の作物を収穫します。
+     * @param tileX タイルX座標（マップ升単位）
+     * @param tileY タイルY座標（マップ升単位）
+     * @param cropItemId 作物のアイテムID
+     * @return 収穫できた場合true
+     */
+    public boolean harvest(int tileX, int tileY, int cropItemId) {
         String key = tileX + "," + tileY;
         FarmTile farmTile = farmTiles.get(key);
         
@@ -92,10 +179,56 @@ public class FarmManager {
         
         // 収穫
         if (farmTile.harvest()) {
+            // 農具の効率を考慮して収穫量を計算
+            float efficiency = farmTile.getToolEfficiency();
+            int harvestAmount = Math.max(1, Math.round(efficiency)); // 最低1個、効率に応じて増加
+            
             // インベントリに作物を追加
             if (inventory != null) {
-                inventory.addItem(CROP_ITEM_ID, 1);
+                inventory.addItem(cropItemId, harvestAmount);
             }
+            return true;
+        }
+        
+        return false;
+    }
+    
+    /**
+     * 指定されたタイル位置の農地に農具を装着します。
+     * @param tileX タイルX座標（マップ升単位）
+     * @param tileY タイルY座標（マップ升単位）
+     * @param toolItemId 農具のアイテムID
+     * @return 装着に成功した場合true
+     */
+    public boolean equipTool(int tileX, int tileY, int toolItemId) {
+        if (inventory == null || itemDataLoader == null) {
+            return false;
+        }
+        
+        // インベントリに農具があるかチェック
+        if (inventory.getItemCount(toolItemId) <= 0) {
+            return false;
+        }
+        
+        // 農具のデータを取得
+        ItemData toolData = itemDataLoader.getItemData(toolItemId);
+        if (toolData == null || !toolData.isTool()) {
+            return false; // 農具ではない
+        }
+        
+        String key = tileX + "," + tileY;
+        FarmTile farmTile = farmTiles.get(key);
+        
+        if (farmTile == null) {
+            return false; // 農地が存在しない
+        }
+        
+        // 農具を装着
+        int durability = toolData.getToolDurability();
+        float efficiency = toolData.getToolEfficiency();
+        if (farmTile.equipTool(toolItemId, durability, efficiency)) {
+            // インベントリから農具を1個消費
+            inventory.removeItem(toolItemId, 1);
             return true;
         }
         

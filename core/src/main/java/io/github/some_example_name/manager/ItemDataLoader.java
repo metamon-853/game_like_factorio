@@ -87,6 +87,43 @@ public class ItemDataLoader {
                     itemData.setMaterials(materials);
                 }
                 
+                // 要求条件情報を読み込む（6番目のカラム、存在する場合）
+                if (parts.size() >= 6 && !parts.get(5).trim().isEmpty()) {
+                    String requirementsStr = parts.get(5).trim();
+                    // 引用符を除去
+                    if (requirementsStr.startsWith("\"") && requirementsStr.endsWith("\"")) {
+                        requirementsStr = requirementsStr.substring(1, requirementsStr.length() - 1);
+                    }
+                    Map<String, Integer> requirements = parseRequirements(requirementsStr);
+                    itemData.setRequirements(requirements);
+                }
+                
+                // 農具の耐久値を読み込む（7番目のカラム、存在する場合）
+                if (parts.size() >= 7 && !parts.get(6).trim().isEmpty()) {
+                    try {
+                        int durability = Integer.parseInt(parts.get(6).trim());
+                        itemData.setToolDurability(durability);
+                    } catch (NumberFormatException e) {
+                        Gdx.app.log("ItemDataLoader", "Invalid tool durability: " + parts.get(6));
+                    }
+                }
+                
+                // 農具の効率を読み込む（8番目のカラム、存在する場合）
+                if (parts.size() >= 8 && !parts.get(7).trim().isEmpty()) {
+                    try {
+                        float efficiency = Float.parseFloat(parts.get(7).trim());
+                        itemData.setToolEfficiency(efficiency);
+                    } catch (NumberFormatException e) {
+                        Gdx.app.log("ItemDataLoader", "Invalid tool efficiency: " + parts.get(7));
+                    }
+                }
+                
+                // 水条件を読み込む（9番目のカラム、存在する場合）
+                if (parts.size() >= 9 && !parts.get(8).trim().isEmpty()) {
+                    String waterRequirement = parts.get(8).trim();
+                    itemData.setRequiresWater("true".equalsIgnoreCase(waterRequirement));
+                }
+                
                 // その他のフィールドはItemDataのデフォルト値を使用
                 
                 itemDataMap.put(itemData.id, itemData);
@@ -168,6 +205,48 @@ public class ItemDataLoader {
         }
         
         return materials;
+    }
+    
+    /**
+     * 要求条件情報の文字列をパースします。
+     * フォーマット: "タイプ:アイテムID,タイプ:アイテムID"
+     * 例: "tool:51" → 道具ID51が必要
+     * 例: "facility:34" → 施設ID34が必要
+     * @param requirementsStr 要求条件情報の文字列
+     * @return 要求条件マップ（キー: タイプ、値: アイテムID）
+     */
+    private Map<String, Integer> parseRequirements(String requirementsStr) {
+        Map<String, Integer> requirements = new HashMap<>();
+        
+        if (requirementsStr == null || requirementsStr.trim().isEmpty()) {
+            return requirements;
+        }
+        
+        // カンマで分割
+        String[] requirementPairs = requirementsStr.split(",");
+        for (String pair : requirementPairs) {
+            pair = pair.trim();
+            if (pair.isEmpty()) {
+                continue;
+            }
+            
+            // コロンで分割
+            String[] parts = pair.split(":");
+            if (parts.length != 2) {
+                Gdx.app.log("ItemDataLoader", "Invalid requirement format: " + pair);
+                continue;
+            }
+            
+            try {
+                String type = parts[0].trim();
+                int itemId = Integer.parseInt(parts[1].trim());
+                requirements.put(type, itemId);
+            } catch (NumberFormatException e) {
+                Gdx.app.log("ItemDataLoader", "Invalid requirement type or item ID: " + pair);
+            }
+        }
+        
+        return requirements;
     }
     
     /**
