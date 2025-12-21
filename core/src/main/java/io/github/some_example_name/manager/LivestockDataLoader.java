@@ -71,11 +71,8 @@ public class LivestockDataLoader {
                     livestockData.name = parts.get(2).trim();
                     livestockData.description = parts.get(3).trim();
                     
-                    // 削除された属性はデフォルト値を使用
-                    livestockData.meatItemId = -1;
-                    livestockData.productItemId = -1;
-                    livestockData.productInterval = 0.0f;
-                    livestockData.setColor(1.0f, 1.0f, 1.0f);
+                    // 家畜IDから対応する肉IDと製品IDを自動設定
+                    setupLivestockAttributes(livestockData);
                     
                 } catch (NumberFormatException e) {
                     Gdx.app.log("LivestockDataLoader", "Invalid number format in line: " + line + " - " + e.getMessage());
@@ -105,6 +102,66 @@ public class LivestockDataLoader {
      */
     public Array<LivestockData> getAllLivestock() {
         return livestockDataList;
+    }
+    
+    /**
+     * 家畜IDに基づいて属性（肉ID、製品ID、色、生産間隔）を設定します。
+     * @param livestockData 設定する家畜データ
+     */
+    private void setupLivestockAttributes(LivestockData livestockData) {
+        switch (livestockData.id) {
+            case 19: // 鶏
+                livestockData.meatItemId = 25; // 鶏肉
+                livestockData.productItemId = 26; // 卵
+                livestockData.productInterval = 8.0f; // 8秒ごとに卵を産む
+                livestockData.requiredCivilizationLevel = 1; // 旧石器時代から利用可能
+                livestockData.setColor(1.0f, 0.9f, 0.7f); // 薄い黄色（鶏の色）
+                break;
+            case 20: // 豚
+                livestockData.meatItemId = 27; // 豚肉
+                livestockData.productItemId = -1; // 製品なし
+                livestockData.productInterval = 0.0f;
+                livestockData.requiredCivilizationLevel = 1; // 旧石器時代から利用可能
+                livestockData.setColor(0.9f, 0.7f, 0.8f); // ピンクがかった色
+                break;
+            case 21: // 羊
+                livestockData.meatItemId = 28; // 羊肉
+                livestockData.productItemId = 29; // 羊毛
+                livestockData.productInterval = 15.0f; // 15秒ごとに羊毛を生産
+                livestockData.requiredCivilizationLevel = 2; // 新石器時代から利用可能
+                livestockData.setColor(0.95f, 0.95f, 0.95f); // 白（羊の色）
+                break;
+            case 22: // 山羊
+                livestockData.meatItemId = 30; // 山羊肉
+                livestockData.productItemId = 31; // ヤギミルク
+                livestockData.productInterval = 10.0f; // 10秒ごとにミルクを生産
+                livestockData.requiredCivilizationLevel = 2; // 新石器時代から利用可能
+                livestockData.setColor(0.6f, 0.5f, 0.4f); // 茶色（山羊の色）
+                break;
+            case 23: // 牛
+                livestockData.meatItemId = 32; // 牛肉
+                livestockData.productItemId = 33; // 牛乳
+                livestockData.productInterval = 12.0f; // 12秒ごとにミルクを生産
+                livestockData.requiredCivilizationLevel = 3; // 青銅器時代から利用可能
+                livestockData.setColor(0.4f, 0.3f, 0.2f); // 濃い茶色（牛の色）
+                break;
+            case 24: // 馬
+                livestockData.meatItemId = 34; // 馬肉
+                livestockData.productItemId = -1; // 製品なし
+                livestockData.productInterval = 0.0f;
+                livestockData.requiredCivilizationLevel = 4; // 鉄器時代から利用可能
+                livestockData.setColor(0.5f, 0.4f, 0.3f); // 茶色（馬の色）
+                break;
+            default:
+                // 未知の家畜IDの場合はデフォルト値
+                livestockData.meatItemId = -1;
+                livestockData.productItemId = -1;
+                livestockData.productInterval = 8.0f;
+                livestockData.requiredCivilizationLevel = 1;
+                livestockData.setColor(1.0f, 1.0f, 1.0f);
+                Gdx.app.log("LivestockDataLoader", "Unknown livestock ID: " + livestockData.id + ", using default values");
+                break;
+        }
     }
     
     /**

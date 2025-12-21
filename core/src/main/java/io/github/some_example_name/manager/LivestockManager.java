@@ -2,6 +2,8 @@ package io.github.some_example_name.manager;
 
 import io.github.some_example_name.entity.LivestockData;
 import io.github.some_example_name.entity.LivestockTile;
+import io.github.some_example_name.entity.TerrainTile;
+import io.github.some_example_name.game.CivilizationLevel;
 import io.github.some_example_name.game.Inventory;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -22,13 +24,25 @@ public class LivestockManager {
     // 家畜データローダー
     private LivestockDataLoader livestockDataLoader;
     
+    // 地形マネージャーへの参照
+    private TerrainManager terrainManager;
+    
+    // 文明レベルへの参照
+    private CivilizationLevel civilizationLevel;
+    
+    // 畜産物の累計生産数（文明レベル進行条件用）
+    private int totalLivestockProductsProduced;
+    
     // 餌のアイテムID（作物を使用）
-    private static final int FEED_ITEM_ID = 6; // 作物
+    private static final int FEED_ITEM_ID = 13; // 作物
     
     public LivestockManager() {
         this.livestockTiles = new HashMap<>();
         this.inventory = null;
         this.livestockDataLoader = new LivestockDataLoader();
+        this.terrainManager = null;
+        this.civilizationLevel = null;
+        this.totalLivestockProductsProduced = 0;
     }
     
     /**
@@ -36,6 +50,27 @@ public class LivestockManager {
      */
     public void setInventory(Inventory inventory) {
         this.inventory = inventory;
+    }
+    
+    /**
+     * 地形マネージャーを設定します。
+     */
+    public void setTerrainManager(TerrainManager terrainManager) {
+        this.terrainManager = terrainManager;
+    }
+    
+    /**
+     * 文明レベルを設定します。
+     */
+    public void setCivilizationLevel(CivilizationLevel civilizationLevel) {
+        this.civilizationLevel = civilizationLevel;
+    }
+    
+    /**
+     * 畜産物の累計生産数を取得します。
+     */
+    public int getTotalLivestockProductsProduced() {
+        return totalLivestockProductsProduced;
     }
     
     /**
@@ -61,6 +96,14 @@ public class LivestockManager {
             return false; // 餌がない
         }
         
+        // 草タイル限定チェック
+        if (terrainManager != null) {
+            TerrainTile terrainTile = terrainManager.getTerrainTile(tileX, tileY);
+            if (terrainTile == null || terrainTile.getTerrainType() != TerrainTile.TerrainType.GRASS) {
+                return false; // 草タイルでない
+            }
+        }
+        
         String key = tileX + "," + tileY;
         LivestockTile livestockTile = livestockTiles.get(key);
         
@@ -73,12 +116,18 @@ public class LivestockManager {
         // 動物を配置
         LivestockData dataToPlace = livestockData;
         if (dataToPlace == null) {
-            // ランダムに種類を選択
-            Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
-            if (allLivestock.size > 0) {
-                dataToPlace = allLivestock.random();
+            // ランダムに種類を選択（文明レベルで利用可能なもののみ）
+            Array<LivestockData> availableLivestock = getAvailableLivestock();
+            if (availableLivestock.size > 0) {
+                dataToPlace = availableLivestock.random();
             } else {
-                return false; // 家畜データが読み込まれていない
+                return false; // 利用可能な家畜がない
+            }
+        } else {
+            // 指定された家畜が文明レベルで利用可能かチェック
+            if (civilizationLevel != null && 
+                !civilizationLevel.isItemAvailable(dataToPlace.requiredCivilizationLevel)) {
+                return false; // 文明レベルが不足
             }
         }
         
@@ -89,6 +138,24 @@ public class LivestockManager {
         }
         
         return false;
+    }
+    
+    /**
+     * 現在の文明レベルで利用可能な家畜のリストを取得します。
+     */
+    private Array<LivestockData> getAvailableLivestock() {
+        Array<LivestockData> available = new Array<>();
+        if (civilizationLevel == null) {
+            return available;
+        }
+        
+        Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
+        for (LivestockData livestock : allLivestock) {
+            if (civilizationLevel.isItemAvailable(livestock.requiredCivilizationLevel)) {
+                available.add(livestock);
+            }
+        }
+        return available;
     }
     
     /**
@@ -127,6 +194,8 @@ public class LivestockManager {
             if (inventory != null) {
                 inventory.addItem(data.productItemId, 1);
             }
+            // 畜産物の累計生産数を増やす
+            totalLivestockProductsProduced++;
             return true;
         }
         
@@ -154,6 +223,8 @@ public class LivestockManager {
             if (inventory != null) {
                 inventory.addItem(meatId, 1);
             }
+            // 畜産物の累計生産数を増やす（肉も畜産物としてカウント）
+            totalLivestockProductsProduced++;
             return true;
         }
         
@@ -205,5 +276,12 @@ public class LivestockManager {
      */
     public LivestockDataLoader getLivestockDataLoader() {
         return livestockDataLoader;
+    }
+    
+    /**
+     * 畜産物の累計生産数を設定します（ロード用）。
+     */
+    public void setTotalLivestockProductsProduced(int count) {
+        this.totalLivestockProductsProduced = count;
     }
 }

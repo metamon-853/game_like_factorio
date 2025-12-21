@@ -19,6 +19,9 @@ public class LivestockData {
     // 製品生産間隔（秒）
     public float productInterval;
     
+    // 必要な文明レベル（このレベル以上でないと配置不可）
+    public int requiredCivilizationLevel;
+    
     // 描画色
     private Color color;
     
@@ -26,6 +29,7 @@ public class LivestockData {
         this.meatItemId = -1;
         this.productItemId = -1;
         this.productInterval = 8.0f;
+        this.requiredCivilizationLevel = 1; // デフォルトはレベル1
         this.color = Color.WHITE;
     }
     

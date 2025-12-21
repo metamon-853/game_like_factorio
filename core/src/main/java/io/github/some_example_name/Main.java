@@ -101,6 +101,11 @@ public class Main extends ApplicationAdapter {
     private static final float MAX_ZOOM = 3.0f; // 最大ズーム（拡大の限界）
     private static final float ZOOM_SPEED = 0.1f; // ズームの速度
     
+    // 文明レベルアップメッセージ
+    private String civilizationLevelUpMessage = null;
+    private float civilizationLevelUpMessageTimer = 0f;
+    private static final float CIVILIZATION_MESSAGE_DURATION = 3.0f; // 3秒間表示
+    
     
     @Override
     public void create() {
@@ -189,10 +194,6 @@ public class Main extends ApplicationAdapter {
         farmManager.setInventory(inventory); // インベントリを設定
         farmManager.setItemDataLoader(itemManager.getItemDataLoader()); // アイテムデータローダーを設定
         
-        // 畜産マネージャーを初期化
-        livestockManager = new LivestockManager();
-        livestockManager.setInventory(inventory); // インベントリを設定
-        
         // 地形マネージャーを初期化
         terrainManager = new TerrainManager();
         
@@ -204,6 +205,12 @@ public class Main extends ApplicationAdapter {
         
         // 農地マネージャーに地形マネージャーを設定
         farmManager.setTerrainManager(terrainManager);
+        
+        // 畜産マネージャーを初期化
+        livestockManager = new LivestockManager();
+        livestockManager.setInventory(inventory); // インベントリを設定
+        livestockManager.setTerrainManager(terrainManager); // 地形マネージャーを設定
+        livestockManager.setCivilizationLevel(itemManager.getCivilizationLevel()); // 文明レベルを設定
         
         textInputHandler = new TextInputHandler();
         inputHandler = new InputHandler(player, farmManager, livestockManager);
@@ -465,6 +472,15 @@ public class Main extends ApplicationAdapter {
             // 文明レベル進行チェック
             checkCivilizationLevelProgress();
             
+            // 文明レベルアップメッセージのタイマーを更新
+            if (civilizationLevelUpMessage != null) {
+                civilizationLevelUpMessageTimer += deltaTime;
+                if (civilizationLevelUpMessageTimer >= CIVILIZATION_MESSAGE_DURATION) {
+                    civilizationLevelUpMessage = null;
+                    civilizationLevelUpMessageTimer = 0f;
+                }
+            }
+            
             // キーボード入力処理
             inputHandler.handleInput();
             
@@ -514,7 +530,8 @@ public class Main extends ApplicationAdapter {
         shapeRenderer.end();
         
         // UI情報を描画（取得アイテム数など）
-        uiRenderer.drawUI(itemManager);
+        int totalLivestockProducts = livestockManager != null ? livestockManager.getTotalLivestockProductsProduced() : 0;
+        uiRenderer.drawUI(itemManager, totalLivestockProducts);
         
         // インベントリUIまたはアイテム図鑑UIを描画
         if (inventoryOpen) {
@@ -531,10 +548,45 @@ public class Main extends ApplicationAdapter {
             }
         }
         
+        // 文明レベルアップメッセージを描画
+        if (civilizationLevelUpMessage != null) {
+            drawCivilizationLevelUpMessage();
+        }
+        
         // ポーズメニューを描画
         if (isPaused) {
             menuSystem.render();
         }
+    }
+    
+    /**
+     * 文明レベルアップメッセージを描画します。
+     */
+    private void drawCivilizationLevelUpMessage() {
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        font.getData().setScale(1.0f);
+        font.setColor(Color.WHITE);
+        
+        // 画面中央に表示
+        com.badlogic.gdx.graphics.g2d.GlyphLayout layout = new com.badlogic.gdx.graphics.g2d.GlyphLayout(font, civilizationLevelUpMessage);
+        float x = (screenWidth - layout.width) / 2;
+        float y = screenHeight / 2;
+        
+        // 背景を描画（半透明の黒）
+        batch.end();
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.7f);
+        float padding = 20f;
+        shapeRenderer.rect(x - padding, y - layout.height - padding, layout.width + padding * 2, layout.height + padding * 2);
+        shapeRenderer.end();
+        
+        // テキストを描画
+        batch.begin();
+        font.draw(batch, civilizationLevelUpMessage, x, y);
+        batch.end();
     }
     
     
@@ -544,16 +596,62 @@ public class Main extends ApplicationAdapter {
      */
     private void checkCivilizationLevelProgress() {
         io.github.some_example_name.game.CivilizationLevel civLevel = itemManager.getCivilizationLevel();
+        int currentLevel = civLevel.getLevel();
+        int totalLivestockProducts = livestockManager != null ? livestockManager.getTotalLivestockProductsProduced() : 0;
         
         // レベル1からレベル2への進行条件：保存食の条件を満たす
-        if (civLevel.getLevel() == 1) {
-            if (civLevel.canProgressToLevel(2, preservedFoodManager)) {
+        if (currentLevel == 1) {
+            if (civLevel.canProgressToLevel(2, preservedFoodManager, totalLivestockProducts)) {
                 if (civLevel.levelUp()) {
                     Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
+                    showCivilizationLevelUpMessage(civLevel.getLevelName());
                 }
             }
         }
-        // レベル2以降の進行条件は今後追加
+        // レベル2からレベル3への進行条件：畜産物を累計20生産
+        else if (currentLevel == 2) {
+            if (civLevel.canProgressToLevel(3, preservedFoodManager, totalLivestockProducts)) {
+                if (civLevel.levelUp()) {
+                    Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
+                    showCivilizationLevelUpMessage(civLevel.getLevelName());
+                }
+            }
+        }
+        // レベル3からレベル4への進行条件：畜産物を累計100生産
+        else if (currentLevel == 3) {
+            if (civLevel.canProgressToLevel(4, preservedFoodManager, totalLivestockProducts)) {
+                if (civLevel.levelUp()) {
+                    Gdx.app.log("Civilization", "Civilization level increased to " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")!");
+                    showCivilizationLevelUpMessage(civLevel.getLevelName());
+                }
+            }
+        }
+        // レベル4以降の進行条件は今後追加
+    }
+    
+    /**
+     * 文明レベルアップ時のメッセージを表示します。
+     */
+    private void showCivilizationLevelUpMessage(String levelName) {
+        // 文明レベルに応じたメッセージを設定
+        switch (levelName) {
+            case "新石器時代":
+                civilizationLevelUpMessage = "余剰食料が生まれ、集落は拡大した。";
+                break;
+            case "青銅器時代":
+                civilizationLevelUpMessage = "畜産が定着し、人々は定住を始めた。";
+                break;
+            case "鉄器時代":
+                civilizationLevelUpMessage = "生産と保存が成立し、文明は次の段階へ進んだ。";
+                break;
+            case "古代文明時代":
+                civilizationLevelUpMessage = "高度な技術が確立し、文明は成熟した。";
+                break;
+            default:
+                civilizationLevelUpMessage = "文明が進歩した。";
+                break;
+        }
+        civilizationLevelUpMessageTimer = 0f;
     }
     
     /**

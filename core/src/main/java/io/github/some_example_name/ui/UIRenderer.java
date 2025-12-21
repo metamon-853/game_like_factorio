@@ -101,8 +101,9 @@ public class UIRenderer {
     /**
      * UI情報（取得アイテム数など）を描画します。
      * @param itemManager アイテムマネージャー
+     * @param totalLivestockProducts 畜産物の累計生産数（nullの場合は表示しない）
      */
-    public void drawUI(ItemManager itemManager) {
+    public void drawUI(ItemManager itemManager, Integer totalLivestockProducts) {
         batch.setProjectionMatrix(uiCamera.combined);
         batch.begin();
         
@@ -122,7 +123,22 @@ public class UIRenderer {
         CivilizationLevel civLevel = itemManager.getCivilizationLevel();
         String civText = "文明レベル: " + civLevel.getLevel() + " (" + civLevel.getLevelName() + ")";
         GlyphLayout civLayout = new GlyphLayout(font, civText);
-        font.draw(batch, civText, leftX, topY - civLayout.height - 10);
+        float currentY = topY - civLayout.height - 10;
+        font.draw(batch, civText, leftX, currentY);
+        
+        // 文明進捗を表示（次のレベルへの進捗）
+        if (civLevel.getLevel() < CivilizationLevel.MAX_LEVEL) {
+            int nextLevel = civLevel.getLevel() + 1;
+            String progressText = getCivilizationProgressText(civLevel, nextLevel, totalLivestockProducts);
+            if (progressText != null) {
+                GlyphLayout progressLayout = new GlyphLayout(font, progressText);
+                currentY -= progressLayout.height + 10;
+                font.draw(batch, progressText, leftX, currentY);
+                
+                // 進捗バーを描画
+                drawProgressBar(leftX, currentY - 20, 200, 10, civLevel, nextLevel, totalLivestockProducts);
+            }
+        }
         
         // ゲームガイドボタンを描画
         float rightX = screenWidth - padding;
@@ -143,6 +159,56 @@ public class UIRenderer {
         
         // ボタンを描画（drawButton内でbatchの開始/終了を管理）
         drawButton(buttonX, buttonY, buttonWidth, buttonHeight, "ゲームガイド", isHovered);
+        
+        batch.end();
+    }
+    
+    /**
+     * 文明進捗のテキストを取得します。
+     */
+    private String getCivilizationProgressText(CivilizationLevel civLevel, int nextLevel, Integer totalLivestockProducts) {
+        if (nextLevel == 3) {
+            // レベル3への進行条件：畜産物を累計20生産
+            if (totalLivestockProducts != null) {
+                return "畜産物生産: " + totalLivestockProducts + " / 20";
+            }
+        } else if (nextLevel == 4) {
+            // レベル4への進行条件：畜産物を累計100生産
+            if (totalLivestockProducts != null) {
+                return "畜産物生産: " + totalLivestockProducts + " / 100";
+            }
+        }
+        return null;
+    }
+    
+    /**
+     * 進捗バーを描画します。
+     */
+    private void drawProgressBar(float x, float y, float width, float height, 
+                                  CivilizationLevel civLevel, int nextLevel, Integer totalLivestockProducts) {
+        batch.end();
+        
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        
+        // 背景（グレー）
+        shapeRenderer.setColor(0.3f, 0.3f, 0.3f, 1f);
+        shapeRenderer.rect(x, y, width, height);
+        
+        // 進捗（緑）
+        float progress = 0f;
+        if (nextLevel == 3 && totalLivestockProducts != null) {
+            progress = Math.min(1f, totalLivestockProducts / 20f);
+        } else if (nextLevel == 4 && totalLivestockProducts != null) {
+            progress = Math.min(1f, totalLivestockProducts / 100f);
+        }
+        
+        shapeRenderer.setColor(0.2f, 0.8f, 0.2f, 1f);
+        shapeRenderer.rect(x, y, width * progress, height);
+        
+        shapeRenderer.end();
+        
+        batch.begin();
     }
     
     /**
