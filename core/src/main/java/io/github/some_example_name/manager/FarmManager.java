@@ -2,6 +2,8 @@ package io.github.some_example_name.manager;
 
 import io.github.some_example_name.entity.FarmTile;
 import io.github.some_example_name.entity.ItemData;
+import io.github.some_example_name.entity.TerrainTile;
+import io.github.some_example_name.entity.CropSoilRequirements;
 import io.github.some_example_name.game.Inventory;
 
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
@@ -138,11 +140,31 @@ public class FarmManager {
         if (farmTile == null) {
             // 新しい農地タイルを作成
             farmTile = new FarmTile(tileX, tileY);
+            
+            // 地形タイプから土壌パラメータを初期化
+            if (terrainManager != null) {
+                TerrainTile terrainTile = terrainManager.getTerrainTile(tileX, tileY);
+                if (terrainTile != null) {
+                    farmTile.initializeSoilFromTerrain(terrainTile.getTerrainType());
+                }
+            }
+            
             farmTiles.put(key, farmTile);
         }
         
-        // 種を植える
-        if (farmTile.plantSeed()) {
+        // 種のデータを取得して土壌条件を設定
+        CropSoilRequirements soilRequirements = null;
+        if (itemDataLoader != null) {
+            ItemData seedData = itemDataLoader.getItemData(seedItemId);
+            if (seedData != null) {
+                // 種のIDから土壌条件を設定
+                seedData.setSoilRequirementsFromSeedId(seedItemId);
+                soilRequirements = seedData.getSoilRequirements();
+            }
+        }
+        
+        // 種を植える（土壌条件チェック付き）
+        if (farmTile.plantSeed(seedItemId, soilRequirements)) {
             // インベントリから種を1個消費
             inventory.removeItem(seedItemId, 1);
             return true;
@@ -179,9 +201,11 @@ public class FarmManager {
         
         // 収穫
         if (farmTile.harvest()) {
-            // 農具の効率を考慮して収穫量を計算
-            float efficiency = farmTile.getToolEfficiency();
-            int harvestAmount = Math.max(1, Math.round(efficiency)); // 最低1個、効率に応じて増加
+            // 農具の効率と土壌条件の収穫量倍率を考慮して収穫量を計算
+            float toolEfficiency = farmTile.getToolEfficiency();
+            float yieldMultiplier = farmTile.getYieldMultiplier();
+            float totalEfficiency = toolEfficiency * yieldMultiplier;
+            int harvestAmount = Math.max(1, Math.round(totalEfficiency)); // 最低1個、効率に応じて増加
             
             // インベントリに作物を追加
             if (inventory != null) {

@@ -348,8 +348,8 @@ public class HelpUI {
                 totalHeight = lineSpacing * 5;
                 break;
             case FARMING:
-                // 農業: タイトル + 1行 + 3行（説明）
-                totalHeight = lineSpacing * 5;
+                // 農業: タイトル + 基本操作 + 土壌システム + 作物の特性
+                totalHeight = lineSpacing * 25; // 大幅に増加
                 break;
             case LIVESTOCK:
                 // 家畜: タイトル + 基本操作 + 家畜の種類
@@ -657,7 +657,7 @@ public class HelpUI {
     private void renderFarmingGuide(SpriteBatch batch, float startX, float currentY, float lineSpacing) {
         font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
         font.getData().setScale(0.75f);
-        font.draw(batch, "【農業】", startX, currentY);
+        font.draw(batch, "【農業の基本操作】", startX, currentY);
         currentY -= lineSpacing;
         
         font.getData().setScale(0.6f);
@@ -669,6 +669,97 @@ public class HelpUI {
         drawTextLine(batch, "・成長した作物がある場所でFキーを押すと収穫できます", startX + 20, currentY);
         currentY -= lineSpacing * 0.8f;
         drawTextLine(batch, "・作物は一定時間で成長し、収穫可能になります", startX + 20, currentY);
+        currentY -= lineSpacing * 1.2f;
+        
+        // 土壌システムの説明
+        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
+        font.getData().setScale(0.75f);
+        font.draw(batch, "【土壌システム】", startX, currentY);
+        currentY -= lineSpacing;
+        
+        font.getData().setScale(0.6f);
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "農地には4つの土壌パラメータがあります：", startX, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・水分量: 土壌の湿り具合（乾燥～湿潤）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・肥沃度: 土壌の栄養分（低～高）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・排水性: 水の流れやすさ（悪い～良い）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・耕作難度: 耕す難しさ（低～高）", startX + 20, currentY);
+        currentY -= lineSpacing * 1.0f;
+        drawTextLine(batch, "地形タイプによって初期の土壌パラメータが決まります：", startX, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・草原: バランス型、農業に適している", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・土: 肥沃度が高く、農業に最適", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・砂: 排水性が高いが肥沃度が低い", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・森: 肥沃度が高いが耕作難度が高い", startX + 20, currentY);
+        currentY -= lineSpacing * 1.2f;
+        
+        // 作物の特性
+        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
+        font.getData().setScale(0.75f);
+        font.draw(batch, "【作物の特性と土壌条件】", startX, currentY);
+        currentY -= lineSpacing;
+        
+        font.getData().setScale(0.6f);
+        font.setColor(Color.WHITE);
+        
+        // 米
+        font.setColor(new Color(0.2f, 0.4f, 0.7f, 1f));
+        drawTextLine(batch, "・米（稲作）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  要求条件: 水分量が非常に高い（0.8以上）、肥沃度中～高", startX + 30, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "  特徴: 水田が必要（排水性が低い方が良い）、水辺必須", startX + 30, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "  役割: 安定供給型の主食、インフラ整備後に強い", startX + 30, currentY);
+        currentY -= lineSpacing * 1.0f;
+        
+        // 麦
+        font.setColor(new Color(0.9f, 0.8f, 0.3f, 1f));
+        drawTextLine(batch, "・麦（小麦）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  要求条件: 水分量低～中（0.2～0.6）、肥沃度中、排水性高", startX + 30, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "  特徴: 乾燥気候でも育つ、過湿に弱い", startX + 30, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "  役割: 加工産業の起点（パン・ビールなど）、文明発展との相性が良い", startX + 30, currentY);
+        currentY -= lineSpacing * 1.0f;
+        
+        // 芋
+        font.setColor(new Color(0.8f, 0.5f, 0.2f, 1f));
+        drawTextLine(batch, "・芋（サツマイモ系）", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "  要求条件: 水分量低～中（0.2～0.6）、肥沃度低でも可、排水性中～高", startX + 30, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "  特徴: 痩せた土地でも育つ、単位面積あたりのカロリーが高い", startX + 30, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "  役割: 序盤の救世主、文明度が低くても強い", startX + 30, currentY);
+        currentY -= lineSpacing * 1.2f;
+        
+        // 土壌条件の影響
+        font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
+        font.getData().setScale(0.75f);
+        font.draw(batch, "【土壌条件の影響】", startX, currentY);
+        currentY -= lineSpacing;
+        
+        font.getData().setScale(0.6f);
+        font.setColor(Color.WHITE);
+        drawTextLine(batch, "・土壌条件が作物の要求を満たしていない場合、種を植えることができません", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・土壌条件が良いほど、成長速度と収穫量が向上します", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・肥沃度は特に収穫量に大きく影響します", startX + 20, currentY);
+        currentY -= lineSpacing * 0.8f;
+        drawTextLine(batch, "・農具の効率も収穫量に影響します", startX + 20, currentY);
     }
     
     /**

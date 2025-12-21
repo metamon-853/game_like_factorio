@@ -121,7 +121,12 @@ public class ItemDataLoader {
                 // 水条件を読み込む（9番目のカラム、存在する場合）
                 if (parts.size() >= 9 && !parts.get(8).trim().isEmpty()) {
                     String waterRequirement = parts.get(8).trim();
-                    itemData.setRequiresWater("true".equalsIgnoreCase(waterRequirement));
+                    itemData.setRequiresWater("true".equalsIgnoreCase(waterRequirement) || "NEAR_WATER".equalsIgnoreCase(waterRequirement));
+                }
+                
+                // 種の場合は土壌条件を自動設定
+                if ("植物".equals(category) && itemData.name != null && itemData.name.contains("種")) {
+                    itemData.setSoilRequirementsFromSeedId(itemData.id);
                 }
                 
                 // その他のフィールドはItemDataのデフォルト値を使用

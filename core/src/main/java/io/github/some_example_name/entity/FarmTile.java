@@ -33,6 +33,18 @@ public class FarmTile {
     private int toolDurability; // 現在の農具の耐久値
     private float toolEfficiency; // 現在の農具の効率
     
+    // 土壌パラメータ
+    private SoilData soilData;
+    
+    // 現在植えられている種のID（土壌条件チェック用）
+    private Integer plantedSeedId;
+    
+    // 成長速度の倍率（土壌条件に基づく）
+    private float growthMultiplier = 1.0f;
+    
+    // 収穫量の倍率（土壌条件に基づく）
+    private float yieldMultiplier = 1.0f;
+    
     public FarmTile(int tileX, int tileY) {
         this.tileX = tileX;
         this.tileY = tileY;
@@ -42,20 +54,56 @@ public class FarmTile {
         this.equippedToolId = null;
         this.toolDurability = 0;
         this.toolEfficiency = 1.0f;
+        this.soilData = new SoilData(); // デフォルトの土壌
+        this.plantedSeedId = null;
+    }
+    
+    /**
+     * 地形タイプから土壌パラメータを初期化します。
+     */
+    public void initializeSoilFromTerrain(TerrainTile.TerrainType terrainType) {
+        this.soilData = SoilData.fromTerrainType(terrainType);
     }
     
     /**
      * 種を植えます。
+     * @param seedId 種のID（土壌条件チェック用、null可）
+     * @param soilRequirements 作物の土壌条件（nullの場合はチェックしない）
      * @return 種を植えられた場合true
      */
-    public boolean plantSeed() {
+    public boolean plantSeed(Integer seedId, CropSoilRequirements soilRequirements) {
         if (hasSeed) {
             return false; // 既に種が植えられている
         }
+        
+        // 土壌条件をチェック
+        if (soilRequirements != null && !soilRequirements.isSuitable(soilData)) {
+            return false; // 土壌条件を満たしていない
+        }
+        
         hasSeed = true;
         growthStage = 0;
         growthTimer = 0f;
+        plantedSeedId = seedId;
+        
+        // 土壌条件に基づいて成長速度と収穫量の倍率を計算
+        if (soilRequirements != null) {
+            growthMultiplier = soilRequirements.calculateGrowthMultiplier(soilData);
+            yieldMultiplier = soilRequirements.calculateYieldMultiplier(soilData);
+        } else {
+            growthMultiplier = 1.0f;
+            yieldMultiplier = 1.0f;
+        }
+        
         return true;
+    }
+    
+    /**
+     * 種を植えます（互換性のため、土壌条件チェックなし）。
+     * @return 種を植えられた場合true
+     */
+    public boolean plantSeed() {
+        return plantSeed(null, null);
     }
     
     /**
@@ -67,7 +115,8 @@ public class FarmTile {
             return;
         }
         
-        growthTimer += deltaTime;
+        // 土壌条件に基づく成長速度の倍率を適用
+        growthTimer += deltaTime * growthMultiplier;
         
         // 成長段階を更新
         if (growthTimer >= STAGE_3_TIME) {
@@ -103,6 +152,9 @@ public class FarmTile {
         hasSeed = false;
         growthStage = 0;
         growthTimer = 0f;
+        plantedSeedId = null;
+        growthMultiplier = 1.0f;
+        yieldMultiplier = 1.0f;
         return true;
     }
     
@@ -194,6 +246,41 @@ public class FarmTile {
      */
     public int getGrowthStage() {
         return growthStage;
+    }
+    
+    /**
+     * 土壌データを取得します。
+     */
+    public SoilData getSoilData() {
+        return soilData;
+    }
+    
+    /**
+     * 土壌データを設定します。
+     */
+    public void setSoilData(SoilData soilData) {
+        this.soilData = soilData != null ? soilData : new SoilData();
+    }
+    
+    /**
+     * 成長速度の倍率を取得します。
+     */
+    public float getGrowthMultiplier() {
+        return growthMultiplier;
+    }
+    
+    /**
+     * 収穫量の倍率を取得します。
+     */
+    public float getYieldMultiplier() {
+        return yieldMultiplier;
+    }
+    
+    /**
+     * 現在植えられている種のIDを取得します。
+     */
+    public Integer getPlantedSeedId() {
+        return plantedSeedId;
     }
     
     /**

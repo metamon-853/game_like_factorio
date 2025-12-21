@@ -38,6 +38,7 @@ public class ItemData {
     
     // 作物関連の属性
     private boolean requiresWater = false; // 水辺必須かどうか
+    private CropSoilRequirements soilRequirements = null; // 作物の土壌条件
     
     public ItemData() {
         this.civilizationLevel = 1; // デフォルトはレベル1
@@ -170,5 +171,43 @@ public class ItemData {
      */
     public boolean requiresWater() {
         return requiresWater;
+    }
+    
+    /**
+     * 作物の土壌条件を設定します。
+     * @param requirements 土壌条件
+     */
+    public void setSoilRequirements(CropSoilRequirements requirements) {
+        this.soilRequirements = requirements;
+    }
+    
+    /**
+     * 作物の土壌条件を取得します。
+     * @return 土壌条件（設定されていない場合はnull）
+     */
+    public CropSoilRequirements getSoilRequirements() {
+        return soilRequirements;
+    }
+    
+    /**
+     * 種のIDから作物タイプを判定し、適切な土壌条件を設定します。
+     * @param seedId 種のID
+     */
+    public void setSoilRequirementsFromSeedId(int seedId) {
+        // 種のIDに基づいて土壌条件を設定
+        // 9: 小麦の種、10: 芋の種、11: 米の種
+        if (seedId == 11) {
+            // 米の種
+            this.soilRequirements = CropSoilRequirements.rice();
+        } else if (seedId == 9) {
+            // 小麦の種
+            this.soilRequirements = CropSoilRequirements.wheat();
+        } else if (seedId == 10) {
+            // 芋の種
+            this.soilRequirements = CropSoilRequirements.potato();
+        } else {
+            // その他の種はデフォルト（緩い条件）
+            this.soilRequirements = new CropSoilRequirements();
+        }
     }
 }
