@@ -40,7 +40,8 @@ public class TileData {
         SAND_DOTS,     // 砂の小さな点
         WATER_WAVES,   // 水の波紋
         STONE_PATTERN, // 岩の模様
-        TREE           // 木（幹と葉）
+        TREE,          // 木（幹と葉）
+        FURROWS        // 畝（うね）
     }
     
     public TileData(TerrainTile.TerrainType terrainType) {

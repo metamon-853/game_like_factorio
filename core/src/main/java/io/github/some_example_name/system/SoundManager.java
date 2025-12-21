@@ -292,6 +292,15 @@ public class SoundManager implements Disposable {
                 return createStoneFootstepSound();
             case FOREST:
                 return createForestFootstepSound();
+            case PADDY:
+                // 水田は水に近い音
+                return createWaterFootstepSound();
+            case FARMLAND:
+                // 畑は土に近い音
+                return createDirtFootstepSound();
+            case MARSH:
+                // 湿地は水と泥の混合音（水の音を使用）
+                return createWaterFootstepSound();
             default:
                 return createGrassFootstepSound(); // デフォルトは草
         }

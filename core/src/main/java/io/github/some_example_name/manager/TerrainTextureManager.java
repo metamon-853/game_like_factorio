@@ -61,6 +61,15 @@ public class TerrainTextureManager implements Disposable {
             case FOREST:
                 createForestTexture(pixmap, size);
                 break;
+            case PADDY:
+                createPaddyTexture(pixmap, size);
+                break;
+            case FARMLAND:
+                createFarmlandTexture(pixmap, size);
+                break;
+            case MARSH:
+                createMarshTexture(pixmap, size);
+                break;
         }
         
         return pixmap;
@@ -236,6 +245,101 @@ public class TerrainTextureManager implements Disposable {
     private void drawRect(Pixmap pixmap, int x, int y, int width, int height, Color color) {
         pixmap.setColor(color.r, color.g, color.b, color.a);
         pixmap.fillRectangle(x, y, width, height);
+    }
+    
+    /**
+     * 水田のテクスチャを生成します。
+     */
+    private void createPaddyTexture(Pixmap pixmap, int size) {
+        // ベース色（濁り水＋土）
+        Color baseColor = new Color(0.25f, 0.45f, 0.35f, 1f);
+        fillPixmap(pixmap, baseColor);
+        
+        // 弱い波紋を追加
+        int centerX = size / 2;
+        int centerY = size / 2;
+        int radius = size / 4;
+        drawCircle(pixmap, centerX, centerY, radius, new Color(0.3f, 0.5f, 0.4f, 0.4f));
+        
+        // 土の質感を少し追加
+        for (int i = 0; i < 5; i++) {
+            int x = (int)(size * (0.2f + (i % 3) * 0.3f));
+            int y = (int)(size * (0.3f + (i / 3) * 0.4f));
+            int dotRadius = size / 30;
+            float brightness = 0.8f + (float)(Math.random() * 0.2f);
+            Color dirtColor = new Color(
+                baseColor.r * brightness,
+                baseColor.g * brightness,
+                baseColor.b * brightness,
+                0.6f
+            );
+            drawCircle(pixmap, x, y, dotRadius, dirtColor);
+        }
+    }
+    
+    /**
+     * 畑のテクスチャを生成します。
+     */
+    private void createFarmlandTexture(Pixmap pixmap, int size) {
+        // ベース色（茶色系）
+        Color baseColor = new Color(0.45f, 0.35f, 0.25f, 1f);
+        fillPixmap(pixmap, baseColor);
+        
+        // 畝（うね）を描画（平行線）
+        int furrowCount = 3;
+        for (int i = 0; i < furrowCount; i++) {
+            int y = (int)(size * (0.2f + i * (0.6f / (furrowCount - 1))));
+            int height = size / 20;
+            drawRect(pixmap, (int)(size * 0.1f), y, (int)(size * 0.8f), height, 
+                    new Color(0.4f, 0.3f, 0.2f, 0.6f));
+        }
+        
+        // 土の質感を追加
+        for (int i = 0; i < 10; i++) {
+            int x = (int)(Math.random() * size);
+            int y = (int)(Math.random() * size);
+            int radius = size / 25;
+            float brightness = 0.7f + (float)(Math.random() * 0.3f);
+            Color dirtColor = new Color(
+                baseColor.r * brightness,
+                baseColor.g * brightness,
+                baseColor.b * brightness,
+                1f
+            );
+            drawCircle(pixmap, x, y, radius, dirtColor);
+        }
+    }
+    
+    /**
+     * 湿地のテクスチャを生成します。
+     */
+    private void createMarshTexture(Pixmap pixmap, int size) {
+        // ベース色（緑がかった水色）
+        Color baseColor = new Color(0.2f, 0.4f, 0.25f, 1f);
+        fillPixmap(pixmap, baseColor);
+        
+        // 波紋を追加（水が多い感じ）
+        for (int i = 0; i < 2; i++) {
+            int centerX = (int)(size * (0.3f + i * 0.4f));
+            int centerY = size / 2;
+            int radius = size / 5;
+            drawCircle(pixmap, centerX, centerY, radius, new Color(0.25f, 0.45f, 0.3f, 0.5f));
+        }
+        
+        // 泥の質感を追加
+        for (int i = 0; i < 8; i++) {
+            int x = (int)(size * (0.15f + (i % 4) * 0.25f));
+            int y = (int)(size * (0.2f + (i / 4) * 0.6f));
+            int radius = size / 20;
+            float brightness = 0.6f + (float)(Math.random() * 0.3f);
+            Color mudColor = new Color(
+                baseColor.r * brightness,
+                baseColor.g * brightness,
+                baseColor.b * brightness,
+                0.7f
+            );
+            drawCircle(pixmap, x, y, radius, mudColor);
+        }
     }
     
     /**

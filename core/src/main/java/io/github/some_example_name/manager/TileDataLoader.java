@@ -216,6 +216,8 @@ public class TileDataLoader {
                 return TileData.DecorationType.STONE_PATTERN;
             case "tree":
                 return TileData.DecorationType.TREE;
+            case "furrows":
+                return TileData.DecorationType.FURROWS;
             default:
                 return TileData.DecorationType.NONE;
         }
@@ -307,6 +309,48 @@ public class TileDataLoader {
         forest.setDrainage(0.4f);
         forest.setTillageDifficulty(0.7f);
         tileDataMap.put(TerrainTile.TerrainType.FOREST, forest);
+        
+        // PADDY
+        TileData paddy = new TileData(TerrainTile.TerrainType.PADDY);
+        paddy.setName("田");
+        paddy.setDescription("灌漑された水田。稲作に特化した地形。");
+        paddy.setColor(0.25f, 0.45f, 0.35f, 1.0f);
+        paddy.setDecorationType(TileData.DecorationType.WATER_WAVES);
+        paddy.setDecorationColor(0.3f, 0.5f, 0.4f, 0.4f);
+        paddy.setDecorationCount(1);
+        paddy.setMoisture(0.95f);
+        paddy.setFertility(0.7f);
+        paddy.setDrainage(0.2f);
+        paddy.setTillageDifficulty(0.8f);
+        tileDataMap.put(TerrainTile.TerrainType.PADDY, paddy);
+        
+        // FARMLAND
+        TileData farmland = new TileData(TerrainTile.TerrainType.FARMLAND);
+        farmland.setName("畑");
+        farmland.setDescription("耕作された農地。穀物栽培に適している。");
+        farmland.setColor(0.45f, 0.35f, 0.25f, 1.0f);
+        farmland.setDecorationType(TileData.DecorationType.FURROWS);
+        farmland.setDecorationColor(0.4f, 0.3f, 0.2f, 0.6f);
+        farmland.setDecorationCount(3);
+        farmland.setMoisture(0.45f);
+        farmland.setFertility(0.75f);
+        farmland.setDrainage(0.6f);
+        farmland.setTillageDifficulty(0.3f);
+        tileDataMap.put(TerrainTile.TerrainType.FARMLAND, farmland);
+        
+        // MARSH
+        TileData marsh = new TileData(TerrainTile.TerrainType.MARSH);
+        marsh.setName("湿地");
+        marsh.setDescription("水は多いが排水が悪い土地。");
+        marsh.setColor(0.2f, 0.4f, 0.25f, 1.0f);
+        marsh.setDecorationType(TileData.DecorationType.WATER_WAVES);
+        marsh.setDecorationColor(0.25f, 0.45f, 0.3f, 0.5f);
+        marsh.setDecorationCount(2);
+        marsh.setMoisture(0.85f);
+        marsh.setFertility(0.6f);
+        marsh.setDrainage(0.1f);
+        marsh.setTillageDifficulty(0.9f);
+        tileDataMap.put(TerrainTile.TerrainType.MARSH, marsh);
     }
     
     /**

@@ -15,7 +15,10 @@ public class TerrainTile {
         SAND,       // 砂
         WATER,      // 水
         STONE,      // 岩
-        FOREST      // 森
+        FOREST,     // 森
+        PADDY,      // 田（水田）
+        FARMLAND,   // 畑
+        MARSH       // 湿地
     }
     
     private int tileX;
@@ -128,6 +131,16 @@ public class TerrainTile {
                     float x = pixelX + Player.TILE_SIZE * (0.15f + (i % 2) * 0.5f);
                     float y = pixelY + Player.TILE_SIZE * (0.2f + (i / 2) * 0.6f);
                     shapeRenderer.circle(x, y, Player.TILE_SIZE * 0.03f);
+                }
+                break;
+            case FURROWS:
+                // 畝（うね）を描画（平行線）
+                shapeRenderer.setColor(tileData.getDecorationColor());
+                int furrowCount = tileData.getDecorationCount();
+                for (int i = 0; i < furrowCount; i++) {
+                    float y = pixelY + Player.TILE_SIZE * (0.2f + i * (0.6f / (furrowCount - 1)));
+                    shapeRenderer.rect(pixelX + Player.TILE_SIZE * 0.1f, y, 
+                                     Player.TILE_SIZE * 0.8f, Player.TILE_SIZE * 0.05f);
                 }
                 break;
             case NONE:
