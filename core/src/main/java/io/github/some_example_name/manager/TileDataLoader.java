@@ -5,6 +5,7 @@ import io.github.some_example_name.entity.TileData;
 
 import com.badlogic.gdx.Gdx;
 import com.badlogic.gdx.files.FileHandle;
+import com.badlogic.gdx.utils.JsonReader;
 import com.badlogic.gdx.utils.JsonValue;
 
 import java.util.HashMap;
@@ -55,7 +56,7 @@ public class TileDataLoader {
         
         try {
             String jsonString = file.readString();
-            JsonValue root = JsonValue.parse(jsonString);
+            JsonValue root = new JsonReader().parse(jsonString);
             
             // 各タイルタイプを処理
             for (JsonValue tileEntry = root.child(); tileEntry != null; tileEntry = tileEntry.next()) {
