@@ -22,6 +22,9 @@ public class GuideContentLoader {
             HEADING_1,      // # 見出し1
             HEADING_2,     // ## 見出し2
             HEADING_3,     // ### 見出し3
+            HEADING_4,     // #### 見出し4
+            HEADING_5,     // ##### 見出し5
+            HEADING_6,     // ###### 見出し6
             TEXT,          // 通常のテキスト
             LIST_ITEM,     // ・リスト項目
             SEPARATOR      // --- 区切り線
@@ -73,12 +76,55 @@ public class GuideContentLoader {
     }
     
     /**
+     * ガイドのサブメニュー項目（見出し1）のリストを取得します。
+     * @param state ガイドの状態
+     * @param livestockDataLoader 家畜データローダー（LIVESTOCKの場合のみ使用）
+     * @return サブメニュー項目のリスト（見出し1のテキスト）
+     */
+    public static List<String> getSubMenuItems(HelpUI.GuideState state, LivestockDataLoader livestockDataLoader) {
+        List<String> subMenuItems = new ArrayList<>();
+        String fileName = getGuideFileName(state);
+        if (fileName == null) {
+            return subMenuItems;
+        }
+        
+        FileHandle file = Gdx.files.internal(fileName);
+        if (!file.exists()) {
+            return subMenuItems;
+        }
+        
+        try {
+            String content = file.readString();
+            content = io.github.some_example_name.util.CSVParser.normalizeLineEndings(content);
+            
+            // 家畜リストのプレースホルダーを置換
+            if (state == HelpUI.GuideState.LIVESTOCK && livestockDataLoader != null) {
+                content = replaceLivestockList(content, livestockDataLoader);
+            }
+            
+            // 見出し1を抽出
+            String[] lines = content.split("\n");
+            for (String line : lines) {
+                line = line.trim();
+                if (line.startsWith("# ") && !line.startsWith("##")) {
+                    subMenuItems.add(line.substring(2).trim());
+                }
+            }
+        } catch (Exception e) {
+            Gdx.app.error("GuideContentLoader", "Error loading submenu items: " + fileName + ", " + e.getMessage());
+        }
+        
+        return subMenuItems;
+    }
+    
+    /**
      * ガイドコンテンツを読み込みます。
      * @param state ガイドの状態
      * @param livestockDataLoader 家畜データローダー（LIVESTOCKの場合のみ使用）
+     * @param sectionTitle 表示するセクションのタイトル（見出し1）。nullの場合はすべて表示
      * @return ガイド要素のリスト
      */
-    public static List<GuideElement> loadGuideContent(HelpUI.GuideState state, LivestockDataLoader livestockDataLoader) {
+    public static List<GuideElement> loadGuideContent(HelpUI.GuideState state, LivestockDataLoader livestockDataLoader, String sectionTitle) {
         String fileName = getGuideFileName(state);
         if (fileName == null) {
             return new ArrayList<>();
@@ -100,12 +146,59 @@ public class GuideContentLoader {
                 content = replaceLivestockList(content, livestockDataLoader);
             }
             
-            return parseMarkdown(content);
+            List<GuideElement> elements = parseMarkdown(content);
+            
+            // 特定のセクションのみを表示する場合
+            if (sectionTitle != null && !sectionTitle.isEmpty()) {
+                elements = filterBySection(elements, sectionTitle);
+            }
+            
+            return elements;
         } catch (Exception e) {
             Gdx.app.error("GuideContentLoader", "Error loading guide file: " + fileName + ", " + e.getMessage());
             e.printStackTrace();
             return new ArrayList<>();
         }
+    }
+    
+    /**
+     * ガイドコンテンツを読み込みます（後方互換性のため）。
+     * @param state ガイドの状態
+     * @param livestockDataLoader 家畜データローダー（LIVESTOCKの場合のみ使用）
+     * @return ガイド要素のリスト
+     */
+    public static List<GuideElement> loadGuideContent(HelpUI.GuideState state, LivestockDataLoader livestockDataLoader) {
+        return loadGuideContent(state, livestockDataLoader, null);
+    }
+    
+    /**
+     * 指定されたセクション（見出し1）の要素のみをフィルタリングします。
+     * @param elements 全要素
+     * @param sectionTitle セクションタイトル（見出し1のテキスト）
+     * @return フィルタリングされた要素のリスト
+     */
+    private static List<GuideElement> filterBySection(List<GuideElement> elements, String sectionTitle) {
+        List<GuideElement> filtered = new ArrayList<>();
+        boolean inTargetSection = false;
+        
+        for (GuideElement element : elements) {
+            if (element.type == GuideElement.ElementType.HEADING_1) {
+                // 見出し1が見つかったら、それが目的のセクションかチェック
+                inTargetSection = element.text.equals(sectionTitle);
+                if (inTargetSection) {
+                    // 目的のセクションの見出し1も含める
+                    filtered.add(element);
+                }
+            } else if (inTargetSection) {
+                // 目的のセクション内の要素を追加
+                filtered.add(element);
+            } else if (!inTargetSection && element.type == GuideElement.ElementType.SEPARATOR) {
+                // セクション区切りが見つかったら、次のセクションの開始を待つ
+                // （何もしない）
+            }
+        }
+        
+        return filtered;
     }
     
     /**
@@ -152,9 +245,27 @@ public class GuideContentLoader {
                 continue;
             }
             
-            // 見出し1 (#)
-            if (line.startsWith("# ")) {
-                elements.add(new GuideElement(GuideElement.ElementType.HEADING_1, line.substring(2).trim()));
+            // 見出し6 (######) - 最も長いものからチェック
+            if (line.startsWith("###### ")) {
+                elements.add(new GuideElement(GuideElement.ElementType.HEADING_6, line.substring(7).trim()));
+                continue;
+            }
+            
+            // 見出し5 (#####)
+            if (line.startsWith("##### ")) {
+                elements.add(new GuideElement(GuideElement.ElementType.HEADING_5, line.substring(6).trim()));
+                continue;
+            }
+            
+            // 見出し4 (####)
+            if (line.startsWith("#### ")) {
+                elements.add(new GuideElement(GuideElement.ElementType.HEADING_4, line.substring(5).trim()));
+                continue;
+            }
+            
+            // 見出し3 (###)
+            if (line.startsWith("### ")) {
+                elements.add(new GuideElement(GuideElement.ElementType.HEADING_3, line.substring(4).trim()));
                 continue;
             }
             
@@ -164,9 +275,9 @@ public class GuideContentLoader {
                 continue;
             }
             
-            // 見出し3 (###)
-            if (line.startsWith("### ")) {
-                elements.add(new GuideElement(GuideElement.ElementType.HEADING_3, line.substring(4).trim()));
+            // 見出し1 (#)
+            if (line.startsWith("# ")) {
+                elements.add(new GuideElement(GuideElement.ElementType.HEADING_1, line.substring(2).trim()));
                 continue;
             }
             

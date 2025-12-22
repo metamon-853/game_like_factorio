@@ -11,6 +11,7 @@ import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 import com.badlogic.gdx.math.Rectangle;
 import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
+import java.util.ArrayList;
 import java.util.List;
 
 /**
@@ -33,6 +34,19 @@ public class HelpUI {
         MINING          // 採掘
     }
     
+    /**
+     * サブメニューの状態を表すクラス
+     */
+    private static class SubMenuState {
+        GuideState category;
+        String selectedSection;
+        
+        SubMenuState(GuideState category) {
+            this.category = category;
+            this.selectedSection = null;
+        }
+    }
+    
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
     private BitmapFont font;
@@ -42,6 +56,7 @@ public class HelpUI {
     
     // 現在の状態
     private GuideState currentState = GuideState.MENU;
+    private SubMenuState subMenuState = null; // サブメニューの状態（nullの場合はメインメニューまたはドキュメント表示）
     
     // UIのサイズと位置
     private float panelWidth = 1200;
@@ -71,32 +86,24 @@ public class HelpUI {
     private boolean isDraggingScrollThumb = false;
     private float scrollThumbGrabOffsetY = 0f; // つまみ内で掴んだ位置（Y）
     
-    // ボタン
-    private Button backButton;
-    private Button controlsButton;
-    private Button farmingButton;
-    private Button livestockButton;
-    private Button terrainButton;
-    private Button otherFeaturesButton;
-    private Button buildingsButton;
-    private Button endingButton;
-    private Button gatheringButton;
-    private Button miningButton;
+    // ボタン（UIButtonを使用）
+    private UIButton backButton;
+    private UIButton controlsButton;
+    private UIButton farmingButton;
+    private UIButton livestockButton;
+    private UIButton terrainButton;
+    private UIButton otherFeaturesButton;
+    private UIButton buildingsButton;
+    private UIButton endingButton;
+    private UIButton gatheringButton;
+    private UIButton miningButton;
+    
+    // サブメニューボタン（動的に生成）
+    private List<UIButton> subMenuButtons = new ArrayList<UIButton>();
+    private List<String> subMenuItems = new ArrayList<String>();
     
     // サウンドマネージャー
     private io.github.some_example_name.system.SoundManager soundManager;
-    
-    // 前回のホバー状態を記録
-    private boolean lastBackButtonHovered = false;
-    private boolean lastControlsButtonHovered = false;
-    private boolean lastFarmingButtonHovered = false;
-    private boolean lastLivestockButtonHovered = false;
-    private boolean lastTerrainButtonHovered = false;
-    private boolean lastOtherFeaturesButtonHovered = false;
-    private boolean lastBuildingsButtonHovered = false;
-    private boolean lastEndingButtonHovered = false;
-    private boolean lastGatheringButtonHovered = false;
-    private boolean lastMiningButtonHovered = false;
     
     public HelpUI(ShapeRenderer shapeRenderer, SpriteBatch batch, BitmapFont font,
                  OrthographicCamera uiCamera, int screenWidth, int screenHeight) {
@@ -107,6 +114,25 @@ public class HelpUI {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         updatePanelPosition();
+        initializeButtonResources();
+    }
+    
+    /**
+     * ボタンの描画リソースを初期化します。
+     */
+    private void initializeButtonResources() {
+        // すべてのボタンに描画リソースを設定するためのヘルパーメソッド
+        // ボタンが作成された後に呼び出される
+    }
+    
+    /**
+     * ボタンに描画リソースを設定します。
+     */
+    private void setupButtonResources(UIButton button) {
+        if (button != null) {
+            button.setRenderResources(shapeRenderer, batch, font, uiCamera);
+            button.setSoundManager(soundManager);
+        }
     }
     
     /**
@@ -114,6 +140,20 @@ public class HelpUI {
      */
     public void setSoundManager(io.github.some_example_name.system.SoundManager soundManager) {
         this.soundManager = soundManager;
+        // すべてのボタンにサウンドマネージャーを設定
+        if (backButton != null) backButton.setSoundManager(soundManager);
+        if (controlsButton != null) controlsButton.setSoundManager(soundManager);
+        if (gatheringButton != null) gatheringButton.setSoundManager(soundManager);
+        if (miningButton != null) miningButton.setSoundManager(soundManager);
+        if (terrainButton != null) terrainButton.setSoundManager(soundManager);
+        if (farmingButton != null) farmingButton.setSoundManager(soundManager);
+        if (livestockButton != null) livestockButton.setSoundManager(soundManager);
+        if (buildingsButton != null) buildingsButton.setSoundManager(soundManager);
+        if (otherFeaturesButton != null) otherFeaturesButton.setSoundManager(soundManager);
+        if (endingButton != null) endingButton.setSoundManager(soundManager);
+        for (UIButton button : subMenuButtons) {
+            button.setSoundManager(soundManager);
+        }
     }
     
     /**
@@ -129,6 +169,22 @@ public class HelpUI {
     public void onOpen() {
         resetScroll();
         currentState = GuideState.MENU; // メニュー画面に戻る
+        subMenuState = null;
+    }
+    
+    /**
+     * サブメニューを開きます。
+     * @param category カテゴリ
+     */
+    private void openSubMenu(GuideState category) {
+        subMenuState = new SubMenuState(category);
+        currentState = category;
+        resetScroll();
+        
+        // サブメニュー項目を取得（livestockDataLoaderはrenderメソッドで取得）
+        // ここではnullを渡し、実際の取得はrenderメソッドで行う
+        subMenuItems = new ArrayList<String>();
+        subMenuButtons.clear();
     }
     
     /**
@@ -161,7 +217,8 @@ public class HelpUI {
         float buttonWidth = 300;
         float buttonX = panelX + 20;
         float buttonY = footerY + footerPadding;
-        backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
+        backButton = new UIButton(buttonX, buttonY, buttonWidth, buttonHeight, "戻る");
+        setupButtonResources(backButton);
         
         // メニューボタンの位置を設定（ボディエリア内に配置）
         float menuButtonWidth = 500;
@@ -171,15 +228,27 @@ public class HelpUI {
         // ボタンをヘッダーの下から配置（上から下へ）
         float menuStartY = headerY - bodyPadding - menuButtonHeight;
         
-        controlsButton = new Button(menuStartX, menuStartY, menuButtonWidth, menuButtonHeight);
-        farmingButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing), menuButtonWidth, menuButtonHeight);
-        livestockButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 2, menuButtonWidth, menuButtonHeight);
-        terrainButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 3, menuButtonWidth, menuButtonHeight);
-        otherFeaturesButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 4, menuButtonWidth, menuButtonHeight);
-        buildingsButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 5, menuButtonWidth, menuButtonHeight);
-        endingButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 6, menuButtonWidth, menuButtonHeight);
-        gatheringButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 7, menuButtonWidth, menuButtonHeight);
-        miningButton = new Button(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 8, menuButtonWidth, menuButtonHeight);
+        // ボタンの順番: 操作方法 → 採集 → 採掘 → 地形 → 農業 → 家畜 → 建造物 → その他の機能 → エンディング
+        controlsButton = new UIButton(menuStartX, menuStartY, menuButtonWidth, menuButtonHeight, "操作方法");
+        gatheringButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing), menuButtonWidth, menuButtonHeight, "採集");
+        miningButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 2, menuButtonWidth, menuButtonHeight, "採掘");
+        terrainButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 3, menuButtonWidth, menuButtonHeight, "地形");
+        farmingButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 4, menuButtonWidth, menuButtonHeight, "農業");
+        livestockButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 5, menuButtonWidth, menuButtonHeight, "家畜");
+        buildingsButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 6, menuButtonWidth, menuButtonHeight, "建造物");
+        otherFeaturesButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 7, menuButtonWidth, menuButtonHeight, "その他の機能");
+        endingButton = new UIButton(menuStartX, menuStartY - (menuButtonHeight + menuButtonSpacing) * 8, menuButtonWidth, menuButtonHeight, "エンディング");
+        
+        // すべてのボタンにリソースを設定
+        setupButtonResources(controlsButton);
+        setupButtonResources(gatheringButton);
+        setupButtonResources(miningButton);
+        setupButtonResources(terrainButton);
+        setupButtonResources(farmingButton);
+        setupButtonResources(livestockButton);
+        setupButtonResources(buildingsButton);
+        setupButtonResources(otherFeaturesButton);
+        setupButtonResources(endingButton);
     }
     
     /**
@@ -198,75 +267,69 @@ public class HelpUI {
             float menuButtonSpacing = 20;
             float menuStartY = headerY - 30 - menuButtonHeight;
             
+            // ボタンの順番: 操作方法 → 採集 → 採掘 → 地形 → 農業 → 家畜 → 建造物 → その他の機能 → エンディング
+            
+            // ボタンの位置を更新してクリック判定
             if (controlsButton != null) {
                 controlsButton.y = menuStartY + scrollOffset;
                 if (controlsButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.CONTROLS;
-                    resetScroll();
+                    openSubMenu(GuideState.CONTROLS);
                     return false;
                 }
             }
-            if (farmingButton != null) {
-                farmingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) + scrollOffset;
-                if (farmingButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.FARMING;
-                    resetScroll();
+            if (gatheringButton != null) {
+                gatheringButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) + scrollOffset;
+                if (gatheringButton.contains((float)screenX, uiY)) {
+                    openSubMenu(GuideState.GATHERING);
                     return false;
                 }
             }
-            if (livestockButton != null) {
-                livestockButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 2 + scrollOffset;
-                if (livestockButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.LIVESTOCK;
-                    resetScroll();
+            if (miningButton != null) {
+                miningButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 2 + scrollOffset;
+                if (miningButton.contains((float)screenX, uiY)) {
+                    openSubMenu(GuideState.MINING);
                     return false;
                 }
             }
             if (terrainButton != null) {
                 terrainButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 3 + scrollOffset;
                 if (terrainButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.TERRAIN;
-                    resetScroll();
+                    openSubMenu(GuideState.TERRAIN);
                     return false;
                 }
             }
-            if (otherFeaturesButton != null) {
-                otherFeaturesButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 4 + scrollOffset;
-                if (otherFeaturesButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.OTHER_FEATURES;
-                    resetScroll();
+            if (farmingButton != null) {
+                farmingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 4 + scrollOffset;
+                if (farmingButton.contains((float)screenX, uiY)) {
+                    openSubMenu(GuideState.FARMING);
+                    return false;
+                }
+            }
+            if (livestockButton != null) {
+                livestockButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 5 + scrollOffset;
+                if (livestockButton.contains((float)screenX, uiY)) {
+                    openSubMenu(GuideState.LIVESTOCK);
                     return false;
                 }
             }
             if (buildingsButton != null) {
-                buildingsButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 5 + scrollOffset;
+                buildingsButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 6 + scrollOffset;
                 if (buildingsButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.BUILDINGS;
-                    resetScroll();
+                    openSubMenu(GuideState.BUILDINGS);
+                    return false;
+                }
+            }
+            if (otherFeaturesButton != null) {
+                otherFeaturesButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 7 + scrollOffset;
+                if (otherFeaturesButton.contains((float)screenX, uiY)) {
+                    openSubMenu(GuideState.OTHER_FEATURES);
                     return false;
                 }
             }
             if (endingButton != null) {
-                endingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 6 + scrollOffset;
+                endingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 8 + scrollOffset;
                 if (endingButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.ENDING;
-                    resetScroll();
-                    return false;
-                }
-            }
-            if (gatheringButton != null) {
-                gatheringButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 7 + scrollOffset;
-                if (gatheringButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.GATHERING;
-                    resetScroll();
-                    return false;
-                }
-            }
-            if (miningButton != null) {
-                miningButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 8 + scrollOffset;
-                if (miningButton.contains((float)screenX, uiY)) {
-                    currentState = GuideState.MINING;
-                    resetScroll();
+                    openSubMenu(GuideState.ENDING);
                     return false;
                 }
             }
@@ -274,10 +337,39 @@ public class HelpUI {
             if (backButton != null && backButton.contains((float)screenX, uiY)) {
                 return true; // ゲームガイドを閉じる
             }
-        } else {
-            // 各ガイド画面での戻るボタンのクリック判定
+        } else if (subMenuState != null && subMenuState.selectedSection == null) {
+            // サブメニュー画面の場合
+            float menuButtonHeight = 80;
+            float menuButtonSpacing = 20;
+            float menuStartY = headerY - 30 - menuButtonHeight;
+            
+            for (int i = 0; i < subMenuButtons.size(); i++) {
+                UIButton button = subMenuButtons.get(i);
+                button.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * i + scrollOffset;
+                if (button.contains((float)screenX, uiY)) {
+                    subMenuState.selectedSection = subMenuItems.get(i);
+                    resetScroll();
+                    return false;
+                }
+            }
+            
+            // サブメニュー画面での戻るボタンのクリック判定
             if (backButton != null && backButton.contains((float)screenX, uiY)) {
+                subMenuState = null;
                 currentState = GuideState.MENU;
+                resetScroll();
+                return false;
+            }
+        } else {
+            // ドキュメント表示画面での戻るボタンのクリック判定
+            if (backButton != null && backButton.contains((float)screenX, uiY)) {
+                if (subMenuState != null) {
+                    // サブメニューに戻る
+                    subMenuState.selectedSection = null;
+                } else {
+                    // メインメニューに戻る
+                    currentState = GuideState.MENU;
+                }
                 resetScroll();
                 return false;
             }
@@ -462,6 +554,29 @@ public class HelpUI {
         // 状態に応じて描画
         if (currentState == GuideState.MENU) {
             renderMenu();
+        } else if (subMenuState != null && subMenuState.selectedSection == null) {
+            // サブメニュー項目がまだ取得されていない場合は取得
+            if (subMenuItems.isEmpty()) {
+                subMenuItems = GuideContentLoader.getSubMenuItems(currentState, livestockDataLoader);
+                // サブメニューボタンを作成
+                subMenuButtons.clear();
+                float menuButtonWidth = 500;
+                float menuButtonHeight = 80;
+                float menuStartX = panelX + (panelWidth - menuButtonWidth) / 2;
+                
+                for (int i = 0; i < subMenuItems.size(); i++) {
+                    float buttonY = headerY - 30 - menuButtonHeight - (menuButtonHeight + 20) * i;
+                    UIButton button = new UIButton(menuStartX, buttonY, menuButtonWidth, menuButtonHeight, subMenuItems.get(i));
+                    setupButtonResources(button);
+                    subMenuButtons.add(button);
+                }
+                
+                // サブメニューが1つしかない場合は、直接ドキュメントを表示
+                if (subMenuItems.size() == 1) {
+                    subMenuState.selectedSection = subMenuItems.get(0);
+                }
+            }
+            renderSubMenu();
         } else {
             renderGuide(livestockDataLoader);
         }
@@ -493,112 +608,43 @@ public class HelpUI {
         float menuButtonSpacing = 20;
         float menuStartY = headerY - 30 - menuButtonHeight;
         
-        // 操作方法ボタン
+        // ボタンの順番: 操作方法 → 採集 → 採掘 → 地形 → 農業 → 家畜 → 建造物 → その他の機能 → エンディング
+        // ボタンの位置を更新して描画（UIButtonがホバー状態の管理と描画を自動的に処理）
         if (controlsButton != null) {
-            float buttonY = menuStartY + scrollOffset;
-            controlsButton.y = buttonY;
-            boolean isHovered = controlsButton.contains(mouseX, mouseY);
-            if (isHovered && !lastControlsButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastControlsButtonHovered = isHovered;
-            drawButton(controlsButton, "操作方法", isHovered);
+            controlsButton.y = menuStartY + scrollOffset;
+            controlsButton.updateAndRender(mouseX, mouseY);
         }
-        
-        // 農業ボタン
-        if (farmingButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) + scrollOffset;
-            farmingButton.y = buttonY;
-            boolean isHovered = farmingButton.contains(mouseX, mouseY);
-            if (isHovered && !lastFarmingButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastFarmingButtonHovered = isHovered;
-            drawButton(farmingButton, "農業", isHovered);
-        }
-        
-        // 家畜ボタン
-        if (livestockButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 2 + scrollOffset;
-            livestockButton.y = buttonY;
-            boolean isHovered = livestockButton.contains(mouseX, mouseY);
-            if (isHovered && !lastLivestockButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastLivestockButtonHovered = isHovered;
-            drawButton(livestockButton, "家畜", isHovered);
-        }
-        
-        // 地形ボタン
-        if (terrainButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 3 + scrollOffset;
-            terrainButton.y = buttonY;
-            boolean isHovered = terrainButton.contains(mouseX, mouseY);
-            if (isHovered && !lastTerrainButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastTerrainButtonHovered = isHovered;
-            drawButton(terrainButton, "地形", isHovered);
-        }
-        
-        // その他の機能ボタン
-        if (otherFeaturesButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 4 + scrollOffset;
-            otherFeaturesButton.y = buttonY;
-            boolean isHovered = otherFeaturesButton.contains(mouseX, mouseY);
-            if (isHovered && !lastOtherFeaturesButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastOtherFeaturesButtonHovered = isHovered;
-            drawButton(otherFeaturesButton, "その他の機能", isHovered);
-        }
-        
-        // 建造物ボタン
-        if (buildingsButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 5 + scrollOffset;
-            buildingsButton.y = buttonY;
-            boolean isHovered = buildingsButton.contains(mouseX, mouseY);
-            if (isHovered && !lastBuildingsButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastBuildingsButtonHovered = isHovered;
-            drawButton(buildingsButton, "建造物", isHovered);
-        }
-        
-        // エンディングボタン
-        if (endingButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 6 + scrollOffset;
-            endingButton.y = buttonY;
-            boolean isHovered = endingButton.contains(mouseX, mouseY);
-            if (isHovered && !lastEndingButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastEndingButtonHovered = isHovered;
-            drawButton(endingButton, "エンディング", isHovered);
-        }
-        
-        // 採集ボタン
         if (gatheringButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 7 + scrollOffset;
-            gatheringButton.y = buttonY;
-            boolean isHovered = gatheringButton.contains(mouseX, mouseY);
-            if (isHovered && !lastGatheringButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastGatheringButtonHovered = isHovered;
-            drawButton(gatheringButton, "採集", isHovered);
+            gatheringButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) + scrollOffset;
+            gatheringButton.updateAndRender(mouseX, mouseY);
         }
-        
-        // 採掘ボタン
         if (miningButton != null) {
-            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * 8 + scrollOffset;
-            miningButton.y = buttonY;
-            boolean isHovered = miningButton.contains(mouseX, mouseY);
-            if (isHovered && !lastMiningButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastMiningButtonHovered = isHovered;
-            drawButton(miningButton, "採掘", isHovered);
+            miningButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 2 + scrollOffset;
+            miningButton.updateAndRender(mouseX, mouseY);
+        }
+        if (terrainButton != null) {
+            terrainButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 3 + scrollOffset;
+            terrainButton.updateAndRender(mouseX, mouseY);
+        }
+        if (farmingButton != null) {
+            farmingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 4 + scrollOffset;
+            farmingButton.updateAndRender(mouseX, mouseY);
+        }
+        if (livestockButton != null) {
+            livestockButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 5 + scrollOffset;
+            livestockButton.updateAndRender(mouseX, mouseY);
+        }
+        if (buildingsButton != null) {
+            buildingsButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 6 + scrollOffset;
+            buildingsButton.updateAndRender(mouseX, mouseY);
+        }
+        if (otherFeaturesButton != null) {
+            otherFeaturesButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 7 + scrollOffset;
+            otherFeaturesButton.updateAndRender(mouseX, mouseY);
+        }
+        if (endingButton != null) {
+            endingButton.y = menuStartY - (menuButtonHeight + menuButtonSpacing) * 8 + scrollOffset;
+            endingButton.updateAndRender(mouseX, mouseY);
         }
         
         // クリッピングを解除
@@ -615,13 +661,72 @@ public class HelpUI {
         
         // 戻るボタンを描画（フッター）
         if (backButton != null) {
-            boolean isHovered = backButton.contains(mouseX, mouseY);
-            if (isHovered && !lastBackButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastBackButtonHovered = isHovered;
-            drawButton(backButton, "戻る", isHovered);
+            backButton.updateAndRender(mouseX, mouseY);
         }
+    }
+    
+    /**
+     * サブメニュー画面を描画します。
+     */
+    private void renderSubMenu() {
+        // サブメニューのコンテンツの高さを計算
+        calculateSubMenuContentHeight();
+        
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
+        // クリッピング領域を設定（コンテンツエリアのみ描画）
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        batch.flush();
+        Rectangle scissors = new Rectangle();
+        Rectangle clipBounds = new Rectangle(
+            panelX, contentAreaY, panelWidth, contentAreaHeight
+        );
+        ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
+        boolean scissorsPushed = ScissorStack.pushScissors(scissors);
+        
+        // ボタンをスクロールオフセットに応じて描画
+        float menuButtonHeight = 80;
+        float menuButtonSpacing = 20;
+        float menuStartY = headerY - 30 - menuButtonHeight;
+        
+        for (int i = 0; i < subMenuButtons.size(); i++) {
+            UIButton button = subMenuButtons.get(i);
+            float buttonY = menuStartY - (menuButtonHeight + menuButtonSpacing) * i + scrollOffset;
+            button.y = buttonY;
+            button.updateAndRender(mouseX, mouseY);
+        }
+        
+        // クリッピングを解除
+        batch.flush();
+        if (scissorsPushed) {
+            ScissorStack.popScissors();
+        }
+        batch.end();
+        
+        // スクロール可能な場合、スクロールバーを描画
+        if (maxScrollOffset > 0) {
+            drawScrollBar();
+        }
+        
+        // 戻るボタンを描画（フッター）
+        if (backButton != null) {
+            backButton.updateAndRender(mouseX, mouseY);
+        }
+    }
+    
+    /**
+     * サブメニューのコンテンツの高さを計算します。
+     */
+    private void calculateSubMenuContentHeight() {
+        float menuButtonHeight = 80;
+        float menuButtonSpacing = 20;
+        float totalButtons = subMenuItems.size();
+        float totalHeight = totalButtons * menuButtonHeight + (totalButtons - 1) * menuButtonSpacing;
+        
+        totalContentHeight = totalHeight;
+        maxScrollOffset = Math.max(0, totalHeight - contentAreaHeight + 40);
     }
     
     /**
@@ -648,14 +753,7 @@ public class HelpUI {
         if (backButton != null) {
             float mouseX = Gdx.input.getX();
             float mouseY = screenHeight - Gdx.input.getY();
-            boolean isHovered = backButton.contains(mouseX, mouseY);
-            
-            if (isHovered && !lastBackButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastBackButtonHovered = isHovered;
-            
-            drawButton(backButton, "戻る", isHovered);
+            backButton.updateAndRender(mouseX, mouseY);
         }
         
         // クリッピング領域を設定（コンテンツエリアのみ描画）
@@ -678,7 +776,9 @@ public class HelpUI {
         font.setColor(Color.WHITE);
         
         // Markdownファイルからガイドコンテンツを読み込んで描画
-        List<GuideContentLoader.GuideElement> elements = GuideContentLoader.loadGuideContent(currentState, livestockDataLoader);
+        String sectionTitle = (subMenuState != null && subMenuState.selectedSection != null) 
+            ? subMenuState.selectedSection : null;
+        List<GuideContentLoader.GuideElement> elements = GuideContentLoader.loadGuideContent(currentState, livestockDataLoader, sectionTitle);
         renderGuideElements(batch, elements, startX, startY, lineSpacing);
         
         font.getData().setScale(0.825f);
@@ -697,53 +797,6 @@ public class HelpUI {
         }
     }
     
-    /**
-     * ボタンを描画します。
-     */
-    private void drawButton(Button button, String text, boolean isHovered) {
-        // batchが既に開始されているかチェック
-        boolean batchWasActive = batch.isDrawing();
-        
-        // batchが開始されている場合は終了してからShapeRendererを使用
-        if (batchWasActive) {
-            batch.end();
-        }
-        
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        if (isHovered) {
-            shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 0.95f);
-        } else {
-            shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
-        }
-        shapeRenderer.rect(button.x, button.y, button.width, button.height);
-        shapeRenderer.end();
-        
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        if (isHovered) {
-            shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
-        } else {
-            shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        }
-        shapeRenderer.rect(button.x, button.y, button.width, button.height);
-        shapeRenderer.end();
-        
-        // batchを開始（元々開始されていた場合は再度開始、されていなかった場合は新規開始）
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
-        font.getData().setScale(0.675f);
-        font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
-        GlyphLayout layout = new GlyphLayout(font, text);
-        float textX = button.x + (button.width - layout.width) / 2;
-        float textY = button.y + button.height / 2 + layout.height / 2;
-        font.draw(batch, text, textX, textY);
-        
-        // batchが元々開始されていなかった場合は終了する
-        // （呼び出し元で開始されていた場合は、呼び出し元で終了を管理）
-        if (!batchWasActive) {
-            batch.end();
-        }
-    }
     
     /**
      * ガイド要素のリストを描画します。
@@ -762,8 +815,11 @@ public class HelpUI {
                 case HEADING_1:
                     font.setColor(new Color(0.8f, 0.9f, 1.0f, 1f));
                     font.getData().setScale(0.75f);
-                    font.draw(batch, "【" + element.text + "】", startX, currentY);
-                    currentY -= lineSpacing;
+                    String heading1Text = "【" + element.text + "】";
+                    GlyphLayout heading1Layout = new GlyphLayout(font, heading1Text);
+                    font.draw(batch, heading1Text, startX, currentY);
+                    // 見出し1の実際の高さを考慮してcurrentYを更新
+                    currentY -= Math.max(lineSpacing, heading1Layout.height + 10);
                     break;
                     
                 case HEADING_2:
@@ -771,8 +827,10 @@ public class HelpUI {
                     Color heading2Color = getHeading2Color(element.text);
                     font.setColor(heading2Color);
                     font.getData().setScale(0.75f);
+                    GlyphLayout heading2Layout = new GlyphLayout(font, element.text);
                     font.draw(batch, element.text, startX, currentY);
-                    currentY -= lineSpacing;
+                    // 見出し2の実際の高さを考慮してcurrentYを更新
+                    currentY -= Math.max(lineSpacing, heading2Layout.height + 10);
                     break;
                     
                 case HEADING_3:
@@ -782,19 +840,40 @@ public class HelpUI {
                     currentY -= lineSpacing * 0.9f;
                     break;
                     
+                case HEADING_4:
+                    font.setColor(new Color(0.65f, 0.75f, 0.9f, 1f));
+                    font.getData().setScale(0.65f);
+                    font.draw(batch, element.text, startX, currentY);
+                    currentY -= lineSpacing * 0.85f;
+                    break;
+                    
+                case HEADING_5:
+                    font.setColor(new Color(0.6f, 0.7f, 0.85f, 1f));
+                    font.getData().setScale(0.6f);
+                    font.draw(batch, element.text, startX, currentY);
+                    currentY -= lineSpacing * 0.8f;
+                    break;
+                    
+                case HEADING_6:
+                    font.setColor(new Color(0.55f, 0.65f, 0.8f, 1f));
+                    font.getData().setScale(0.6f);
+                    font.draw(batch, element.text, startX, currentY);
+                    currentY -= lineSpacing * 0.8f;
+                    break;
+                    
                 case LIST_ITEM:
                     font.getData().setScale(0.6f);
                     font.setColor(Color.WHITE);
                     float indentX = startX + 20 + (element.indentLevel * 20);
-                    drawTextLine(batch, "・" + element.text, indentX, currentY);
-                    currentY -= lineSpacing * 0.8f;
+                    int listItemLines = drawTextLine(batch, "・" + element.text, indentX, currentY);
+                    currentY -= lineSpacing * 0.8f * listItemLines;
                     break;
                     
                 case TEXT:
                     font.getData().setScale(0.6f);
                     font.setColor(Color.WHITE);
-                    drawTextLine(batch, element.text, startX, currentY);
-                    currentY -= lineSpacing * 0.8f;
+                    int textLines = drawTextLine(batch, element.text, startX, currentY);
+                    currentY -= lineSpacing * 0.8f * textLines;
                     break;
                     
                 case SEPARATOR:
@@ -831,6 +910,7 @@ public class HelpUI {
      */
     private float calculateGuideElementsHeight(List<GuideContentLoader.GuideElement> elements, float lineSpacing) {
         float totalHeight = 0;
+        float maxWidth = panelWidth - 80;
         
         for (GuideContentLoader.GuideElement element : elements) {
             switch (element.type) {
@@ -841,9 +921,29 @@ public class HelpUI {
                 case HEADING_3:
                     totalHeight += lineSpacing * 0.9f;
                     break;
-                case LIST_ITEM:
-                case TEXT:
+                case HEADING_4:
+                    totalHeight += lineSpacing * 0.85f;
+                    break;
+                case HEADING_5:
+                case HEADING_6:
                     totalHeight += lineSpacing * 0.8f;
+                    break;
+                case LIST_ITEM:
+                    // 折り返しを考慮して高さを計算
+                    font.getData().setScale(0.6f);
+                    String listText = "・" + element.text;
+                    GlyphLayout listLayout = new GlyphLayout(font, listText);
+                    int listLines = (int)Math.ceil(listLayout.width / maxWidth);
+                    if (listLines < 1) listLines = 1;
+                    totalHeight += lineSpacing * 0.8f * listLines;
+                    break;
+                case TEXT:
+                    // 折り返しを考慮して高さを計算
+                    font.getData().setScale(0.6f);
+                    GlyphLayout textLayout = new GlyphLayout(font, element.text);
+                    int textLines = (int)Math.ceil(textLayout.width / maxWidth);
+                    if (textLines < 1) textLines = 1;
+                    totalHeight += lineSpacing * 0.8f * textLines;
                     break;
                 case SEPARATOR:
                     totalHeight += lineSpacing * 0.5f;
@@ -884,8 +984,13 @@ public class HelpUI {
     
     /**
      * テキストを1行描画します（長い場合は折り返し）。
+     * @param batch SpriteBatch
+     * @param text 描画するテキスト
+     * @param x 開始X座標
+     * @param y 開始Y座標
+     * @return 使用した行数（折り返し後の行数）
      */
-    private void drawTextLine(SpriteBatch batch, String text, float x, float y) {
+    private int drawTextLine(SpriteBatch batch, String text, float x, float y) {
         float maxWidth = panelWidth - 80;
         GlyphLayout layout = new GlyphLayout(font, text);
         
@@ -895,6 +1000,7 @@ public class HelpUI {
             StringBuilder line = new StringBuilder();
             float currentX = x;
             float currentY = y;
+            int lineCount = 0;
             
             for (String word : words) {
                 String testLine = line.toString() + word;
@@ -902,6 +1008,7 @@ public class HelpUI {
                 if (testLayout.width > maxWidth && line.length() > 0) {
                     font.draw(batch, line.toString(), currentX, currentY);
                     currentY -= font.getLineHeight() * 0.8f;
+                    lineCount++;
                     line = new StringBuilder(word);
                 } else {
                     line.append(word);
@@ -909,9 +1016,12 @@ public class HelpUI {
             }
             if (line.length() > 0) {
                 font.draw(batch, line.toString(), currentX, currentY);
+                lineCount++;
             }
+            return lineCount;
         } else {
             font.draw(batch, text, x, y);
+            return 1;
         }
     }
 }
