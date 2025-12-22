@@ -33,6 +33,9 @@ public class ItemEncyclopediaUI {
     private float panelX;
     private float panelY;
     
+    // ウィンドウ（共通化）
+    private UIWindow window;
+    
     // アイテムスロットの設定
     private static final int SLOTS_PER_ROW = 8;
     private static final int MAX_ROWS = 10;
@@ -82,6 +85,17 @@ public class ItemEncyclopediaUI {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         updatePanelPosition();
+        initializeWindow();
+    }
+    
+    /**
+     * ウィンドウを初期化します。
+     */
+    private void initializeWindow() {
+        window = new UIWindow(panelX, panelY, panelWidth, panelHeight);
+        window.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        window.setTitle("アイテム図鑑");
+        window.setTitleFontSize(0.825f);
     }
     
     /**
@@ -98,6 +112,12 @@ public class ItemEncyclopediaUI {
         this.screenWidth = width;
         this.screenHeight = height;
         updatePanelPosition();
+        if (window != null) {
+            window.x = panelX;
+            window.y = panelY;
+            window.width = panelWidth;
+            window.height = panelHeight;
+        }
     }
     
     /**
@@ -225,41 +245,20 @@ public class ItemEncyclopediaUI {
             return;
         }
         
+        // ウィンドウを描画（タイトルも含む）
+        if (window != null) {
+            window.render(true);
+        }
+        
         // batchが既に開始されているかチェック
         boolean batchWasActive = batch.isDrawing();
-        
-        // パネルの背景を描画
-        if (batchWasActive) {
-        // batchを終了（元々開始されていなかった場合は終了しない）
         if (!batchWasActive) {
-            batch.end();
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
         }
-    }
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
-        shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
-        shapeRenderer.end();
-        
-        // パネルの枠線を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
-        shapeRenderer.end();
-        
-        // batchを開始（元々開始されていた場合は再度開始）
-        batch.begin();
-        batch.setProjectionMatrix(uiCamera.combined);
         
         font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);
-        
-        // タイトルを描画
-        String title = "アイテム図鑑";
-        GlyphLayout titleLayout = new GlyphLayout(font, title);
-        float titleX = panelX + (panelWidth - titleLayout.width) / 2;
-        float titleY = panelY + panelHeight - 45;
-        font.draw(batch, title, titleX, titleY);
         
         // 戻るボタンを描画
         if (backButton != null) {
@@ -304,6 +303,7 @@ public class ItemEncyclopediaUI {
         
         // アイテムリストを描画
         float startX = panelX + 30;
+        float titleY = panelY + panelHeight - 45; // タイトルのY座標
         float startY = titleY - 120;
         float currentY = startY - scrollOffset;
         

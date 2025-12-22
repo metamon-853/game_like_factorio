@@ -35,6 +35,9 @@ public class InventoryUI {
     private float panelX;
     private float panelY;
     
+    // ウィンドウ（共通化）
+    private UIWindow window;
+    
     // アイテムスロットの設定
     private static final int SLOTS_PER_ROW = 6;
     private static final int MAX_ROWS = 8;
@@ -100,6 +103,15 @@ public class InventoryUI {
         this.screenWidth = screenWidth;
         this.screenHeight = screenHeight;
         updatePanelPosition();
+        initializeWindow();
+    }
+    
+    /**
+     * ウィンドウを初期化します。
+     */
+    private void initializeWindow() {
+        window = new UIWindow(panelX, panelY, panelWidth, panelHeight);
+        window.setRenderResources(shapeRenderer, batch, font, uiCamera);
     }
     
     /**
@@ -116,6 +128,12 @@ public class InventoryUI {
         this.screenWidth = width;
         this.screenHeight = height;
         updatePanelPosition();
+        if (window != null) {
+            window.x = panelX;
+            window.y = panelY;
+            window.width = panelWidth;
+            window.height = panelHeight;
+        }
     }
     
     /**
@@ -259,28 +277,17 @@ public class InventoryUI {
             return;
         }
         
+        // ウィンドウを描画
+        if (window != null) {
+            window.render();
+        }
+        
         // batchが既に開始されているかチェック
         boolean batchWasActive = batch.isDrawing();
-        
-        // パネルの背景を描画
-        if (batchWasActive) {
-            batch.end();
+        if (!batchWasActive) {
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
         }
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
-        shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
-        shapeRenderer.end();
-        
-        // パネルの枠線を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
-        shapeRenderer.end();
-        
-        // batchを開始（元々開始されていた場合は再度開始）
-        batch.begin();
-        batch.setProjectionMatrix(uiCamera.combined);
         
         font.getData().setScale(0.825f);
         font.setColor(Color.WHITE);

@@ -209,17 +209,18 @@ public class GuideContentLoader {
         Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
         
         for (LivestockData livestock : allLivestock) {
-            livestockList.append("・").append(livestock.name).append(": ");
+            StringBuilder itemText = new StringBuilder();
+            itemText.append(livestock.name).append(": ");
             if (livestock.hasProduct()) {
-                livestockList.append("肉（ID:").append(livestock.meatItemId)
-                           .append("）、製品（ID:").append(livestock.productItemId).append("）");
+                itemText.append("肉（ID:").append(livestock.meatItemId)
+                       .append("）、製品（ID:").append(livestock.productItemId).append("）");
             } else {
-                livestockList.append("肉（ID:").append(livestock.meatItemId).append("）のみ");
+                itemText.append("肉（ID:").append(livestock.meatItemId).append("）のみ");
             }
-            livestockList.append("\n");
             if (livestock.description != null && !livestock.description.isEmpty()) {
-                livestockList.append("  ").append(livestock.description).append("\n");
+                itemText.append(" - ").append(livestock.description);
             }
+            livestockList.append("・").append(itemText.toString()).append("\n");
         }
         
         return content.replace("{{LIVESTOCK_LIST}}", livestockList.toString().trim());

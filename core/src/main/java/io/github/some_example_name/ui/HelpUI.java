@@ -64,6 +64,9 @@ public class HelpUI {
     private float panelX;
     private float panelY;
     
+    // ウィンドウ（共通化）
+    private UIWindow window;
+    
     // ヘッダーエリア（タイトル用）
     private float headerY;
     private float headerHeight;
@@ -118,11 +121,15 @@ public class HelpUI {
     }
     
     /**
-     * ボタンの描画リソースを初期化します。
+     * ボタンとウィンドウの描画リソースを初期化します。
      */
     private void initializeButtonResources() {
-        // すべてのボタンに描画リソースを設定するためのヘルパーメソッド
-        // ボタンが作成された後に呼び出される
+        // ウィンドウを作成
+        window = new UIWindow(panelX, panelY, panelWidth, panelHeight);
+        window.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        window.setHeader(headerY, headerHeight);
+        window.setTitle("ゲームガイド");
+        window.setTitleFontSize(1.0f);
     }
     
     /**
@@ -513,43 +520,10 @@ public class HelpUI {
      * ヘルプUIを描画します。
      */
     public void render(LivestockDataLoader livestockDataLoader) {
-        // パネルの背景を描画
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
-        shapeRenderer.rect(panelX, panelY, panelWidth, panelHeight);
-        shapeRenderer.end();
-        
-        // ヘッダーエリアの背景を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.15f, 0.15f, 0.2f, 0.95f);
-        shapeRenderer.rect(panelX, headerY, panelWidth, headerHeight);
-        shapeRenderer.end();
-        
-        // パネルの枠線を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.line(panelX, panelY + panelHeight, panelX + panelWidth, panelY + panelHeight);
-        shapeRenderer.line(panelX, panelY + panelHeight, panelX, panelY);
-        shapeRenderer.line(panelX + panelWidth, panelY + panelHeight, panelX + panelWidth, panelY);
-        // ヘッダーとボディの区切り線
-        shapeRenderer.line(panelX, headerY, panelX + panelWidth, headerY);
-        shapeRenderer.end();
-        
-        // batchを開始
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
-        
-        // ヘッダーにタイトルを描画
-        font.getData().setScale(1.0f);
-        font.setColor(Color.WHITE);
-        String title = "ゲームガイド";
-        GlyphLayout titleLayout = new GlyphLayout(font, title);
-        float titleX = panelX + (panelWidth - titleLayout.width) / 2;
-        float titleY = headerY + headerHeight / 2 + titleLayout.height / 2;
-        font.draw(batch, title, titleX, titleY);
-        
-        batch.end();
+        // ウィンドウを描画（タイトルも含む）
+        if (window != null) {
+            window.render(true);
+        }
         
         // 状態に応じて描画
         if (currentState == GuideState.MENU) {
@@ -592,9 +566,15 @@ public class HelpUI {
         float mouseX = Gdx.input.getX();
         float mouseY = screenHeight - Gdx.input.getY();
         
+        // batchが既に開始されているかチェック（UIWindowがbatchを開始している可能性がある）
+        boolean batchWasActive = batch.isDrawing();
+        if (!batchWasActive) {
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
+        }
+        
         // クリッピング領域を設定（コンテンツエリアのみ描画）
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
+        batch.flush();
         batch.flush();
         Rectangle scissors = new Rectangle();
         Rectangle clipBounds = new Rectangle(
@@ -675,9 +655,14 @@ public class HelpUI {
         float mouseX = Gdx.input.getX();
         float mouseY = screenHeight - Gdx.input.getY();
         
+        // batchが既に開始されているかチェック（UIWindowがbatchを開始している可能性がある）
+        boolean batchWasActive = batch.isDrawing();
+        if (!batchWasActive) {
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
+        }
+        
         // クリッピング領域を設定（コンテンツエリアのみ描画）
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
         batch.flush();
         Rectangle scissors = new Rectangle();
         Rectangle clipBounds = new Rectangle(
@@ -703,7 +688,12 @@ public class HelpUI {
         if (scissorsPushed) {
             ScissorStack.popScissors();
         }
-        batch.end();
+        
+        // batchが元々開始されていなかった場合は終了する
+        // （UIWindowが開始した場合は、UIWindowで終了を管理）
+        if (!batchWasActive) {
+            batch.end();
+        }
         
         // スクロール可能な場合、スクロールバーを描画
         if (maxScrollOffset > 0) {
@@ -749,16 +739,14 @@ public class HelpUI {
         // コンテンツの高さを計算
         calculateContentHeight(livestockDataLoader);
         
-        // 戻るボタンを描画
-        if (backButton != null) {
-            float mouseX = Gdx.input.getX();
-            float mouseY = screenHeight - Gdx.input.getY();
-            backButton.updateAndRender(mouseX, mouseY);
+        // batchが既に開始されているかチェック（UIWindowがbatchを開始している可能性がある）
+        boolean batchWasActive = batch.isDrawing();
+        if (!batchWasActive) {
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
         }
         
         // クリッピング領域を設定（コンテンツエリアのみ描画）
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
         batch.flush();
         Rectangle scissors = new Rectangle();
         Rectangle clipBounds = new Rectangle(
@@ -789,11 +777,23 @@ public class HelpUI {
         if (scissorsPushed) {
             ScissorStack.popScissors();
         }
-        batch.end();
+        
+        // batchが元々開始されていなかった場合は終了する
+        // （UIWindowが開始した場合は、UIWindowで終了を管理）
+        if (!batchWasActive) {
+            batch.end();
+        }
         
         // スクロール可能な場合、スクロールバーを描画
         if (maxScrollOffset > 0) {
             drawScrollBar();
+        }
+        
+        // 戻るボタンを描画（フッター）
+        if (backButton != null) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            backButton.updateAndRender(mouseX, mouseY);
         }
     }
     
