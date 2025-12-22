@@ -13,6 +13,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -48,17 +50,20 @@ public class InventoryUI {
     private ItemData selectedItemData = null;
     private int selectedItemCount = 0;
     
+    // アイテム詳細パネル（共通化）
+    private ItemDetailPanel itemDetailPanel;
+    
     // スロット情報を保持（クリック判定用）
     private List<SlotInfo> slotInfos;
     
     // アイテム図鑑ボタン
-    private Button encyclopediaButton;
+    private UIButton encyclopediaButton;
     
     // タブ（インベントリ/クラフト）
     private enum Tab { INVENTORY, CRAFTING }
     private Tab currentTab = Tab.INVENTORY;
-    private Button inventoryTabButton;
-    private Button craftingTabButton;
+    private UIButton inventoryTabButton;
+    private UIButton craftingTabButton;
     
     // クラフトシステム
     private CraftingSystem craftingSystem;
@@ -73,8 +78,12 @@ public class InventoryUI {
     private SoundManager soundManager;
     
     // 前回のホバー状態を記録（音の重複再生を防ぐため）
-    private boolean lastEncyclopediaButtonHovered = false;
     private ItemData lastHoveredItem = null;
+    
+    // スクロールバー
+    private UIScrollBar scrollBar;
+    private float contentAreaY;
+    private float contentAreaHeight;
     
     /**
      * スロット情報を保持する内部クラス
@@ -112,6 +121,14 @@ public class InventoryUI {
     private void initializeWindow() {
         window = new UIWindow(panelX, panelY, panelWidth, panelHeight);
         window.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        
+        // アイテム詳細パネルを初期化
+        itemDetailPanel = new ItemDetailPanel(shapeRenderer, batch, font, uiCamera);
+        itemDetailPanel.setPosition(panelX + panelWidth + 30, panelY);
+        
+        // スクロールバーを初期化
+        scrollBar = new UIScrollBar(shapeRenderer, uiCamera, screenHeight);
+        scrollBar.setScrollSpeed(20f);
     }
     
     /**
@@ -143,19 +160,41 @@ public class InventoryUI {
         panelX = (screenWidth - panelWidth) / 2;
         panelY = (screenHeight - panelHeight) / 2;
         
+        // コンテンツエリアの設定
+        float titleY = panelY + panelHeight - 45;
+        float buttonAreaHeight = 75 + 20; // ボタンエリアの高さ
+        contentAreaY = panelY + 20;
+        contentAreaHeight = titleY - buttonAreaHeight - contentAreaY - 20;
+        
+        // スクロールバーのコンテンツエリアを設定
+        if (scrollBar != null) {
+            scrollBar.setContentArea(panelX + 30, contentAreaY, panelWidth - 60, contentAreaHeight);
+        }
+        
         // アイテム図鑑ボタンの位置を設定
         float buttonWidth = 300;
         float buttonHeight = 75;
         float buttonX = panelX + panelWidth - buttonWidth - 20;
         float buttonY = panelY + panelHeight - buttonHeight - 20;
-        encyclopediaButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
+        encyclopediaButton = new UIButton(buttonX, buttonY, buttonWidth, buttonHeight, "アイテム図鑑");
+        encyclopediaButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        encyclopediaButton.setSoundManager(soundManager);
         
         // タブボタンの位置を設定
         float tabWidth = 200;
         float tabHeight = 50;
         float tabY = panelY + panelHeight - tabHeight - 20;
-        inventoryTabButton = new Button(panelX + 20, tabY, tabWidth, tabHeight);
-        craftingTabButton = new Button(panelX + 20 + tabWidth + 10, tabY, tabWidth, tabHeight);
+        inventoryTabButton = new UIButton(panelX + 20, tabY, tabWidth, tabHeight, "インベントリ");
+        inventoryTabButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        inventoryTabButton.setSoundManager(soundManager);
+        craftingTabButton = new UIButton(panelX + 20 + tabWidth + 10, tabY, tabWidth, tabHeight, "クラフト");
+        craftingTabButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        craftingTabButton.setSoundManager(soundManager);
+        
+        // アイテム詳細パネルの位置を更新
+        if (itemDetailPanel != null) {
+            itemDetailPanel.setPosition(panelX + panelWidth + 30, panelY);
+        }
     }
     
     /**
@@ -163,6 +202,9 @@ public class InventoryUI {
      */
     public void setCraftingSystem(CraftingSystem craftingSystem) {
         this.craftingSystem = craftingSystem;
+        if (itemDetailPanel != null) {
+            itemDetailPanel.setCraftingSystem(craftingSystem);
+        }
     }
     
     /**
@@ -170,6 +212,9 @@ public class InventoryUI {
      */
     public void setItemDataLoader(ItemDataLoader itemDataLoader) {
         this.itemDataLoader = itemDataLoader;
+        if (itemDetailPanel != null) {
+            itemDetailPanel.setItemDataLoader(itemDataLoader);
+        }
     }
     
     /**
@@ -230,13 +275,7 @@ public class InventoryUI {
         float uiY = screenHeight - mouseY;
         
         // 詳細パネルの上にマウスがある場合は、ホバーを無視
-        float detailX = panelX + panelWidth + 30;
-        float detailY = panelY;
-        float detailWidth = 600;
-        float detailHeight = 450;
-        
-        if (mouseX >= detailX && mouseX <= detailX + detailWidth &&
-            uiY >= detailY && uiY <= detailY + detailHeight) {
+        if (itemDetailPanel != null && itemDetailPanel.contains(mouseX, uiY)) {
             // 詳細パネルの上にある場合は、現在の選択を維持
             return;
         }
@@ -302,42 +341,7 @@ public class InventoryUI {
         if (encyclopediaButton != null) {
             float mouseX = Gdx.input.getX();
             float mouseY = screenHeight - Gdx.input.getY();
-            boolean isHovered = encyclopediaButton.contains(mouseX, mouseY);
-            
-            // ホバー状態が変わったときに音を再生
-            if (isHovered && !lastEncyclopediaButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastEncyclopediaButtonHovered = isHovered;
-            
-            batch.end();
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            if (isHovered) {
-                shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 0.95f);
-            } else {
-                shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
-            }
-            shapeRenderer.rect(encyclopediaButton.x, encyclopediaButton.y, encyclopediaButton.width, encyclopediaButton.height);
-            shapeRenderer.end();
-            
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            if (isHovered) {
-                shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
-            } else {
-                shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-            }
-            shapeRenderer.rect(encyclopediaButton.x, encyclopediaButton.y, encyclopediaButton.width, encyclopediaButton.height);
-            shapeRenderer.end();
-            
-            batch.begin();
-            font.getData().setScale(0.675f);
-            font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
-            String buttonText = "アイテム図鑑";
-            GlyphLayout buttonLayout = new GlyphLayout(font, buttonText);
-            float buttonTextX = encyclopediaButton.x + (encyclopediaButton.width - buttonLayout.width) / 2;
-            float buttonTextY = encyclopediaButton.y + encyclopediaButton.height / 2 + buttonLayout.height / 2;
-            font.draw(batch, buttonText, buttonTextX, buttonTextY);
-            font.getData().setScale(0.825f);
+            encyclopediaButton.updateAndRender(mouseX, mouseY);
         }
         
         // 現在のタブに応じて内容を描画
@@ -357,8 +361,8 @@ public class InventoryUI {
         lastHoveredItem = selectedItemData;
         
         // アイテム詳細パネルを描画
-        if (selectedItemData != null) {
-            renderItemDetail(selectedItemData, selectedItemCount);
+        if (selectedItemData != null && itemDetailPanel != null) {
+            itemDetailPanel.render(selectedItemData, selectedItemCount);
         }
         
         font.getData().setScale(0.825f);
@@ -387,68 +391,100 @@ public class InventoryUI {
         
         batch.end();
         
-        // インベントリタブ
+        // インベントリタブ（選択状態を反映）
         boolean inventoryHovered = inventoryTabButton.contains(mouseX, mouseY);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         if (currentTab == Tab.INVENTORY) {
+            // 選択中のタブは特別な色で描画
+            shapeRenderer.setProjectionMatrix(uiCamera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f);
-        } else if (inventoryHovered) {
-            shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 1f);
+            shapeRenderer.rect(inventoryTabButton.x, inventoryTabButton.y, inventoryTabButton.width, inventoryTabButton.height);
+            shapeRenderer.end();
+            
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+            shapeRenderer.rect(inventoryTabButton.x, inventoryTabButton.y, inventoryTabButton.width, inventoryTabButton.height);
+            shapeRenderer.end();
+            
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
+            font.getData().setScale(0.675f);
+            font.setColor(Color.WHITE);
+            String inventoryTabText = "インベントリ";
+            GlyphLayout inventoryLayout = new GlyphLayout(font, inventoryTabText);
+            float inventoryTextX = inventoryTabButton.x + (inventoryTabButton.width - inventoryLayout.width) / 2;
+            float inventoryTextY = inventoryTabButton.y + inventoryTabButton.height / 2 + inventoryLayout.height / 2;
+            font.draw(batch, inventoryTabText, inventoryTextX, inventoryTextY);
         } else {
-            shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 1f);
+            inventoryTabButton.updateAndRender(mouseX, mouseY);
         }
-        shapeRenderer.rect(inventoryTabButton.x, inventoryTabButton.y, inventoryTabButton.width, inventoryTabButton.height);
-        shapeRenderer.end();
         
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(inventoryTabButton.x, inventoryTabButton.y, inventoryTabButton.width, inventoryTabButton.height);
-        shapeRenderer.end();
-        
-        // クラフトタブ
+        // クラフトタブ（選択状態を反映）
         boolean craftingHovered = craftingTabButton.contains(mouseX, mouseY);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
         if (currentTab == Tab.CRAFTING) {
+            // 選択中のタブは特別な色で描画
+            shapeRenderer.setProjectionMatrix(uiCamera.combined);
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
             shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f);
-        } else if (craftingHovered) {
-            shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 1f);
+            shapeRenderer.rect(craftingTabButton.x, craftingTabButton.y, craftingTabButton.width, craftingTabButton.height);
+            shapeRenderer.end();
+            
+            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+            shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+            shapeRenderer.rect(craftingTabButton.x, craftingTabButton.y, craftingTabButton.width, craftingTabButton.height);
+            shapeRenderer.end();
+            
+            batch.setProjectionMatrix(uiCamera.combined);
+            batch.begin();
+            font.getData().setScale(0.675f);
+            font.setColor(Color.WHITE);
+            String craftingTabText = "クラフト";
+            GlyphLayout craftingLayout = new GlyphLayout(font, craftingTabText);
+            float craftingTextX = craftingTabButton.x + (craftingTabButton.width - craftingLayout.width) / 2;
+            float craftingTextY = craftingTabButton.y + craftingTabButton.height / 2 + craftingLayout.height / 2;
+            font.draw(batch, craftingTabText, craftingTextX, craftingTextY);
         } else {
-            shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 1f);
+            craftingTabButton.updateAndRender(mouseX, mouseY);
         }
-        shapeRenderer.rect(craftingTabButton.x, craftingTabButton.y, craftingTabButton.width, craftingTabButton.height);
-        shapeRenderer.end();
-        
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(craftingTabButton.x, craftingTabButton.y, craftingTabButton.width, craftingTabButton.height);
-        shapeRenderer.end();
-        
-        batch.begin();
-        font.getData().setScale(0.675f);
-        font.setColor(Color.WHITE);
-        
-        String inventoryTabText = "インベントリ";
-        GlyphLayout inventoryLayout = new GlyphLayout(font, inventoryTabText);
-        float inventoryTextX = inventoryTabButton.x + (inventoryTabButton.width - inventoryLayout.width) / 2;
-        float inventoryTextY = inventoryTabButton.y + inventoryTabButton.height / 2 + inventoryLayout.height / 2;
-        font.draw(batch, inventoryTabText, inventoryTextX, inventoryTextY);
-        
-        String craftingTabText = "クラフト";
-        GlyphLayout craftingLayout = new GlyphLayout(font, craftingTabText);
-        float craftingTextX = craftingTabButton.x + (craftingTabButton.width - craftingLayout.width) / 2;
-        float craftingTextY = craftingTabButton.y + craftingTabButton.height / 2 + craftingLayout.height / 2;
-        font.draw(batch, craftingTabText, craftingTextX, craftingTextY);
         
         font.getData().setScale(0.825f);
+    }
+    
+    /**
+     * スクロール処理を行います。
+     */
+    public void handleScroll(float amountY) {
+        if (scrollBar != null) {
+            scrollBar.handleScroll(amountY);
+        }
+    }
+    
+    /**
+     * スクロールバーのドラッグ入力を処理します。
+     */
+    public void handleScrollBarDragInput() {
+        if (scrollBar != null) {
+            scrollBar.handleScrollBarDragInput();
+        }
     }
     
     /**
      * インベントリタブの内容を描画します。
      */
     private void renderInventoryTab(Inventory inventory, ItemDataLoader itemDataLoader, float titleY) {
+        // コンテンツの高さを計算
+        float totalItems = inventory.getAllItems().size();
+        float totalRows = (float)Math.ceil(totalItems / SLOTS_PER_ROW);
+        float totalContentHeight = totalRows * (SLOT_SIZE + SLOT_PADDING) - SLOT_PADDING;
+        
+        if (scrollBar != null) {
+            scrollBar.setTotalContentHeight(totalContentHeight);
+        }
+        
         float startX = panelX + 30;
         float startY = titleY - 75;
-        float currentY = startY;
+        float scrollOffset = scrollBar != null ? scrollBar.getScrollOffset() : 0;
+        float currentY = startY - scrollOffset;
         
         Map<Integer, Integer> items = inventory.getAllItems();
         int itemIndex = 0;
@@ -458,19 +494,19 @@ public class InventoryUI {
         
         if (items.isEmpty()) {
             // 空のインベントリメッセージを表示
-            font.getData().setScale(0.825f);
-            font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-            String emptyText = "Inventory is empty";
-            GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
-            float emptyX = panelX + (panelWidth - emptyLayout.width) / 2;
-            float emptyY = panelY + panelHeight / 2;
-            font.draw(batch, emptyText, emptyX, emptyY);
-            font.setColor(Color.WHITE);
+            UITextHelper.drawEmptyStateMessage(batch, font, "Inventory is empty", 
+                                              panelX, panelY, panelWidth, panelHeight, null);
         } else {
+            // クリッピング領域を設定（コンテンツエリアのみ描画）
+            batch.flush();
+            Rectangle scissors = new Rectangle();
+            Rectangle clipBounds = new Rectangle(
+                panelX + 30, contentAreaY, panelWidth - 60, contentAreaHeight
+            );
+            ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
+            boolean scissorsPushed = ScissorStack.pushScissors(scissors);
+            
             for (Map.Entry<Integer, Integer> entry : items.entrySet()) {
-                if (itemIndex >= SLOTS_PER_ROW * MAX_ROWS) {
-                    break; // 最大表示数を超えたら終了
-                }
                 
                 int itemId = entry.getKey();
                 int count = entry.getValue();
@@ -543,6 +579,17 @@ public class InventoryUI {
                 
                 itemIndex++;
             }
+            
+            // クリッピングを解除
+            batch.flush();
+            if (scissorsPushed) {
+                ScissorStack.popScissors();
+            }
+        }
+        
+        // スクロール可能な場合、スクロールバーを描画
+        if (scrollBar != null && scrollBar.getScrollOffset() >= 0) {
+            scrollBar.render();
         }
     }
     
@@ -554,10 +601,6 @@ public class InventoryUI {
             return;
         }
         
-        float startX = panelX + 30;
-        float startY = titleY - 75;
-        float currentY = startY;
-        
         // クラフト可能なアイテムを取得
         List<ItemData> craftableItems = new ArrayList<>();
         for (ItemData itemData : itemDataLoader.getAllItems()) {
@@ -566,20 +609,37 @@ public class InventoryUI {
             }
         }
         
+        // コンテンツの高さを計算
+        float totalItems = craftableItems.size();
+        float totalRows = (float)Math.ceil(totalItems / SLOTS_PER_ROW);
+        float totalContentHeight = totalRows * (SLOT_SIZE + SLOT_PADDING) - SLOT_PADDING;
+        
+        if (scrollBar != null) {
+            scrollBar.setTotalContentHeight(totalContentHeight);
+        }
+        
+        float startX = panelX + 30;
+        float startY = titleY - 75;
+        float scrollOffset = scrollBar != null ? scrollBar.getScrollOffset() : 0;
+        float currentY = startY - scrollOffset;
+        
         // スロット情報をリセット
         craftSlotInfos = new ArrayList<>();
         
         if (craftableItems.isEmpty()) {
             // クラフト可能なアイテムがないメッセージを表示
-            font.getData().setScale(0.825f);
-            font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-            String emptyText = "クラフト可能なアイテムがありません";
-            GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
-            float emptyX = panelX + (panelWidth - emptyLayout.width) / 2;
-            float emptyY = panelY + panelHeight / 2;
-            font.draw(batch, emptyText, emptyX, emptyY);
-            font.setColor(Color.WHITE);
+            UITextHelper.drawEmptyStateMessage(batch, font, "クラフト可能なアイテムがありません", 
+                                              panelX, panelY, panelWidth, panelHeight, null);
         } else {
+            // クリッピング領域を設定（コンテンツエリアのみ描画）
+            batch.flush();
+            Rectangle scissors = new Rectangle();
+            Rectangle clipBounds = new Rectangle(
+                panelX + 30, contentAreaY, panelWidth - 60, contentAreaHeight
+            );
+            ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
+            boolean scissorsPushed = ScissorStack.pushScissors(scissors);
+            
             int itemIndex = 0;
             for (ItemData itemData : craftableItems) {
                 if (itemIndex >= SLOTS_PER_ROW * MAX_ROWS) {
@@ -648,120 +708,4 @@ public class InventoryUI {
         }
     }
     
-    /**
-     * アイテム詳細パネルを描画します。
-     */
-    private void renderItemDetail(ItemData itemData, int count) {
-        float detailX = panelX + panelWidth + 30;
-        float detailY = panelY;
-        float detailWidth = 600;
-        float detailHeight = 450;
-        
-        batch.end();
-        
-        // 詳細パネルの背景
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.15f, 0.15f, 0.2f, 0.95f);
-        shapeRenderer.rect(detailX, detailY, detailWidth, detailHeight);
-        shapeRenderer.end();
-        
-        // 詳細パネルの枠線
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.7f, 0.7f, 0.9f, 1f);
-        shapeRenderer.rect(detailX, detailY, detailWidth, detailHeight);
-        shapeRenderer.end();
-        
-        // アイテムの色で円を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(itemData.getColor());
-        float iconSize = 90;
-        float iconX = detailX + 30;
-        float iconY = detailY + detailHeight - 120;
-        shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
-        shapeRenderer.end();
-        
-        batch.begin();
-        batch.setProjectionMatrix(uiCamera.combined);
-        
-        font.getData().setScale(0.825f);
-        font.setColor(Color.WHITE);
-        
-        // アイテム名
-        float textX = detailX + 150;
-        float textY = detailY + detailHeight - 60;
-        font.draw(batch, itemData.name, textX, textY);
-        
-        // 数量
-        if (count > 1) {
-            font.setColor(Color.YELLOW);
-            font.draw(batch, "x" + count, textX + 300, textY);
-            font.setColor(Color.WHITE);
-        }
-        
-        // 説明
-        font.getData().setScale(0.6375f);
-        font.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
-        float descY = textY - 75;
-        
-        // 説明文を複数行に分割（長すぎる場合）
-        String description = itemData.description;
-        float maxWidth = detailWidth - 60;
-        GlyphLayout descLayout = new GlyphLayout(font, description);
-        
-        if (descLayout.width > maxWidth) {
-            // 説明文が長い場合は折り返し処理（簡易版）
-            String[] words = description.split("");
-            StringBuilder line = new StringBuilder();
-            float currentX = detailX + 30;
-            
-            for (String word : words) {
-                String testLine = line.toString() + word;
-                GlyphLayout testLayout = new GlyphLayout(font, testLine);
-                if (testLayout.width > maxWidth && line.length() > 0) {
-                    font.draw(batch, line.toString(), currentX, descY);
-                    descY -= 37.5f;
-                    line = new StringBuilder(word);
-                } else {
-                    line.append(word);
-                }
-            }
-            if (line.length() > 0) {
-                font.draw(batch, line.toString(), currentX, descY);
-            }
-        } else {
-            font.draw(batch, description, detailX + 30, descY);
-        }
-        
-        // クラフト可能なアイテムの場合は素材情報を表示
-        if (itemData.isCraftable()) {
-            descY -= 50;
-            font.setColor(new Color(0.9f, 0.9f, 0.7f, 1f));
-            font.draw(batch, "必要な素材:", detailX + 30, descY);
-            descY -= 30;
-            
-            Map<Integer, Integer> materials = itemData.getMaterials();
-            for (Map.Entry<Integer, Integer> entry : materials.entrySet()) {
-                int materialId = entry.getKey();
-                int requiredAmount = entry.getValue();
-                
-                // 素材の名前を取得
-                ItemData materialData = null;
-                if (itemDataLoader != null) {
-                    materialData = itemDataLoader.getItemData(materialId);
-                }
-                String materialName = materialData != null ? materialData.name : "アイテムID" + materialId;
-                int currentAmount = craftingSystem != null ? craftingSystem.getItemCount(materialId) : 0;
-                
-                // 素材名と必要数を表示
-                String materialText = materialName + ": " + currentAmount + "/" + requiredAmount;
-                Color materialColor = currentAmount >= requiredAmount ? 
-                    new Color(0.7f, 1.0f, 0.7f, 1f) : new Color(1.0f, 0.7f, 0.7f, 1f);
-                font.setColor(materialColor);
-                font.draw(batch, materialText, detailX + 30, descY);
-                descY -= 25;
-            }
-        }
-        
-        font.setColor(Color.WHITE);
-    }
 }

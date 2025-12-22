@@ -389,6 +389,18 @@ public class Main extends ApplicationAdapter {
                     }
                 }
                 
+                // インベントリが開いている場合はInventoryUIにスクロール入力を渡す
+                if (inventoryOpen && !showEncyclopedia && inventoryUI != null) {
+                    inventoryUI.handleScroll(amountY);
+                    return true;
+                }
+                
+                // アイテム図鑑が開いている場合はItemEncyclopediaUIにスクロール入力を渡す
+                if (showEncyclopedia && encyclopediaUI != null) {
+                    encyclopediaUI.handleScroll(amountY);
+                    return true;
+                }
+                
                 // 通常時はカメラズームを変更
                 // amountY > 0 は上スクロール（縮小）、amountY < 0 は下スクロール（拡大）
                 float zoomChange = amountY * ZOOM_SPEED;
@@ -547,6 +559,14 @@ public class Main extends ApplicationAdapter {
             } catch (Exception e) {
                 Gdx.app.error("Main", "Error handling encyclopedia click: " + e.getMessage(), e);
             }
+        }
+        
+        // スクロールバーのドラッグ入力を処理（毎フレーム）
+        if (inventoryOpen && !showEncyclopedia && inventoryUI != null) {
+            inventoryUI.handleScrollBarDragInput();
+        }
+        if (showEncyclopedia && encyclopediaUI != null) {
+            encyclopediaUI.handleScrollBarDragInput();
         }
         
         // ゲームガイドボタンのクリック処理（ポーズ中でない場合のみ）

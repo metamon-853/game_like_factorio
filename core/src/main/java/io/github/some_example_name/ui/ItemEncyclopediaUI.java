@@ -11,6 +11,8 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.GlyphLayout;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
+import com.badlogic.gdx.math.Rectangle;
+import com.badlogic.gdx.scenes.scene2d.utils.ScissorStack;
 import com.badlogic.gdx.utils.Array;
 
 import java.util.ArrayList;
@@ -45,21 +47,24 @@ public class ItemEncyclopediaUI {
     // アイテム詳細表示
     private ItemData selectedItemData = null;
     
+    // アイテム詳細パネル（共通化）
+    private ItemDetailPanel itemDetailPanel;
+    
     // スロット情報を保持（クリック判定用）
     private List<SlotInfo> slotInfos;
     
     // インベントリに戻るボタン
-    private Button backButton;
+    private UIButton backButton;
     
-    // スクロール位置
-    private float scrollOffset = 0;
-    private static final float SCROLL_SPEED = 20f;
+    // スクロールバー
+    private UIScrollBar scrollBar;
+    private float contentAreaY;
+    private float contentAreaHeight;
     
     // サウンドマネージャー
     private SoundManager soundManager;
     
     // 前回のホバー状態を記録（音の重複再生を防ぐため）
-    private boolean lastBackButtonHovered = false;
     private ItemData lastHoveredItem = null;
     
     /**
@@ -96,6 +101,14 @@ public class ItemEncyclopediaUI {
         window.setRenderResources(shapeRenderer, batch, font, uiCamera);
         window.setTitle("アイテム図鑑");
         window.setTitleFontSize(0.825f);
+        
+        // アイテム詳細パネルを初期化
+        itemDetailPanel = new ItemDetailPanel(shapeRenderer, batch, font, uiCamera);
+        itemDetailPanel.setPosition(panelX + panelWidth + 30, panelY);
+        
+        // スクロールバーを初期化
+        scrollBar = new UIScrollBar(shapeRenderer, uiCamera, screenHeight);
+        scrollBar.setScrollSpeed(20f);
     }
     
     /**
@@ -127,12 +140,30 @@ public class ItemEncyclopediaUI {
         panelX = (screenWidth - panelWidth) / 2;
         panelY = (screenHeight - panelHeight) / 2;
         
+        // コンテンツエリアの設定
+        float titleY = panelY + panelHeight - 45;
+        float buttonAreaHeight = 75 + 20; // ボタンエリアの高さ
+        contentAreaY = panelY + 20;
+        contentAreaHeight = titleY - buttonAreaHeight - contentAreaY - 20;
+        
+        // スクロールバーのコンテンツエリアを設定
+        if (scrollBar != null) {
+            scrollBar.setContentArea(panelX + 30, contentAreaY, panelWidth - 60, contentAreaHeight);
+        }
+        
         // インベントリに戻るボタンの位置を設定
         float buttonWidth = 300;
         float buttonHeight = 75;
         float buttonX = panelX + 20;
         float buttonY = panelY + panelHeight - buttonHeight - 20;
-        backButton = new Button(buttonX, buttonY, buttonWidth, buttonHeight);
+        backButton = new UIButton(buttonX, buttonY, buttonWidth, buttonHeight, "インベントリに戻る");
+        backButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        backButton.setSoundManager(soundManager);
+        
+        // アイテム詳細パネルの位置を更新
+        if (itemDetailPanel != null) {
+            itemDetailPanel.setPosition(panelX + panelWidth + 30, panelY);
+        }
     }
     
     /**
@@ -164,14 +195,8 @@ public class ItemEncyclopediaUI {
         }
         
         // 詳細パネルの外側をクリックした場合は詳細を閉じる
-        if (selectedItemData != null) {
-            float detailX = panelX + panelWidth + 30;
-            float detailY = panelY;
-            float detailWidth = 600;
-            float detailHeight = 450;
-            
-            if (!(screenX >= detailX && screenX <= detailX + detailWidth &&
-                  uiY >= detailY && uiY <= detailY + detailHeight)) {
+        if (selectedItemData != null && itemDetailPanel != null) {
+            if (!itemDetailPanel.contains(screenX, uiY)) {
                 selectedItemData = null;
             }
         }
@@ -183,9 +208,18 @@ public class ItemEncyclopediaUI {
      * スクロール処理を行います。
      */
     public void handleScroll(float amountY) {
-        scrollOffset += amountY * SCROLL_SPEED;
-        // スクロール範囲を制限（必要に応じて調整）
-        scrollOffset = Math.max(0, scrollOffset);
+        if (scrollBar != null) {
+            scrollBar.handleScroll(amountY);
+        }
+    }
+    
+    /**
+     * スクロールバーのドラッグ入力を処理します。
+     */
+    public void handleScrollBarDragInput() {
+        if (scrollBar != null) {
+            scrollBar.handleScrollBarDragInput();
+        }
     }
     
     /**
@@ -202,16 +236,8 @@ public class ItemEncyclopediaUI {
         float mouseY = screenHeight - Gdx.input.getY();
         
         // 詳細パネルの上にマウスがある場合は、ホバーを無視
-        float detailX = panelX + panelWidth + 30;
-        float detailY = panelY;
-        float detailWidth = 600;
-        float detailHeight = 450;
-        
-        boolean mouseOnDetailPanel = mouseX >= detailX && mouseX <= detailX + detailWidth &&
-                                    mouseY >= detailY && mouseY <= detailY + detailHeight;
-        
-        // 詳細パネルの上にマウスがある場合は何もしない
-        if (mouseOnDetailPanel) {
+        if (itemDetailPanel != null && itemDetailPanel.contains(mouseX, mouseY)) {
+            // 詳細パネルの上にマウスがある場合は何もしない
             return;
         }
         
@@ -264,70 +290,47 @@ public class ItemEncyclopediaUI {
         if (backButton != null) {
             float mouseX = Gdx.input.getX();
             float mouseY = screenHeight - Gdx.input.getY();
-            boolean isHovered = backButton.contains(mouseX, mouseY);
-            
-            // ホバー状態が変わったときに音を再生
-            if (isHovered && !lastBackButtonHovered && soundManager != null) {
-                soundManager.playHoverSound();
-            }
-            lastBackButtonHovered = isHovered;
-            
-            batch.end();
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-            if (isHovered) {
-                shapeRenderer.setColor(0.25f, 0.25f, 0.35f, 0.95f);
-            } else {
-                shapeRenderer.setColor(0.15f, 0.15f, 0.25f, 0.95f);
-            }
-            shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
-            shapeRenderer.end();
-            
-            shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-            if (isHovered) {
-                shapeRenderer.setColor(0.8f, 0.8f, 1.0f, 1f);
-            } else {
-                shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-            }
-            shapeRenderer.rect(backButton.x, backButton.y, backButton.width, backButton.height);
-            shapeRenderer.end();
-            
-            batch.begin();
-            font.getData().setScale(0.675f);
-            font.setColor(isHovered ? new Color(0.9f, 0.9f, 1.0f, 1f) : Color.WHITE);
-            String backText = "インベントリに戻る";
-            GlyphLayout backLayout = new GlyphLayout(font, backText);
-            float backTextX = backButton.x + (backButton.width - backLayout.width) / 2;
-            float backTextY = backButton.y + backButton.height / 2 + backLayout.height / 2;
-            font.draw(batch, backText, backTextX, backTextY);
+            backButton.updateAndRender(mouseX, mouseY);
         }
         
         // アイテムリストを描画
         float startX = panelX + 30;
         float titleY = panelY + panelHeight - 45; // タイトルのY座標
         float startY = titleY - 120;
-        float currentY = startY - scrollOffset;
         
         Array<ItemData> allItems = itemDataLoader.getAllItems();
+        
+        // コンテンツの高さを計算
+        float totalItems = allItems.size;
+        float totalRows = (float)Math.ceil(totalItems / SLOTS_PER_ROW);
+        float totalContentHeight = totalRows * (SLOT_SIZE + SLOT_PADDING) - SLOT_PADDING;
+        
+        if (scrollBar != null) {
+            scrollBar.setTotalContentHeight(totalContentHeight);
+        }
+        
+        float scrollOffset = scrollBar != null ? scrollBar.getScrollOffset() : 0;
+        float currentY = startY - scrollOffset;
         
         // スロット情報をリセット
         slotInfos = new ArrayList<>();
         
         if (allItems.size == 0) {
             // 空のメッセージを表示
-            font.getData().setScale(0.825f);
-            font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-            String emptyText = "アイテムがありません";
-            GlyphLayout emptyLayout = new GlyphLayout(font, emptyText);
-            float emptyX = panelX + (panelWidth - emptyLayout.width) / 2;
-            float emptyY = panelY + panelHeight / 2;
-            font.draw(batch, emptyText, emptyX, emptyY);
-            font.setColor(Color.WHITE);
+            UITextHelper.drawEmptyStateMessage(batch, font, "アイテムがありません", 
+                                              panelX, panelY, panelWidth, panelHeight, null);
         } else {
+            // クリッピング領域を設定（コンテンツエリアのみ描画）
+            batch.flush();
+            Rectangle scissors = new Rectangle();
+            Rectangle clipBounds = new Rectangle(
+                panelX + 30, contentAreaY, panelWidth - 60, contentAreaHeight
+            );
+            ScissorStack.calculateScissors(uiCamera, batch.getTransformMatrix(), clipBounds, scissors);
+            boolean scissorsPushed = ScissorStack.pushScissors(scissors);
+            
             int itemIndex = 0;
             for (ItemData itemData : allItems) {
-                if (itemIndex >= SLOTS_PER_ROW * MAX_ROWS) {
-                    break; // 最大表示数を超えたら終了
-                }
                 
                 // スロットの位置を計算
                 int row = itemIndex / SLOTS_PER_ROW;
@@ -376,6 +379,17 @@ public class ItemEncyclopediaUI {
                 
                 itemIndex++;
             }
+            
+            // クリッピングを解除
+            batch.flush();
+            if (scissorsPushed) {
+                ScissorStack.popScissors();
+            }
+        }
+        
+        // スクロール可能な場合、スクロールバーを描画
+        if (scrollBar != null && scrollBar.getScrollOffset() >= 0) {
+            scrollBar.render();
         }
         
         // ホバー処理を実行（slotInfosが設定された後）
@@ -397,90 +411,11 @@ public class ItemEncyclopediaUI {
         font.setColor(Color.WHITE);
         
         // アイテム詳細パネルを描画（ホバーまたはクリックで選択されたアイテム）
-        if (selectedItemData != null) {
-            renderItemDetail(selectedItemData);
+        if (selectedItemData != null && itemDetailPanel != null) {
+            itemDetailPanel.render(selectedItemData);
         }
         
         font.getData().setScale(0.825f);
     }
     
-    /**
-     * アイテム詳細パネルを描画します。
-     */
-    private void renderItemDetail(ItemData itemData) {
-        float detailX = panelX + panelWidth + 30;
-        float detailY = panelY;
-        float detailWidth = 600;
-        float detailHeight = 450;
-        
-        batch.end();
-        
-        // 詳細パネルの背景
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.15f, 0.15f, 0.2f, 0.95f);
-        shapeRenderer.rect(detailX, detailY, detailWidth, detailHeight);
-        shapeRenderer.end();
-        
-        // 詳細パネルの枠線
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.7f, 0.7f, 0.9f, 1f);
-        shapeRenderer.rect(detailX, detailY, detailWidth, detailHeight);
-        shapeRenderer.end();
-        
-        // アイテムの色で円を描画
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(itemData.getColor());
-        float iconSize = 90;
-        float iconX = detailX + 30;
-        float iconY = detailY + detailHeight - 120;
-        shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
-        shapeRenderer.end();
-        
-        batch.begin();
-        batch.setProjectionMatrix(uiCamera.combined);
-        
-        font.getData().setScale(0.825f);
-        font.setColor(Color.WHITE);
-        
-        // アイテム名
-        float textX = detailX + 150;
-        float textY = detailY + detailHeight - 60;
-        font.draw(batch, itemData.name, textX, textY);
-        
-        // 説明
-        font.getData().setScale(0.6375f);
-        font.setColor(new Color(0.8f, 0.8f, 0.8f, 1f));
-        float descY = textY - 75;
-        
-        // 説明文を複数行に分割（長すぎる場合）
-        String description = itemData.description;
-        float maxWidth = detailWidth - 60;
-        GlyphLayout descLayout = new GlyphLayout(font, description);
-        
-        if (descLayout.width > maxWidth) {
-            // 説明文が長い場合は折り返し処理（簡易版）
-            String[] words = description.split("");
-            StringBuilder line = new StringBuilder();
-            float currentX = detailX + 30;
-            
-            for (String word : words) {
-                String testLine = line.toString() + word;
-                GlyphLayout testLayout = new GlyphLayout(font, testLine);
-                if (testLayout.width > maxWidth && line.length() > 0) {
-                    font.draw(batch, line.toString(), currentX, descY);
-                    descY -= 37.5f;
-                    line = new StringBuilder(word);
-                } else {
-                    line.append(word);
-                }
-            }
-            if (line.length() > 0) {
-                font.draw(batch, line.toString(), currentX, descY);
-            }
-        } else {
-            font.draw(batch, description, detailX + 30, descY);
-        }
-        
-        font.setColor(Color.WHITE);
-    }
 }

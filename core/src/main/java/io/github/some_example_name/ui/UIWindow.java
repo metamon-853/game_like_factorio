@@ -29,8 +29,8 @@ public class UIWindow {
     private OrthographicCamera uiCamera;
     
     // カスタマイズ可能な色
-    private Color backgroundColor = new Color(0.1f, 0.1f, 0.15f, 0.95f);
-    private Color headerBackgroundColor = new Color(0.15f, 0.15f, 0.2f, 0.95f);
+    private Color backgroundColor = new Color(0.1f, 0.1f, 0.15f, 0.7f); // 半透明に変更（背景が見えるように）
+    private Color headerBackgroundColor = new Color(0.15f, 0.15f, 0.2f, 0.8f);
     private Color borderColor = new Color(0.6f, 0.6f, 0.8f, 1f);
     private Color titleColor = Color.WHITE;
     

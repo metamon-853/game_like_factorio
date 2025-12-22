@@ -992,36 +992,7 @@ public class HelpUI {
      */
     private int drawTextLine(SpriteBatch batch, String text, float x, float y) {
         float maxWidth = panelWidth - 80;
-        GlyphLayout layout = new GlyphLayout(font, text);
-        
-        if (layout.width > maxWidth) {
-            // 長い場合は折り返し処理（簡易版）
-            String[] words = text.split("");
-            StringBuilder line = new StringBuilder();
-            float currentX = x;
-            float currentY = y;
-            int lineCount = 0;
-            
-            for (String word : words) {
-                String testLine = line.toString() + word;
-                GlyphLayout testLayout = new GlyphLayout(font, testLine);
-                if (testLayout.width > maxWidth && line.length() > 0) {
-                    font.draw(batch, line.toString(), currentX, currentY);
-                    currentY -= font.getLineHeight() * 0.8f;
-                    lineCount++;
-                    line = new StringBuilder(word);
-                } else {
-                    line.append(word);
-                }
-            }
-            if (line.length() > 0) {
-                font.draw(batch, line.toString(), currentX, currentY);
-                lineCount++;
-            }
-            return lineCount;
-        } else {
-            font.draw(batch, text, x, y);
-            return 1;
-        }
+        float lineSpacing = font.getLineHeight() * 0.8f;
+        return UITextHelper.drawWrappedText(batch, font, text, x, y, maxWidth, lineSpacing);
     }
 }
