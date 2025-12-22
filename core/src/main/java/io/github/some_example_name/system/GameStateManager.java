@@ -79,13 +79,11 @@ public class GameStateManager {
     
     /**
      * ゲームがポーズ中かどうかを判定します。
+     * 注意: ゲームガイド（HELP_MENU）はポーズではないため、ゲームは動き続けます。
      * @return ポーズ中の場合true
      */
     public boolean isPaused() {
-        return currentState == GameState.PAUSED || 
-               currentState == GameState.HELP_MENU ||
-               currentState == GameState.INVENTORY_OPEN ||
-               currentState == GameState.ENCYCLOPEDIA_OPEN;
+        return currentState == GameState.PAUSED;
     }
     
     /**

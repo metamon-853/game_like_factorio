@@ -271,14 +271,16 @@ public class ItemEncyclopediaUI {
             return;
         }
         
+        // batchが既に開始されているかチェック（UIWindowがbatchを開始する可能性がある）
+        boolean batchWasActive = batch.isDrawing();
+        
         // ウィンドウを描画（タイトルも含む）
         if (window != null) {
             window.render(true);
         }
         
-        // batchが既に開始されているかチェック
-        boolean batchWasActive = batch.isDrawing();
-        if (!batchWasActive) {
+        // batchが既に開始されているか再チェック（UIWindowがbatchを開始/終了した可能性がある）
+        if (!batch.isDrawing()) {
             batch.setProjectionMatrix(uiCamera.combined);
             batch.begin();
         }
@@ -295,8 +297,6 @@ public class ItemEncyclopediaUI {
         
         // アイテムリストを描画
         float startX = panelX + 30;
-        float titleY = panelY + panelHeight - 45; // タイトルのY座標
-        float startY = titleY - 120;
         
         Array<ItemData> allItems = itemDataLoader.getAllItems();
         
@@ -309,8 +309,11 @@ public class ItemEncyclopediaUI {
             scrollBar.setTotalContentHeight(totalContentHeight);
         }
         
+        // HelpUIと同じロジック：コンテンツエリアの上部から開始し、scrollOffsetを加算
+        // スロットは上から下に配置するので、最初のスロットのY座標を計算
         float scrollOffset = scrollBar != null ? scrollBar.getScrollOffset() : 0;
-        float currentY = startY - scrollOffset;
+        float startY = contentAreaY + contentAreaHeight - 20 + scrollOffset;
+        float currentY = startY;
         
         // スロット情報をリセット
         slotInfos = new ArrayList<>();
@@ -344,8 +347,11 @@ public class ItemEncyclopediaUI {
                 // ホバー中のアイテムかどうかで色を変える
                 boolean isHovered = selectedItemData != null && selectedItemData.id == itemData.id;
                 
-                // スロットの背景を描画
+                // スロットの背景を描画（batchを一時的に終了してShapeRendererを使用）
+                batch.flush();
                 batch.end();
+                
+                shapeRenderer.setProjectionMatrix(uiCamera.combined);
                 shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
                 if (isHovered) {
                     shapeRenderer.setColor(0.3f, 0.3f, 0.5f, 1f); // ホバー時は少し明るく
@@ -374,8 +380,9 @@ public class ItemEncyclopediaUI {
                 shapeRenderer.circle(iconX + iconSize / 2, iconY + iconSize / 2, iconSize / 2);
                 shapeRenderer.end();
                 
-                batch.begin();
+                // batchを再開
                 batch.setProjectionMatrix(uiCamera.combined);
+                batch.begin();
                 
                 itemIndex++;
             }
@@ -401,21 +408,18 @@ public class ItemEncyclopediaUI {
         }
         lastHoveredItem = selectedItemData;
         
-        // 閉じるヒントを描画
-        font.getData().setScale(0.6375f);
-        font.setColor(new Color(0.7f, 0.7f, 0.7f, 1f));
-        String hint = "Hover item for details | Press E to close";
-        GlyphLayout hintLayout = new GlyphLayout(font, hint);
-        float hintX = panelX + (panelWidth - hintLayout.width) / 2;
-        font.draw(batch, hint, hintX, panelY + 30);
-        font.setColor(Color.WHITE);
-        
         // アイテム詳細パネルを描画（ホバーまたはクリックで選択されたアイテム）
         if (selectedItemData != null && itemDetailPanel != null) {
             itemDetailPanel.render(selectedItemData);
         }
         
         font.getData().setScale(0.825f);
+        
+        // batchが元々開始されていなかった場合は終了する
+        // （UIWindowが開始した場合は、UIWindowで終了を管理）
+        if (!batchWasActive && batch.isDrawing()) {
+            batch.end();
+        }
     }
     
 }

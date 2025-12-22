@@ -72,7 +72,7 @@ public class InventoryUI {
     private ItemDataLoader itemDataLoader;
     
     // クラフト可能アイテムのスロット情報
-    private List<SlotInfo> craftSlotInfos;
+    private List<SlotInfo> craftSlotInfos = new ArrayList<>();
     
     // サウンドマネージャー
     private SoundManager soundManager;
@@ -230,10 +230,18 @@ public class InventoryUI {
         // タブボタンのクリック判定
         if (inventoryTabButton != null && inventoryTabButton.contains(screenX, uiY)) {
             currentTab = Tab.INVENTORY;
+            // スクロール位置をリセット
+            if (scrollBar != null) {
+                scrollBar.resetScroll();
+            }
             return null;
         }
         if (craftingTabButton != null && craftingTabButton.contains(screenX, uiY)) {
             currentTab = Tab.CRAFTING;
+            // スクロール位置をリセット
+            if (scrollBar != null) {
+                scrollBar.resetScroll();
+            }
             return null;
         }
         
@@ -482,9 +490,11 @@ public class InventoryUI {
         }
         
         float startX = panelX + 30;
-        float startY = titleY - 75;
+        // HelpUIと同じロジック：コンテンツエリアの上部から開始し、scrollOffsetを加算
+        // スロットは上から下に配置するので、最初のスロットのY座標を計算
         float scrollOffset = scrollBar != null ? scrollBar.getScrollOffset() : 0;
-        float currentY = startY - scrollOffset;
+        float startY = contentAreaY + contentAreaHeight - 20 + scrollOffset;
+        float currentY = startY;
         
         Map<Integer, Integer> items = inventory.getAllItems();
         int itemIndex = 0;
@@ -619,9 +629,11 @@ public class InventoryUI {
         }
         
         float startX = panelX + 30;
-        float startY = titleY - 75;
+        // HelpUIと同じロジック：コンテンツエリアの上部から開始し、scrollOffsetを加算
+        // スロットは上から下に配置するので、最初のスロットのY座標を計算
         float scrollOffset = scrollBar != null ? scrollBar.getScrollOffset() : 0;
-        float currentY = startY - scrollOffset;
+        float startY = contentAreaY + contentAreaHeight - 20 + scrollOffset;
+        float currentY = startY;
         
         // スロット情報をリセット
         craftSlotInfos = new ArrayList<>();
@@ -705,6 +717,17 @@ public class InventoryUI {
                 
                 itemIndex++;
             }
+            
+            // クリッピングを解除
+            batch.flush();
+            if (scissorsPushed) {
+                ScissorStack.popScissors();
+            }
+        }
+        
+        // スクロール可能な場合、スクロールバーを描画
+        if (scrollBar != null && scrollBar.getScrollOffset() >= 0) {
+            scrollBar.render();
         }
     }
     

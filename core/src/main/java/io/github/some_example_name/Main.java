@@ -380,8 +380,8 @@ public class Main extends ApplicationAdapter {
         Gdx.input.setInputProcessor(new InputAdapter() {
             @Override
             public boolean scrolled(float amountX, float amountY) {
-                // ヘルプメニューが開いている場合はHelpUIにスクロール入力を渡す
-                if (isPaused && menuSystem != null && 
+                // ヘルプメニューが開いている場合はHelpUIにスクロール入力を渡す（isPausedのチェックを削除）
+                if (menuSystem != null && 
                     menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
                     if (helpUI != null) {
                         helpUI.handleScroll(amountY);
@@ -458,7 +458,6 @@ public class Main extends ApplicationAdapter {
                 // ゲームガイドが開いている場合は直接ゲーム画面に戻る
                 if (menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU) {
                     gameStateManager.setState(GameState.PLAYING);
-                    isPaused = false;
                     menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
                 } else if (isPaused) {
                     if (!menuSystem.handleEscapeKey()) {
@@ -490,12 +489,13 @@ public class Main extends ApplicationAdapter {
                     // ヘルプが開いている場合は閉じる
                     gameStateManager.setState(GameState.PLAYING);
                     menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
-                    isPaused = false;
                 } else {
-                    // ヘルプを開く
+                    // ヘルプを開く（ゲームは動き続ける）
                     gameStateManager.setState(GameState.HELP_MENU);
-                    isPaused = true;
                     menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
+                    if (helpUI != null) {
+                        helpUI.onOpen();
+                    }
                 }
             }
         }
@@ -578,9 +578,8 @@ public class Main extends ApplicationAdapter {
                 if (guideButton != null) {
                     float uiY = screenHeight - mouseY;
                     if (guideButton.contains((float)mouseX, uiY)) {
-                        // ゲームガイドを開く
+                        // ゲームガイドを開く（ゲームは動き続ける）
                         gameStateManager.setState(GameState.HELP_MENU);
-                        isPaused = true;
                         menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
                         if (helpUI != null) {
                             helpUI.onOpen();
@@ -615,8 +614,9 @@ public class Main extends ApplicationAdapter {
             }
         }
         
-        // ポーズ中にマウスクリックとドラッグを処理
-        if (isPaused && menuSystem != null) {
+        // ポーズ中またはゲームガイドが開いている時にマウスクリックとドラッグを処理
+        if (menuSystem != null && 
+            (isPaused || menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU)) {
             try {
                 menuSystem.handleMenuInput();
             } catch (Exception e) {
@@ -626,6 +626,7 @@ public class Main extends ApplicationAdapter {
         
         // ポーズ中でない場合のみゲームを更新
         // パフォーマンス: ポーズ中はゲームロジックをスキップして描画のみ行う
+        // 注意: ゲームガイド（HELP_MENU）が開いていてもゲームは動き続ける
         if (!isPaused && gameController != null) {
             try {
                 if (performanceProfiler != null && performanceProfiler.isEnabled()) {
@@ -635,7 +636,7 @@ public class Main extends ApplicationAdapter {
                 float deltaTime = Gdx.graphics.getDeltaTime();
                 gameController.update(deltaTime);
                 
-                // キーボード入力処理
+                // キーボード入力処理（ゲームガイドが開いている時もプレイヤーは動ける）
                 if (inputHandler != null) {
                     if (performanceProfiler != null && performanceProfiler.isEnabled()) {
                         performanceProfiler.startSection("input");

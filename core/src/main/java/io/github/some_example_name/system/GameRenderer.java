@@ -217,9 +217,16 @@ public class GameRenderer {
         }
         
         try {
-            batch.begin();
+            // batchが既に開始されているかチェック
+            boolean batchWasActive = batch.isDrawing();
+            if (!batchWasActive) {
+                batch.setProjectionMatrix(camera.combined);
+                batch.begin();
+            }
             terrainManager.render(batch, camera);
-            batch.end();
+            if (!batchWasActive) {
+                batch.end();
+            }
         } catch (Exception e) {
             Gdx.app.error("GameRenderer", "Error rendering terrain: " + e.getMessage(), e);
             if (batch.isDrawing()) {
@@ -406,14 +413,19 @@ public class GameRenderer {
     }
     
     /**
-     * ポーズメニューを描画します。
+     * ポーズメニューまたはゲームガイドを描画します。
      */
     private void renderMenu(boolean isPaused) {
-        if (isPaused && menuSystem != null) {
-            try {
-                menuSystem.render();
-            } catch (Exception e) {
-                Gdx.app.error("GameRenderer", "Error rendering menu: " + e.getMessage(), e);
+        if (menuSystem != null) {
+            // ポーズ中、またはゲームガイドが開いている場合は描画
+            boolean shouldRender = isPaused || 
+                menuSystem.getCurrentMenuState() == MenuSystem.MenuState.HELP_MENU;
+            if (shouldRender) {
+                try {
+                    menuSystem.render();
+                } catch (Exception e) {
+                    Gdx.app.error("GameRenderer", "Error rendering menu: " + e.getMessage(), e);
+                }
             }
         }
     }

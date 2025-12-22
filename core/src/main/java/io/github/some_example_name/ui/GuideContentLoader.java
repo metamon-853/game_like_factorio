@@ -184,6 +184,10 @@ public class GuideContentLoader {
         for (GuideElement element : elements) {
             if (element.type == GuideElement.ElementType.HEADING_1) {
                 // 見出し1が見つかったら、それが目的のセクションかチェック
+                if (inTargetSection) {
+                    // 既に目的のセクション内にいて、次の見出し1が見つかったら終了
+                    break;
+                }
                 inTargetSection = element.text.equals(sectionTitle);
                 if (inTargetSection) {
                     // 目的のセクションの見出し1も含める
@@ -192,10 +196,8 @@ public class GuideContentLoader {
             } else if (inTargetSection) {
                 // 目的のセクション内の要素を追加
                 filtered.add(element);
-            } else if (!inTargetSection && element.type == GuideElement.ElementType.SEPARATOR) {
-                // セクション区切りが見つかったら、次のセクションの開始を待つ
-                // （何もしない）
             }
+            // セクション区切り（---）は通常の要素として扱う（inTargetSectionがtrueなら追加される）
         }
         
         return filtered;
