@@ -490,6 +490,12 @@ public class Main extends ApplicationAdapter {
                     gameStateManager.setState(GameState.PLAYING);
                     menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
                 } else {
+                    // インベントリや図鑑が開いている場合は閉じる
+                    if (gameStateManager.isInventoryOpen()) {
+                        gameStateManager.setState(GameState.PLAYING);
+                        inventoryOpen = false;
+                        showEncyclopedia = false;
+                    }
                     // ヘルプを開く（ゲームは動き続ける）
                     gameStateManager.setState(GameState.HELP_MENU);
                     menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
@@ -502,6 +508,11 @@ public class Main extends ApplicationAdapter {
         
         // Eキーでインベントリを開閉（ポーズ中でない場合のみ）
         if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.E)) {
+            // ヘルプが開いている場合は閉じる
+            if (gameStateManager.isHelpMenuOpen()) {
+                gameStateManager.setState(GameState.PLAYING);
+                menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+            }
             if (gameStateManager.isInventoryOpen()) {
                 gameStateManager.setState(GameState.PLAYING);
                 inventoryOpen = false;
@@ -569,8 +580,8 @@ public class Main extends ApplicationAdapter {
             encyclopediaUI.handleScrollBarDragInput();
         }
         
-        // ゲームガイドボタンのクリック処理（ポーズ中でない場合のみ）
-        if (!isPaused && !inventoryOpen && !showEncyclopedia && uiRenderer != null && menuSystem != null && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
+        // ゲームガイドボタンのクリック処理（ポーズ中でない場合のみ、インベントリが開いていない場合のみ）
+        if (!isPaused && !gameStateManager.isInventoryOpen() && uiRenderer != null && menuSystem != null && Gdx.input.isButtonJustPressed(com.badlogic.gdx.Input.Buttons.LEFT)) {
             try {
                 int mouseX = Gdx.input.getX();
                 int mouseY = Gdx.input.getY();
@@ -578,6 +589,11 @@ public class Main extends ApplicationAdapter {
                 if (guideButton != null) {
                     float uiY = screenHeight - mouseY;
                     if (guideButton.contains((float)mouseX, uiY)) {
+                        // インベントリや図鑑が開いている場合は閉じる
+                        if (inventoryOpen || showEncyclopedia) {
+                            inventoryOpen = false;
+                            showEncyclopedia = false;
+                        }
                         // ゲームガイドを開く（ゲームは動き続ける）
                         gameStateManager.setState(GameState.HELP_MENU);
                         menuSystem.setCurrentMenuState(MenuSystem.MenuState.HELP_MENU);
