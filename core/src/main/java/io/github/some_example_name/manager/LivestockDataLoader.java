@@ -29,21 +29,19 @@ public class LivestockDataLoader {
     private void loadLivestockData() {
         FileHandle file = Gdx.files.internal("items/entity.csv");
         if (!file.exists()) {
-            Gdx.app.error("LivestockDataLoader", "entity.csv not found at: items/entity.csv");
+            return;
+        }
+        
+        String content = file.readString();
+        // 改行コードを統一（\r\n -> \n）
+        content = io.github.some_example_name.util.CSVParser.normalizeLineEndings(content);
+        String[] lines = content.split("\n");
+        
+        if (lines.length < 2) {
             return;
         }
         
         try {
-            String content = file.readString();
-            // 改行コードを統一（\r\n -> \n）
-            content = io.github.some_example_name.util.CSVParser.normalizeLineEndings(content);
-            String[] lines = content.split("\n");
-            
-            if (lines.length < 2) {
-                Gdx.app.error("LivestockDataLoader", "entity.csv has no data rows");
-                return;
-            }
-            
             // ヘッダー行をスキップ（最初の行）
             for (int i = 1; i < lines.length; i++) {
                 String line = lines[i].trim();
@@ -52,7 +50,13 @@ public class LivestockDataLoader {
                 }
                 
                 // CSVのパース（引用符を考慮したカンマ区切り）
-                List<String> parts = io.github.some_example_name.util.CSVParser.parseCSVLine(line);
+                List<String> parts;
+                try {
+                    parts = io.github.some_example_name.util.CSVParser.parseCSVLine(line);
+                } catch (Exception e) {
+                    continue;
+                }
+                
                 if (parts.size() < 5) {
                     continue;
                 }
@@ -70,29 +74,48 @@ public class LivestockDataLoader {
                     livestockData.description = parts.get(4).trim(); // descriptionは5番目のカラム（インデックス4）
                     
                     // CSVから家畜属性を読み込む（カラムが存在する場合）
-                    if (parts.size() >= 11 && !parts.get(10).trim().isEmpty()) {
-                        // meat_item_id (カラム11, インデックス10)
-                        livestockData.meatItemId = Integer.parseInt(parts.get(10).trim());
+                    // ヘッダー: id,category,item_type,name,description,materials,requirements,tool_durability,tool_efficiency,water_requirement,meat_item_id,product_item_id,product_interval,required_civilization_level,color_r,color_g,color_b
+                    // 実際のインデックス: 0,1,2,3,4,5,6,7,8,9,10,11,12,13,14,15,16
+                    // パース結果から: parts[9]=meat_item_id, parts[10]=product_item_id, parts[11]=product_interval, parts[12]=required_civilization_level, parts[13]=color_r, parts[14]=color_g, parts[15]=color_b
+                    if (parts.size() > 9) {
+                        String meatItemIdStr = parts.get(9).trim();
+                        if (!meatItemIdStr.isEmpty()) {
+                            // meat_item_id (実際のインデックス9)
+                            livestockData.meatItemId = Integer.parseInt(meatItemIdStr);
+                        }
                     }
-                    if (parts.size() >= 12 && !parts.get(11).trim().isEmpty()) {
-                        // product_item_id (カラム12, インデックス11)
-                        String productIdStr = parts.get(11).trim();
-                        livestockData.productItemId = "-1".equals(productIdStr) ? -1 : Integer.parseInt(productIdStr);
+                    if (parts.size() > 10) {
+                        String productIdStr = parts.get(10).trim();
+                        if (!productIdStr.isEmpty() && !"-1".equals(productIdStr)) {
+                            // product_item_id (実際のインデックス10)
+                            livestockData.productItemId = Integer.parseInt(productIdStr);
+                        } else {
+                            livestockData.productItemId = -1;
+                        }
                     }
-                    if (parts.size() >= 13 && !parts.get(12).trim().isEmpty()) {
-                        // product_interval (カラム13, インデックス12)
-                        livestockData.productInterval = Float.parseFloat(parts.get(12).trim());
+                    if (parts.size() > 11) {
+                        String productIntervalStr = parts.get(11).trim();
+                        if (!productIntervalStr.isEmpty()) {
+                            // product_interval (実際のインデックス11)
+                            livestockData.productInterval = Float.parseFloat(productIntervalStr);
+                        }
                     }
-                    if (parts.size() >= 14 && !parts.get(13).trim().isEmpty()) {
-                        // required_civilization_level (カラム14, インデックス13)
-                        livestockData.requiredCivilizationLevel = Integer.parseInt(parts.get(13).trim());
+                    if (parts.size() > 12) {
+                        String civLevelStr = parts.get(12).trim();
+                        if (!civLevelStr.isEmpty()) {
+                            // required_civilization_level (実際のインデックス12)
+                            livestockData.requiredCivilizationLevel = Integer.parseInt(civLevelStr);
+                        }
                     }
-                    if (parts.size() >= 17) {
-                        // color_r, color_g, color_b (カラム15-17, インデックス14-16)
-                        if (!parts.get(14).trim().isEmpty() && !parts.get(15).trim().isEmpty() && !parts.get(16).trim().isEmpty()) {
-                            float r = Float.parseFloat(parts.get(14).trim());
-                            float g = Float.parseFloat(parts.get(15).trim());
-                            float b = Float.parseFloat(parts.get(16).trim());
+                    if (parts.size() > 15) {
+                        // color_r, color_g, color_b (実際のインデックス13, 14, 15)
+                        String colorRStr = parts.get(13).trim();
+                        String colorGStr = parts.get(14).trim();
+                        String colorBStr = parts.get(15).trim();
+                        if (!colorRStr.isEmpty() && !colorGStr.isEmpty() && !colorBStr.isEmpty()) {
+                            float r = Float.parseFloat(colorRStr);
+                            float g = Float.parseFloat(colorGStr);
+                            float b = Float.parseFloat(colorBStr);
                             livestockData.setColor(r, g, b);
                         }
                     }
@@ -102,16 +125,21 @@ public class LivestockDataLoader {
                         setupLivestockAttributes(livestockData);
                     }
                     
+                    // データを追加（例外が発生しなかった場合のみ）
+                    livestockDataMap.put(livestockData.id, livestockData);
+                    livestockDataList.add(livestockData);
+                    
                 } catch (NumberFormatException e) {
                     // 無効な数値フォーマットの行はスキップ
                     continue;
+                } catch (Exception e) {
+                    // その他の例外
+                    continue;
                 }
-                
-                livestockDataMap.put(livestockData.id, livestockData);
-                livestockDataList.add(livestockData);
             }
+            
         } catch (Exception e) {
-            Gdx.app.error("LivestockDataLoader", "Error loading entity.csv: " + e.getMessage());
+            // エラーは静かに処理
         }
     }
     
@@ -126,6 +154,9 @@ public class LivestockDataLoader {
      * すべての家畜データのリストを取得します。
      */
     public Array<LivestockData> getAllLivestock() {
+        if (livestockDataList == null) {
+            return new Array<>();
+        }
         return livestockDataList;
     }
     

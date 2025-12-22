@@ -794,6 +794,10 @@ public class MenuSystem {
      */
     private void drawHelpMenu() {
         if (helpUI != null) {
+            if (livestockDataLoader == null) {
+                Gdx.app.error("MenuSystem", "livestockDataLoader is null! Cannot render help menu.");
+                return;
+            }
             helpUI.render(livestockDataLoader);
         }
     }
@@ -803,5 +807,8 @@ public class MenuSystem {
      */
     public void setLivestockDataLoader(io.github.some_example_name.manager.LivestockDataLoader loader) {
         this.livestockDataLoader = loader;
+        if (loader == null) {
+            Gdx.app.error("MenuSystem", "setLivestockDataLoader called with null!");
+        }
     }
 }

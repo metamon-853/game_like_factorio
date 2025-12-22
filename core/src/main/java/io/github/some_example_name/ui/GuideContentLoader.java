@@ -13,7 +13,6 @@ import java.util.List;
  * ガイドコンテンツ（Markdownファイル）を読み込むクラス。
  */
 public class GuideContentLoader {
-    
     /**
      * ガイドコンテンツの要素を表すクラス。
      */
@@ -141,7 +140,7 @@ public class GuideContentLoader {
             // 改行コードを統一
             content = io.github.some_example_name.util.CSVParser.normalizeLineEndings(content);
             
-            // 家畜リストのプレースホルダーを置換
+            // 家畜リストのプレースホルダーを置換（parseMarkdownの前に実行）
             if (state == HelpUI.GuideState.LIVESTOCK && livestockDataLoader != null) {
                 content = replaceLivestockList(content, livestockDataLoader);
             }
@@ -188,6 +187,7 @@ public class GuideContentLoader {
                     // 既に目的のセクション内にいて、次の見出し1が見つかったら終了
                     break;
                 }
+                
                 inTargetSection = element.text.equals(sectionTitle);
                 if (inTargetSection) {
                     // 目的のセクションの見出し1も含める
@@ -207,25 +207,37 @@ public class GuideContentLoader {
      * 家畜リストのプレースホルダーを実際のデータに置換します。
      */
     private static String replaceLivestockList(String content, LivestockDataLoader livestockDataLoader) {
+        if (livestockDataLoader == null) {
+            Gdx.app.error("GuideContentLoader", "LivestockDataLoader is null");
+            return content.replace("{{LIVESTOCK_LIST}}", "");
+        }
+        
         StringBuilder livestockList = new StringBuilder();
         Array<LivestockData> allLivestock = livestockDataLoader.getAllLivestock();
         
+        if (allLivestock == null || allLivestock.size == 0) {
+            return content.replace("{{LIVESTOCK_LIST}}", "");
+        }
+        
         for (LivestockData livestock : allLivestock) {
+            if (livestock == null) {
+                continue;
+            }
+            
             StringBuilder itemText = new StringBuilder();
-            itemText.append(livestock.name).append(": ");
-            if (livestock.hasProduct()) {
-                itemText.append("肉（ID:").append(livestock.meatItemId)
-                       .append("）、製品（ID:").append(livestock.productItemId).append("）");
-            } else {
-                itemText.append("肉（ID:").append(livestock.meatItemId).append("）のみ");
-            }
+            String name = livestock.name != null ? livestock.name : "Unknown";
+            itemText.append(name);
+            
+            // 説明文がある場合は追加
             if (livestock.description != null && !livestock.description.isEmpty()) {
-                itemText.append(" - ").append(livestock.description);
+                itemText.append(": ").append(livestock.description);
             }
+            
             livestockList.append("・").append(itemText.toString()).append("\n");
         }
         
-        return content.replace("{{LIVESTOCK_LIST}}", livestockList.toString().trim());
+        String replacement = livestockList.toString().trim();
+        return content.replace("{{LIVESTOCK_LIST}}", replacement);
     }
     
     /**
