@@ -244,17 +244,17 @@ public class Main extends ApplicationAdapter {
             @Override
             public void onNewGame() {
                 // 新規ゲーム開始（既に初期化されているので、タイトル画面を終了するだけ）
-                Gdx.app.log("TitleScreen", "新規ゲームを開始しました");
             }
             
             @Override
             public void onLoadGame(String saveName) {
                 // ゲームをロード
-                if (loadGame(saveName)) {
-                    Gdx.app.log("TitleScreen", "ゲームをロードしました: " + saveName);
-                } else {
-                    Gdx.app.error("TitleScreen", "ゲームのロードに失敗しました: " + saveName);
-                }
+                loadGame(saveName);
+            }
+            
+            @Override
+            public void onQuit() {
+                Gdx.app.exit();
             }
             
             @Override
@@ -378,7 +378,6 @@ public class Main extends ApplicationAdapter {
                 if (titleScreen != null) {
                     titleScreen.start();
                 }
-                Gdx.app.log("MenuSystem", "タイトル画面に戻りました");
             }
             
             @Override
@@ -524,7 +523,6 @@ public class Main extends ApplicationAdapter {
             if (titleScreen.handleInput()) {
                 // ゲーム開始
                 gameStateManager.setState(GameState.PLAYING);
-                Gdx.app.log("Main", "ゲームを開始しました");
             }
             
             // タイトル画面を描画

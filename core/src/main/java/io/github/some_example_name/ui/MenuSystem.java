@@ -26,7 +26,6 @@ public class MenuSystem {
         SOUND_MENU,
         SAVE_MENU,
         LOAD_MENU,
-        QUIT_CONFIRM,
         HELP_MENU
     }
     
@@ -122,7 +121,6 @@ public class MenuSystem {
         } else if (currentMenuState == MenuState.SOUND_MENU || 
                   currentMenuState == MenuState.SAVE_MENU || 
                   currentMenuState == MenuState.LOAD_MENU ||
-                  currentMenuState == MenuState.QUIT_CONFIRM ||
                   currentMenuState == MenuState.HELP_MENU) {
             currentMenuState = MenuState.MAIN_MENU;
             return false;
@@ -146,8 +144,6 @@ public class MenuSystem {
             handleSaveMenuClick();
         } else if (currentMenuState == MenuState.LOAD_MENU) {
             handleLoadMenuClick();
-        } else if (currentMenuState == MenuState.QUIT_CONFIRM) {
-            handleQuitConfirmClick();
         } else if (currentMenuState == MenuState.HELP_MENU) {
             handleHelpMenuClick();
             // スクロールバー（つまみ）ドラッグ
@@ -175,8 +171,6 @@ public class MenuSystem {
             drawSaveMenu();
         } else if (currentMenuState == MenuState.LOAD_MENU) {
             drawLoadMenu();
-        } else if (currentMenuState == MenuState.QUIT_CONFIRM) {
-            drawQuitConfirmDialog();
         } else if (currentMenuState == MenuState.HELP_MENU) {
             drawHelpMenu();
         }
@@ -211,9 +205,6 @@ public class MenuSystem {
             float titleButtonY = centerY - buttonSpacing * 3 - 20;
             Button titleButton = new Button(centerX - buttonWidth / 2, titleButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
-            float quitButtonY = centerY - buttonSpacing * 4 - 20;
-            Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-            
             if (gridButton.contains(mouseX, mouseY)) {
                 callbacks.onToggleGrid();
             } else if (saveButton.contains(mouseX, mouseY)) {
@@ -224,8 +215,6 @@ public class MenuSystem {
                 currentMenuState = MenuState.SOUND_MENU;
             } else if (titleButton.contains(mouseX, mouseY)) {
                 callbacks.onReturnToTitle();
-            } else if (quitButton.contains(mouseX, mouseY)) {
-                currentMenuState = MenuState.QUIT_CONFIRM;
             }
         }
     }
@@ -283,13 +272,6 @@ public class MenuSystem {
         isAnyButtonHovered = isAnyButtonHovered || titleHovered;
         uiRenderer.drawButton(centerX - buttonWidth / 2, titleButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "タイトルに戻る", titleHovered);
-        
-        float quitButtonY = centerY - buttonSpacing * 4 - 20;
-        Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
-        boolean quitHovered = quitButton.contains(mouseX, mouseY);
-        isAnyButtonHovered = isAnyButtonHovered || quitHovered;
-        uiRenderer.drawButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
-                   "Quit Game", quitHovered);
         
         // ホバー状態が変わったときに音を再生
         if (isAnyButtonHovered && !lastHoveredState && soundManager != null) {
@@ -684,100 +666,6 @@ public class MenuSystem {
             }
             lastHoveredState = isAnyButtonHovered;
         }
-        
-        font.getData().setScale(0.5f);
-        batch.end();
-    }
-    
-    /**
-     * 終了確認ダイアログのマウスクリックを処理します。
-     */
-    private void handleQuitConfirmClick() {
-        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            float mouseX = Gdx.input.getX();
-            float mouseY = screenHeight - Gdx.input.getY();
-            
-            float buttonWidth = 200;
-            float buttonHeight = 65;
-            float centerX = screenWidth / 2;
-            float centerY = screenHeight / 2 - 50;
-            float buttonSpacing = 120;
-            
-            float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
-            float yesButtonY = centerY - buttonHeight / 2;
-            Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
-            
-            float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
-            float noButtonY = centerY - buttonHeight / 2;
-            Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
-            
-            if (yesButton.contains(mouseX, mouseY)) {
-                callbacks.onQuit();
-            } else if (noButton.contains(mouseX, mouseY)) {
-                currentMenuState = MenuState.MAIN_MENU;
-            }
-        }
-    }
-    
-    /**
-     * 終了確認ダイアログを描画します。
-     */
-    private void drawQuitConfirmDialog() {
-        float mouseX = Gdx.input.getX();
-        float mouseY = screenHeight - Gdx.input.getY();
-        
-        shapeRenderer.setProjectionMatrix(uiCamera.combined);
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
-        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
-        float dialogWidth = 500;
-        float dialogHeight = 250;
-        float dialogX = (screenWidth - dialogWidth) / 2;
-        float dialogY = (screenHeight - dialogHeight) / 2;
-        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
-        shapeRenderer.end();
-        
-        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
-        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
-        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
-        shapeRenderer.end();
-        
-        batch.setProjectionMatrix(uiCamera.combined);
-        batch.begin();
-        
-        font.getData().setScale(0.625f);
-        font.setColor(Color.WHITE);
-        String messageText = "Quit Game?";
-        GlyphLayout messageLayout = new GlyphLayout(font, messageText);
-        float messageX = (screenWidth - messageLayout.width) / 2;
-        float messageY = screenHeight / 2 + 50;
-        font.draw(batch, messageText, messageX, messageY);
-        
-        float buttonWidth = 200;
-        float buttonHeight = 65;
-        float centerX = screenWidth / 2;
-        float centerY = screenHeight / 2 - 50;
-        float buttonSpacing = 120;
-        
-        float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
-        float yesButtonY = centerY - buttonHeight / 2;
-        Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
-        boolean yesHovered = yesButton.contains(mouseX, mouseY);
-        uiRenderer.drawButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, 
-                   "Yes", yesHovered);
-        
-        float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
-        float noButtonY = centerY - buttonHeight / 2;
-        Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
-        boolean noHovered = noButton.contains(mouseX, mouseY);
-        uiRenderer.drawButton(noButtonX, noButtonY, buttonWidth, buttonHeight, 
-                   "No", noHovered);
-        
-        // ホバー状態が変わったときに音を再生
-        boolean isAnyButtonHovered = yesHovered || noHovered;
-        if (isAnyButtonHovered && !lastHoveredState && soundManager != null) {
-            soundManager.playHoverSound();
-        }
-        lastHoveredState = isAnyButtonHovered;
         
         font.getData().setScale(0.5f);
         batch.end();

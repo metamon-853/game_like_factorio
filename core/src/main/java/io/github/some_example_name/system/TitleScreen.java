@@ -21,6 +21,7 @@ public class TitleScreen {
     public interface TitleScreenCallbacks {
         void onNewGame();
         void onLoadGame(String saveName);
+        void onQuit();
         List<String> getSaveFileList();
     }
     
@@ -34,6 +35,12 @@ public class TitleScreen {
     // ボタン
     private UIButton newGameButton;
     private UIButton loadGameButton;
+    private UIButton quitButton;
+    
+    // 前回のホバー状態を記録（音の重複再生を防ぐため）
+    private boolean lastNewGameHovered = false;
+    private boolean lastLoadGameHovered = false;
+    private boolean lastQuitHovered = false;
     
     // 描画用のリソース
     private ShapeRenderer shapeRenderer;
@@ -63,7 +70,6 @@ public class TitleScreen {
         this.isActive = true;
         this.animationTimer = 0f;
         this.showLoadMenu = false;
-        Gdx.app.log("TitleScreen", "タイトル画面を開始しました");
     }
     
     /**
@@ -88,17 +94,22 @@ public class TitleScreen {
         
         float newGameButtonY = screenHeight * 0.5f;
         float loadGameButtonY = screenHeight * 0.5f - buttonSpacing;
+        float quitButtonY = screenHeight * 0.5f - buttonSpacing * 2;
         
         newGameButton = new UIButton(centerX - buttonWidth / 2, newGameButtonY - buttonHeight / 2,
                                     buttonWidth, buttonHeight, "新規開始");
         loadGameButton = new UIButton(centerX - buttonWidth / 2, loadGameButtonY - buttonHeight / 2,
                                      buttonWidth, buttonHeight, "ゲームをロード");
+        quitButton = new UIButton(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2,
+                                 buttonWidth, buttonHeight, "ゲームを終了");
         
         // ボタンにリソースを設定
         newGameButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
         newGameButton.setSoundManager(soundManager);
         loadGameButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
         loadGameButton.setSoundManager(soundManager);
+        quitButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        quitButton.setSoundManager(soundManager);
     }
     
     /**
@@ -116,7 +127,7 @@ public class TitleScreen {
         this.screenHeight = height;
         
         // ボタンの位置を再計算
-        if (newGameButton != null && loadGameButton != null) {
+        if (newGameButton != null && loadGameButton != null && quitButton != null) {
             float buttonWidth = 400;
             float buttonHeight = 80;
             float centerX = screenWidth / 2;
@@ -124,12 +135,16 @@ public class TitleScreen {
             
             float newGameButtonY = screenHeight * 0.5f;
             float loadGameButtonY = screenHeight * 0.5f - buttonSpacing;
+            float quitButtonY = screenHeight * 0.5f - buttonSpacing * 2;
             
             newGameButton.x = centerX - buttonWidth / 2;
             newGameButton.y = newGameButtonY - buttonHeight / 2;
             
             loadGameButton.x = centerX - buttonWidth / 2;
             loadGameButton.y = loadGameButtonY - buttonHeight / 2;
+            
+            quitButton.x = centerX - buttonWidth / 2;
+            quitButton.y = quitButtonY - buttonHeight / 2;
         }
     }
     
@@ -203,15 +218,33 @@ public class TitleScreen {
             renderLoadMenu();
         } else {
             // ボタンを描画
-            if (newGameButton != null && loadGameButton != null) {
+            if (newGameButton != null && loadGameButton != null && quitButton != null) {
                 float mouseX = Gdx.input.getX();
                 float mouseY = screenHeight - Gdx.input.getY();
                 
+                // ホバー状態をチェックして音を再生
                 boolean newGameHovered = newGameButton.contains(mouseX, mouseY);
                 boolean loadGameHovered = loadGameButton.contains(mouseX, mouseY);
+                boolean quitHovered = quitButton.contains(mouseX, mouseY);
+                
+                // ホバー状態が変わったときに音を再生
+                if (newGameHovered && !lastNewGameHovered && soundManager != null) {
+                    soundManager.playHoverSound();
+                }
+                if (loadGameHovered && !lastLoadGameHovered && soundManager != null) {
+                    soundManager.playHoverSound();
+                }
+                if (quitHovered && !lastQuitHovered && soundManager != null) {
+                    soundManager.playHoverSound();
+                }
+                
+                lastNewGameHovered = newGameHovered;
+                lastLoadGameHovered = loadGameHovered;
+                lastQuitHovered = quitHovered;
                 
                 newGameButton.render(newGameHovered);
                 loadGameButton.render(loadGameHovered);
+                quitButton.render(quitHovered);
             }
         }
         
@@ -362,6 +395,11 @@ public class TitleScreen {
                     return true;
                 } else if (loadGameButton != null && loadGameButton.contains(mouseX, mouseY)) {
                     showLoadMenu = true;
+                    return false;
+                } else if (quitButton != null && quitButton.contains(mouseX, mouseY)) {
+                    if (callbacks != null) {
+                        callbacks.onQuit();
+                    }
                     return false;
                 }
             }
