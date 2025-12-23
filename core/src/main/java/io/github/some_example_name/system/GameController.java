@@ -86,7 +86,7 @@ public class GameController {
                 // プレイヤーのマップ升座標を取得
                 int playerTileX = player.getTileX();
                 int playerTileY = player.getTileY();
-                terrainManager.update(camera, playerTileX, playerTileY);
+                terrainManager.update(camera, playerTileX, playerTileY, deltaTime);
             }
             
             // アイテムマネージャーを更新（カメラの視野範囲を渡す）

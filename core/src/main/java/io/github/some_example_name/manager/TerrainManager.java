@@ -27,11 +27,15 @@ public class TerrainManager {
     // テクスチャマネージャー
     private TerrainTextureManager textureManager;
     
+    // アニメーション用の時間変数
+    private float animationTime;
+    
     public TerrainManager() {
         this.terrainTiles = new HashMap<>();
         this.generatedChunks = new java.util.HashSet<>();
         this.exploredTiles = new java.util.HashSet<>();
         this.textureManager = new TerrainTextureManager();
+        this.animationTime = 0f;
     }
     
     /**
@@ -39,10 +43,13 @@ public class TerrainManager {
      * @param camera カメラ
      * @param playerTileX プレイヤーのマップ升X座標（探索済みエリア記録用）
      * @param playerTileY プレイヤーのマップ升Y座標（探索済みエリア記録用）
+     * @param deltaTime 前フレームからの経過時間（秒）（アニメーション用）
      */
-    public void update(OrthographicCamera camera, int playerTileX, int playerTileY) {
+    public void update(OrthographicCamera camera, int playerTileX, int playerTileY, float deltaTime) {
         generateTerrainInView(camera);
         markExplored(playerTileX, playerTileY);
+        // アニメーション時間を更新
+        animationTime += deltaTime;
     }
     
     /**
@@ -309,11 +316,74 @@ public class TerrainManager {
                     float pixelY = tile.getTileY() * Player.TILE_SIZE;
                     Texture texture = textureManager.getTexture(tile.getTerrainType());
                     if (texture != null) {
-                        batch.draw(texture, pixelX, pixelY, Player.TILE_SIZE, Player.TILE_SIZE);
+                        // アニメーション効果を適用
+                        renderAnimatedTile(batch, texture, tile.getTerrainType(), 
+                                          pixelX, pixelY, x, y);
                     }
                 }
             }
         }
+    }
+    
+    /**
+     * アニメーション効果を適用してタイルを描画します。
+     * @param batch SpriteBatchインスタンス
+     * @param texture テクスチャ
+     * @param terrainType 地形タイプ
+     * @param pixelX ピクセルX座標
+     * @param pixelY ピクセルY座標
+     * @param tileX タイルX座標（アニメーションの位相をずらすため）
+     * @param tileY タイルY座標（アニメーションの位相をずらすため）
+     */
+    private void renderAnimatedTile(SpriteBatch batch, Texture texture, 
+                                   TerrainTile.TerrainType terrainType,
+                                   float pixelX, float pixelY, int tileX, int tileY) {
+        float drawX = pixelX;
+        float drawY = pixelY;
+        
+        // 地形タイプに応じてアニメーション効果を適用
+        switch (terrainType) {
+            case WATER:
+            case PADDY:
+            case WATER_CHANNEL:
+            case MARSH:
+                // 水場の波アニメーション（位置を微調整して揺れる効果）
+                float waterSpeed = 0.5f; // 波の速度
+                float waterAmplitude = 0.8f; // 波の振幅（ピクセル単位）
+                float waterPhaseX = (float)(tileX * 0.3f + tileY * 0.2f); // 位相をずらす
+                float waterPhaseY = (float)(tileX * 0.2f + tileY * 0.3f);
+                
+                // 波のような動き（sin波とcos波の組み合わせ）
+                float offsetX = (float)Math.sin(animationTime * waterSpeed + waterPhaseX) * waterAmplitude;
+                float offsetY = (float)Math.cos(animationTime * waterSpeed * 1.3f + waterPhaseY) * waterAmplitude;
+                
+                drawX = pixelX + offsetX;
+                drawY = pixelY + offsetY;
+                break;
+                
+            case FOREST:
+            case GRASS:
+                // 森や草の揺れアニメーション（風に揺れる感じ）
+                float windSpeed = 0.8f; // 風の速度
+                float windAmplitude = 0.6f; // 揺れの振幅（ピクセル単位）
+                float windPhase = (float)(tileX * 0.4f + tileY * 0.3f); // 位相をずらす
+                
+                // 水平方向の揺れ（左右に揺れる）
+                float windOffsetX = (float)Math.sin(animationTime * windSpeed + windPhase) * windAmplitude;
+                // 垂直方向の揺れ（上下に揺れる、より小さく）
+                float windOffsetY = (float)Math.cos(animationTime * windSpeed * 0.7f + windPhase) * windAmplitude * 0.5f;
+                
+                drawX = pixelX + windOffsetX;
+                drawY = pixelY + windOffsetY;
+                break;
+                
+            default:
+                // アニメーションなし（通常の描画）
+                break;
+        }
+        
+        // テクスチャを描画
+        batch.draw(texture, drawX, drawY, Player.TILE_SIZE, Player.TILE_SIZE);
     }
     
     /**
