@@ -37,11 +37,6 @@ public class TitleScreen {
     private UIButton loadGameButton;
     private UIButton quitButton;
     
-    // 前回のホバー状態を記録（音の重複再生を防ぐため）
-    private boolean lastNewGameHovered = false;
-    private boolean lastLoadGameHovered = false;
-    private boolean lastQuitHovered = false;
-    
     // 描画用のリソース
     private ShapeRenderer shapeRenderer;
     private SpriteBatch batch;
@@ -234,29 +229,10 @@ public class TitleScreen {
                 float mouseX = Gdx.input.getX();
                 float mouseY = screenHeight - Gdx.input.getY();
                 
-                // ホバー状態をチェックして音を再生
-                boolean newGameHovered = newGameButton.contains(mouseX, mouseY);
-                boolean loadGameHovered = loadGameButton.contains(mouseX, mouseY);
-                boolean quitHovered = quitButton.contains(mouseX, mouseY);
-                
-                // ホバー状態が変わったときに音を再生
-                if (newGameHovered && !lastNewGameHovered && soundManager != null) {
-                    soundManager.playHoverSound();
-                }
-                if (loadGameHovered && !lastLoadGameHovered && soundManager != null) {
-                    soundManager.playHoverSound();
-                }
-                if (quitHovered && !lastQuitHovered && soundManager != null) {
-                    soundManager.playHoverSound();
-                }
-                
-                lastNewGameHovered = newGameHovered;
-                lastLoadGameHovered = loadGameHovered;
-                lastQuitHovered = quitHovered;
-                
-                newGameButton.render(newGameHovered);
-                loadGameButton.render(loadGameHovered);
-                quitButton.render(quitHovered);
+                // updateAndRenderメソッドを使用してホバー音を自動的に再生
+                newGameButton.updateAndRender(mouseX, mouseY);
+                loadGameButton.updateAndRender(mouseX, mouseY);
+                quitButton.updateAndRender(mouseX, mouseY);
             }
         }
         

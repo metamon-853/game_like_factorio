@@ -26,7 +26,8 @@ public class MenuSystem {
         SOUND_MENU,
         SAVE_MENU,
         LOAD_MENU,
-        HELP_MENU
+        HELP_MENU,
+        TITLE_CONFIRM
     }
     
     // コールバックインターフェース
@@ -121,7 +122,8 @@ public class MenuSystem {
         } else if (currentMenuState == MenuState.SOUND_MENU || 
                   currentMenuState == MenuState.SAVE_MENU || 
                   currentMenuState == MenuState.LOAD_MENU ||
-                  currentMenuState == MenuState.HELP_MENU) {
+                  currentMenuState == MenuState.HELP_MENU ||
+                  currentMenuState == MenuState.TITLE_CONFIRM) {
             currentMenuState = MenuState.MAIN_MENU;
             return false;
         } else {
@@ -144,6 +146,8 @@ public class MenuSystem {
             handleSaveMenuClick();
         } else if (currentMenuState == MenuState.LOAD_MENU) {
             handleLoadMenuClick();
+        } else if (currentMenuState == MenuState.TITLE_CONFIRM) {
+            handleTitleConfirmClick();
         } else if (currentMenuState == MenuState.HELP_MENU) {
             handleHelpMenuClick();
             // スクロールバー（つまみ）ドラッグ
@@ -171,6 +175,8 @@ public class MenuSystem {
             drawSaveMenu();
         } else if (currentMenuState == MenuState.LOAD_MENU) {
             drawLoadMenu();
+        } else if (currentMenuState == MenuState.TITLE_CONFIRM) {
+            drawTitleConfirmDialog();
         } else if (currentMenuState == MenuState.HELP_MENU) {
             drawHelpMenu();
         }
@@ -214,7 +220,7 @@ public class MenuSystem {
             } else if (soundButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.SOUND_MENU;
             } else if (titleButton.contains(mouseX, mouseY)) {
-                callbacks.onReturnToTitle();
+                currentMenuState = MenuState.TITLE_CONFIRM;
             }
         }
     }
@@ -666,6 +672,100 @@ public class MenuSystem {
             }
             lastHoveredState = isAnyButtonHovered;
         }
+        
+        font.getData().setScale(0.5f);
+        batch.end();
+    }
+    
+    /**
+     * タイトルに戻る確認ダイアログのマウスクリックを処理します。
+     */
+    private void handleTitleConfirmClick() {
+        if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+            float mouseX = Gdx.input.getX();
+            float mouseY = screenHeight - Gdx.input.getY();
+            
+            float buttonWidth = 200;
+            float buttonHeight = 65;
+            float centerX = screenWidth / 2;
+            float centerY = screenHeight / 2 - 50;
+            float buttonSpacing = 120;
+            
+            float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
+            float yesButtonY = centerY - buttonHeight / 2;
+            Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
+            
+            float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
+            float noButtonY = centerY - buttonHeight / 2;
+            Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
+            
+            if (yesButton.contains(mouseX, mouseY)) {
+                callbacks.onReturnToTitle();
+            } else if (noButton.contains(mouseX, mouseY)) {
+                currentMenuState = MenuState.MAIN_MENU;
+            }
+        }
+    }
+    
+    /**
+     * タイトルに戻る確認ダイアログを描画します。
+     */
+    private void drawTitleConfirmDialog() {
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
+        float dialogWidth = 500;
+        float dialogHeight = 250;
+        float dialogX = (screenWidth - dialogWidth) / 2;
+        float dialogY = (screenHeight - dialogHeight) / 2;
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        font.getData().setScale(0.625f);
+        font.setColor(Color.WHITE);
+        String messageText = "タイトル画面に戻りますか？";
+        GlyphLayout messageLayout = new GlyphLayout(font, messageText);
+        float messageX = (screenWidth - messageLayout.width) / 2;
+        float messageY = screenHeight / 2 + 50;
+        font.draw(batch, messageText, messageX, messageY);
+        
+        float buttonWidth = 200;
+        float buttonHeight = 65;
+        float centerX = screenWidth / 2;
+        float centerY = screenHeight / 2 - 50;
+        float buttonSpacing = 120;
+        
+        float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
+        float yesButtonY = centerY - buttonHeight / 2;
+        Button yesButton = new Button(yesButtonX, yesButtonY, buttonWidth, buttonHeight);
+        boolean yesHovered = yesButton.contains(mouseX, mouseY);
+        uiRenderer.drawButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, 
+                   "はい", yesHovered);
+        
+        float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
+        float noButtonY = centerY - buttonHeight / 2;
+        Button noButton = new Button(noButtonX, noButtonY, buttonWidth, buttonHeight);
+        boolean noHovered = noButton.contains(mouseX, mouseY);
+        uiRenderer.drawButton(noButtonX, noButtonY, buttonWidth, buttonHeight, 
+                   "いいえ", noHovered);
+        
+        // ホバー状態が変わったときに音を再生
+        boolean isAnyButtonHovered = yesHovered || noHovered;
+        if (isAnyButtonHovered && !lastHoveredState && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        lastHoveredState = isAnyButtonHovered;
         
         font.getData().setScale(0.5f);
         batch.end();
