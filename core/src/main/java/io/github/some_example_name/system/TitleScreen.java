@@ -57,10 +57,18 @@ public class TitleScreen {
     // ロードメニュー表示フラグ
     private boolean showLoadMenu;
     
+    // 終了確認ダイアログ表示フラグ
+    private boolean showQuitConfirm;
+    
+    // 確認ダイアログのホバー状態を記録
+    private boolean lastYesHovered = false;
+    private boolean lastNoHovered = false;
+    
     public TitleScreen() {
         this.isActive = true; // デフォルトでアクティブ
         this.animationTimer = 0f;
         this.showLoadMenu = false;
+        this.showQuitConfirm = false;
     }
     
     /**
@@ -70,6 +78,7 @@ public class TitleScreen {
         this.isActive = true;
         this.animationTimer = 0f;
         this.showLoadMenu = false;
+        this.showQuitConfirm = false;
     }
     
     /**
@@ -216,6 +225,9 @@ public class TitleScreen {
         // ロードメニューが表示されている場合はロードメニューを描画
         if (showLoadMenu) {
             renderLoadMenu();
+        } else if (showQuitConfirm) {
+            // 終了確認ダイアログを描画
+            renderQuitConfirmDialog();
         } else {
             // ボタンを描画
             if (newGameButton != null && loadGameButton != null && quitButton != null) {
@@ -329,6 +341,82 @@ public class TitleScreen {
     }
     
     /**
+     * 終了確認ダイアログを描画します。
+     */
+    private void renderQuitConfirmDialog() {
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
+        // ダイアログ背景を描画
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0.1f, 0.1f, 0.15f, 0.95f);
+        float dialogWidth = 500;
+        float dialogHeight = 250;
+        float dialogX = (screenWidth - dialogWidth) / 2;
+        float dialogY = (screenHeight - dialogHeight) / 2;
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        // ダイアログの枠線を描画
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Line);
+        shapeRenderer.setColor(0.6f, 0.6f, 0.8f, 1f);
+        shapeRenderer.rect(dialogX, dialogY, dialogWidth, dialogHeight);
+        shapeRenderer.end();
+        
+        // テキストとボタンを描画
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        
+        font.getData().setScale(0.625f);
+        font.setColor(Color.WHITE);
+        String messageText = "ゲームを終了しますか？";
+        com.badlogic.gdx.graphics.g2d.GlyphLayout messageLayout = new com.badlogic.gdx.graphics.g2d.GlyphLayout();
+        messageLayout.setText(font, messageText);
+        float messageX = (screenWidth - messageLayout.width) / 2;
+        float messageY = screenHeight / 2 + 50;
+        font.draw(batch, messageText, messageX, messageY);
+        
+        float buttonWidth = 200;
+        float buttonHeight = 65;
+        float centerX = screenWidth / 2;
+        float centerY = screenHeight / 2 - 50;
+        float buttonSpacing = 120;
+        
+        // はいボタン
+        float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
+        float yesButtonY = centerY - buttonHeight / 2;
+        UIButton yesButton = new UIButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, "はい");
+        yesButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        yesButton.setSoundManager(soundManager);
+        boolean yesHovered = yesButton.contains(mouseX, mouseY);
+        
+        // いいえボタン
+        float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
+        float noButtonY = centerY - buttonHeight / 2;
+        UIButton noButton = new UIButton(noButtonX, noButtonY, buttonWidth, buttonHeight, "いいえ");
+        noButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        noButton.setSoundManager(soundManager);
+        boolean noHovered = noButton.contains(mouseX, mouseY);
+        
+        // ホバー状態が変わったときに音を再生
+        if (yesHovered && !lastYesHovered && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        if (noHovered && !lastNoHovered && soundManager != null) {
+            soundManager.playHoverSound();
+        }
+        
+        lastYesHovered = yesHovered;
+        lastNoHovered = noHovered;
+        
+        yesButton.render(yesHovered);
+        noButton.render(noHovered);
+        
+        batch.end();
+    }
+    
+    /**
      * 入力処理を行います。
      * @return ゲーム開始の入力があった場合true
      */
@@ -337,7 +425,45 @@ public class TitleScreen {
             return false;
         }
         
-        if (showLoadMenu) {
+        if (showQuitConfirm) {
+            // 終了確認ダイアログのクリック処理
+            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                float mouseX = Gdx.input.getX();
+                float mouseY = screenHeight - Gdx.input.getY();
+                
+                float buttonWidth = 200;
+                float buttonHeight = 65;
+                float centerX = screenWidth / 2;
+                float centerY = screenHeight / 2 - 50;
+                float buttonSpacing = 120;
+                
+                // はいボタン
+                float yesButtonX = centerX - buttonSpacing - buttonWidth / 2;
+                float yesButtonY = centerY - buttonHeight / 2;
+                UIButton yesButton = new UIButton(yesButtonX, yesButtonY, buttonWidth, buttonHeight, "はい");
+                if (yesButton.contains(mouseX, mouseY)) {
+                    if (callbacks != null) {
+                        callbacks.onQuit();
+                    }
+                    return false;
+                }
+                
+                // いいえボタン
+                float noButtonX = centerX + buttonSpacing - buttonWidth / 2;
+                float noButtonY = centerY - buttonHeight / 2;
+                UIButton noButton = new UIButton(noButtonX, noButtonY, buttonWidth, buttonHeight, "いいえ");
+                if (noButton.contains(mouseX, mouseY)) {
+                    showQuitConfirm = false;
+                    return false;
+                }
+            }
+            
+            // ESCキーで確認ダイアログを閉じる
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                showQuitConfirm = false;
+                return false;
+            }
+        } else if (showLoadMenu) {
             // ロードメニューのクリック処理
             if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
                 float mouseX = Gdx.input.getX();
@@ -397,9 +523,7 @@ public class TitleScreen {
                     showLoadMenu = true;
                     return false;
                 } else if (quitButton != null && quitButton.contains(mouseX, mouseY)) {
-                    if (callbacks != null) {
-                        callbacks.onQuit();
-                    }
+                    showQuitConfirm = true;
                     return false;
                 }
             }
