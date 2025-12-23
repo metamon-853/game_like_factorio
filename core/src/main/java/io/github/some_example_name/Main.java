@@ -45,6 +45,8 @@ import io.github.some_example_name.game.CraftingSystem;
 import io.github.some_example_name.game.PreservedFoodManager;
 import io.github.some_example_name.entity.ItemData;
 
+import java.util.List;
+
 /**
  * メインゲームクラス。
  * 
@@ -235,6 +237,31 @@ public class Main extends ApplicationAdapter {
         
         // タイトル画面を初期化
         titleScreen = new TitleScreen();
+        // タイトル画面にリソースを設定
+        titleScreen.setRenderResources(shapeRenderer, batch, font, uiCamera, soundManager, screenWidth, screenHeight);
+        // タイトル画面のコールバックを設定
+        titleScreen.setCallbacks(new TitleScreen.TitleScreenCallbacks() {
+            @Override
+            public void onNewGame() {
+                // 新規ゲーム開始（既に初期化されているので、タイトル画面を終了するだけ）
+                Gdx.app.log("TitleScreen", "新規ゲームを開始しました");
+            }
+            
+            @Override
+            public void onLoadGame(String saveName) {
+                // ゲームをロード
+                if (loadGame(saveName)) {
+                    Gdx.app.log("TitleScreen", "ゲームをロードしました: " + saveName);
+                } else {
+                    Gdx.app.error("TitleScreen", "ゲームのロードに失敗しました: " + saveName);
+                }
+            }
+            
+            @Override
+            public List<String> getSaveFileList() {
+                return saveGameManager.getSaveFileList();
+            }
+        });
         
         // マップ画面を初期化
         mapScreen = new MapScreen();
@@ -341,6 +368,17 @@ public class Main extends ApplicationAdapter {
             @Override
             public void onQuit() {
                 Gdx.app.exit();
+            }
+            
+            @Override
+            public void onReturnToTitle() {
+                // タイトル画面に戻る
+                gameStateManager.setState(GameState.TITLE_SCREEN);
+                isPaused = false;
+                if (titleScreen != null) {
+                    titleScreen.start();
+                }
+                Gdx.app.log("MenuSystem", "タイトル画面に戻りました");
             }
             
             @Override
@@ -466,6 +504,11 @@ public class Main extends ApplicationAdapter {
             screenHeight = Gdx.graphics.getHeight();
             viewport.update(screenWidth, screenHeight);
             camera.update();
+            
+            // タイトル画面の画面サイズを更新
+            if (titleScreen != null) {
+                titleScreen.updateScreenSize(screenWidth, screenHeight);
+            }
         }
         
         // ビューポートを適用

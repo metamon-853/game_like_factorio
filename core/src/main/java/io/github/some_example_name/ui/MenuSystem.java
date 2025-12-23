@@ -36,6 +36,7 @@ public class MenuSystem {
         void onLoadGame(String saveName);
         void onToggleGrid();
         void onQuit();
+        void onReturnToTitle();
         boolean isGridVisible();
         float getCameraZoom();
         void setPaused(boolean paused);
@@ -207,7 +208,10 @@ public class MenuSystem {
             float soundButtonY = centerY - buttonSpacing * 2 - 20;
             Button soundButton = new Button(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
-            float quitButtonY = centerY - buttonSpacing * 3 - 20;
+            float titleButtonY = centerY - buttonSpacing * 3 - 20;
+            Button titleButton = new Button(centerX - buttonWidth / 2, titleButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+            
+            float quitButtonY = centerY - buttonSpacing * 4 - 20;
             Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
             
             if (gridButton.contains(mouseX, mouseY)) {
@@ -218,6 +222,8 @@ public class MenuSystem {
                 currentMenuState = MenuState.LOAD_MENU;
             } else if (soundButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.SOUND_MENU;
+            } else if (titleButton.contains(mouseX, mouseY)) {
+                callbacks.onReturnToTitle();
             } else if (quitButton.contains(mouseX, mouseY)) {
                 currentMenuState = MenuState.QUIT_CONFIRM;
             }
@@ -271,7 +277,14 @@ public class MenuSystem {
         uiRenderer.drawButton(centerX - buttonWidth / 2, soundButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
                    "Sound", soundHovered);
         
-        float quitButtonY = centerY - buttonSpacing * 3 - 20;
+        float titleButtonY = centerY - buttonSpacing * 3 - 20;
+        Button titleButton = new Button(centerX - buttonWidth / 2, titleButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
+        boolean titleHovered = titleButton.contains(mouseX, mouseY);
+        isAnyButtonHovered = isAnyButtonHovered || titleHovered;
+        uiRenderer.drawButton(centerX - buttonWidth / 2, titleButtonY - buttonHeight / 2, buttonWidth, buttonHeight, 
+                   "タイトルに戻る", titleHovered);
+        
+        float quitButtonY = centerY - buttonSpacing * 4 - 20;
         Button quitButton = new Button(centerX - buttonWidth / 2, quitButtonY - buttonHeight / 2, buttonWidth, buttonHeight);
         boolean quitHovered = quitButton.contains(mouseX, mouseY);
         isAnyButtonHovered = isAnyButtonHovered || quitHovered;

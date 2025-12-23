@@ -8,22 +8,52 @@ import com.badlogic.gdx.graphics.g2d.BitmapFont;
 import com.badlogic.gdx.graphics.g2d.SpriteBatch;
 import com.badlogic.gdx.graphics.glutils.ShapeRenderer;
 
+import io.github.some_example_name.ui.UIButton;
+
+import java.util.List;
+
 /**
  * タイトル画面を管理するクラス。
  * ゲーム開始時に表示されるタイトル画面を管理します。
  */
 public class TitleScreen {
+    // コールバックインターフェース
+    public interface TitleScreenCallbacks {
+        void onNewGame();
+        void onLoadGame(String saveName);
+        List<String> getSaveFileList();
+    }
+    
     private boolean isActive;
     private float animationTimer;
     private static final float ANIMATION_SPEED = 1.0f; // アニメーション速度
     
     // タイトルテキスト
     private static final String TITLE_TEXT = "Factorio風ゲーム";
-    private static final String SUBTITLE_TEXT = "スペースキーまたはクリックで開始";
+    
+    // ボタン
+    private UIButton newGameButton;
+    private UIButton loadGameButton;
+    
+    // 描画用のリソース
+    private ShapeRenderer shapeRenderer;
+    private SpriteBatch batch;
+    private BitmapFont font;
+    private OrthographicCamera uiCamera;
+    private SoundManager soundManager;
+    private int screenWidth;
+    private int screenHeight;
+    
+    // コールバック
+    private TitleScreenCallbacks callbacks;
+    
+    // ロードメニュー表示フラグ
+    private boolean showLoadMenu;
     
     public TitleScreen() {
         this.isActive = true; // デフォルトでアクティブ
         this.animationTimer = 0f;
+        this.showLoadMenu = false;
     }
     
     /**
@@ -32,7 +62,75 @@ public class TitleScreen {
     public void start() {
         this.isActive = true;
         this.animationTimer = 0f;
+        this.showLoadMenu = false;
         Gdx.app.log("TitleScreen", "タイトル画面を開始しました");
+    }
+    
+    /**
+     * 描画用のリソースを設定します。
+     */
+    public void setRenderResources(ShapeRenderer shapeRenderer, SpriteBatch batch, 
+                                   BitmapFont font, OrthographicCamera uiCamera,
+                                   SoundManager soundManager, int screenWidth, int screenHeight) {
+        this.shapeRenderer = shapeRenderer;
+        this.batch = batch;
+        this.font = font;
+        this.uiCamera = uiCamera;
+        this.soundManager = soundManager;
+        this.screenWidth = screenWidth;
+        this.screenHeight = screenHeight;
+        
+        // ボタンを作成
+        float buttonWidth = 400;
+        float buttonHeight = 80;
+        float centerX = screenWidth / 2;
+        float buttonSpacing = 100;
+        
+        float newGameButtonY = screenHeight * 0.5f;
+        float loadGameButtonY = screenHeight * 0.5f - buttonSpacing;
+        
+        newGameButton = new UIButton(centerX - buttonWidth / 2, newGameButtonY - buttonHeight / 2,
+                                    buttonWidth, buttonHeight, "新規開始");
+        loadGameButton = new UIButton(centerX - buttonWidth / 2, loadGameButtonY - buttonHeight / 2,
+                                     buttonWidth, buttonHeight, "ゲームをロード");
+        
+        // ボタンにリソースを設定
+        newGameButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        newGameButton.setSoundManager(soundManager);
+        loadGameButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        loadGameButton.setSoundManager(soundManager);
+    }
+    
+    /**
+     * コールバックを設定します。
+     */
+    public void setCallbacks(TitleScreenCallbacks callbacks) {
+        this.callbacks = callbacks;
+    }
+    
+    /**
+     * 画面サイズを更新します。
+     */
+    public void updateScreenSize(int width, int height) {
+        this.screenWidth = width;
+        this.screenHeight = height;
+        
+        // ボタンの位置を再計算
+        if (newGameButton != null && loadGameButton != null) {
+            float buttonWidth = 400;
+            float buttonHeight = 80;
+            float centerX = screenWidth / 2;
+            float buttonSpacing = 100;
+            
+            float newGameButtonY = screenHeight * 0.5f;
+            float loadGameButtonY = screenHeight * 0.5f - buttonSpacing;
+            
+            newGameButton.x = centerX - buttonWidth / 2;
+            newGameButton.y = newGameButtonY - buttonHeight / 2;
+            
+            loadGameButton.x = centerX - buttonWidth / 2;
+            loadGameButton.y = loadGameButtonY - buttonHeight / 2;
+        }
     }
     
     /**
@@ -94,23 +192,28 @@ public class TitleScreen {
         com.badlogic.gdx.graphics.g2d.GlyphLayout titleLayout = new com.badlogic.gdx.graphics.g2d.GlyphLayout();
         titleLayout.setText(font, TITLE_TEXT);
         float titleX = (screenWidth - titleLayout.width) / 2;
-        float titleY = screenHeight * 0.7f + titleLayout.height / 2;
+        float titleY = screenHeight * 0.75f + titleLayout.height / 2;
         
         font.draw(batch, TITLE_TEXT, titleX, titleY);
         
-        // サブタイトルテキスト（小さく、点滅アニメーション）
-        font.getData().setScale(1.5f);
-        float subtitleAlpha = 0.5f + 0.5f * (float)Math.sin(animationTimer * 3.0f);
-        font.setColor(0.9f, 0.9f, 0.9f, subtitleAlpha);
-        
-        com.badlogic.gdx.graphics.g2d.GlyphLayout subtitleLayout = new com.badlogic.gdx.graphics.g2d.GlyphLayout();
-        subtitleLayout.setText(font, SUBTITLE_TEXT);
-        float subtitleX = (screenWidth - subtitleLayout.width) / 2;
-        float subtitleY = screenHeight * 0.3f + subtitleLayout.height / 2;
-        
-        font.draw(batch, SUBTITLE_TEXT, subtitleX, subtitleY);
-        
         batch.end();
+        
+        // ロードメニューが表示されている場合はロードメニューを描画
+        if (showLoadMenu) {
+            renderLoadMenu();
+        } else {
+            // ボタンを描画
+            if (newGameButton != null && loadGameButton != null) {
+                float mouseX = Gdx.input.getX();
+                float mouseY = screenHeight - Gdx.input.getY();
+                
+                boolean newGameHovered = newGameButton.contains(mouseX, mouseY);
+                boolean loadGameHovered = loadGameButton.contains(mouseX, mouseY);
+                
+                newGameButton.render(newGameHovered);
+                loadGameButton.render(loadGameHovered);
+            }
+        }
         
         // フォント設定を復元
         font.getData().setScale(originalScale);
@@ -134,7 +237,66 @@ public class TitleScreen {
     }
     
     /**
-     * 入力処理を行います（スペースキーまたはクリックでゲーム開始）。
+     * ロードメニューを描画します。
+     */
+    private void renderLoadMenu() {
+        if (callbacks == null) {
+            return;
+        }
+        
+        List<String> saveList = callbacks.getSaveFileList();
+        float mouseX = Gdx.input.getX();
+        float mouseY = screenHeight - Gdx.input.getY();
+        
+        float buttonWidth = 400;
+        float buttonHeight = 60;
+        float centerX = screenWidth / 2;
+        float startY = screenHeight * 0.6f;
+        float buttonSpacing = 70;
+        
+        // 背景を半透明で描画
+        shapeRenderer.setProjectionMatrix(uiCamera.combined);
+        shapeRenderer.begin(ShapeRenderer.ShapeType.Filled);
+        shapeRenderer.setColor(0f, 0f, 0f, 0.7f);
+        shapeRenderer.rect(centerX - buttonWidth / 2 - 20, startY - saveList.size() * buttonSpacing - 20,
+                          buttonWidth + 40, saveList.size() * buttonSpacing + 100);
+        shapeRenderer.end();
+        
+        // セーブファイルリストを描画
+        batch.setProjectionMatrix(uiCamera.combined);
+        batch.begin();
+        font.getData().setScale(1.5f);
+        font.setColor(Color.WHITE);
+        com.badlogic.gdx.graphics.g2d.GlyphLayout layout = new com.badlogic.gdx.graphics.g2d.GlyphLayout();
+        layout.setText(font, "セーブファイルを選択");
+        float titleX = (screenWidth - layout.width) / 2;
+        font.draw(batch, "セーブファイルを選択", titleX, startY + 40);
+        batch.end();
+        
+        // セーブファイルボタンを描画
+        for (int i = 0; i < saveList.size() && i < 8; i++) {
+            float buttonY = startY - i * buttonSpacing;
+            UIButton saveButton = new UIButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2,
+                                              buttonWidth, buttonHeight, saveList.get(i));
+            saveButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+            saveButton.setSoundManager(soundManager);
+            
+            boolean hovered = saveButton.contains(mouseX, mouseY);
+            saveButton.render(hovered);
+        }
+        
+        // 戻るボタンを描画
+        float backButtonY = startY - saveList.size() * buttonSpacing - 20;
+        UIButton backButton = new UIButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2,
+                                          buttonWidth, buttonHeight, "戻る");
+        backButton.setRenderResources(shapeRenderer, batch, font, uiCamera);
+        backButton.setSoundManager(soundManager);
+        boolean backHovered = backButton.contains(mouseX, mouseY);
+        backButton.render(backHovered);
+    }
+    
+    /**
+     * 入力処理を行います。
      * @return ゲーム開始の入力があった場合true
      */
     public boolean handleInput() {
@@ -142,11 +304,67 @@ public class TitleScreen {
             return false;
         }
         
-        // スペースキーまたはマウスクリックでゲーム開始
-        if (Gdx.input.isKeyJustPressed(Input.Keys.SPACE) || 
-            Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
-            end();
-            return true;
+        if (showLoadMenu) {
+            // ロードメニューのクリック処理
+            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                float mouseX = Gdx.input.getX();
+                float mouseY = screenHeight - Gdx.input.getY();
+                
+                if (callbacks != null) {
+                    List<String> saveList = callbacks.getSaveFileList();
+                    float buttonWidth = 400;
+                    float buttonHeight = 60;
+                    float centerX = screenWidth / 2;
+                    float startY = screenHeight * 0.6f;
+                    float buttonSpacing = 70;
+                    
+                    // セーブファイルボタンのクリック処理
+                    for (int i = 0; i < saveList.size() && i < 8; i++) {
+                        float buttonY = startY - i * buttonSpacing;
+                        UIButton saveButton = new UIButton(centerX - buttonWidth / 2, buttonY - buttonHeight / 2,
+                                                          buttonWidth, buttonHeight, saveList.get(i));
+                        if (saveButton.contains(mouseX, mouseY)) {
+                            String saveName = saveList.get(i);
+                            callbacks.onLoadGame(saveName);
+                            showLoadMenu = false;
+                            end();
+                            return true;
+                        }
+                    }
+                    
+                    // 戻るボタンのクリック処理
+                    float backButtonY = startY - saveList.size() * buttonSpacing - 20;
+                    UIButton backButton = new UIButton(centerX - buttonWidth / 2, backButtonY - buttonHeight / 2,
+                                                      buttonWidth, buttonHeight, "戻る");
+                    if (backButton.contains(mouseX, mouseY)) {
+                        showLoadMenu = false;
+                        return false;
+                    }
+                }
+            }
+            
+            // ESCキーでロードメニューを閉じる
+            if (Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
+                showLoadMenu = false;
+                return false;
+            }
+        } else {
+            // 通常のボタンクリック処理
+            if (Gdx.input.isButtonJustPressed(Input.Buttons.LEFT)) {
+                float mouseX = Gdx.input.getX();
+                float mouseY = screenHeight - Gdx.input.getY();
+                
+                if (newGameButton != null && newGameButton.contains(mouseX, mouseY)) {
+                    if (callbacks != null) {
+                        callbacks.onNewGame();
+                    }
+                    end();
+                    return true;
+                } else if (loadGameButton != null && loadGameButton.contains(mouseX, mouseY)) {
+                    showLoadMenu = true;
+                    return false;
+                }
+            }
         }
         
         return false;

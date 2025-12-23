@@ -288,6 +288,11 @@ public class GameInitializer {
             }
             
             @Override
+            public void onReturnToTitle() {
+                // このコールバックはMainクラスで実装される
+            }
+            
+            @Override
             public boolean isGridVisible() {
                 return true; // デフォルト値、Mainクラスで上書きされる
             }
