@@ -83,7 +83,10 @@ public class GameController {
             
             // 地形マネージャーを更新（カメラの視野範囲を渡す）
             if (terrainManager != null && camera != null) {
-                terrainManager.update(camera);
+                // プレイヤーのマップ升座標を取得
+                int playerTileX = player.getTileX();
+                int playerTileY = player.getTileY();
+                terrainManager.update(camera, playerTileX, playerTileY);
             }
             
             // アイテムマネージャーを更新（カメラの視野範囲を渡す）

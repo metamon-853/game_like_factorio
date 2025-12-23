@@ -118,4 +118,20 @@ public class GameStateManager {
     public boolean isHelpMenuOpen() {
         return currentState == GameState.HELP_MENU;
     }
+    
+    /**
+     * タイトル画面が表示されているかどうかを判定します。
+     * @return タイトル画面が表示されている場合true
+     */
+    public boolean isTitleScreen() {
+        return currentState == GameState.TITLE_SCREEN;
+    }
+    
+    /**
+     * マップ画面が開いているかどうかを判定します。
+     * @return マップ画面が開いている場合true
+     */
+    public boolean isMapOpen() {
+        return currentState == GameState.MAP_OPEN;
+    }
 }

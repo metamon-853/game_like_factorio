@@ -38,6 +38,8 @@ import io.github.some_example_name.system.GameState;
 import io.github.some_example_name.system.GameRenderer;
 import io.github.some_example_name.system.GameController;
 import io.github.some_example_name.system.PerformanceProfiler;
+import io.github.some_example_name.system.TitleScreen;
+import io.github.some_example_name.system.MapScreen;
 import io.github.some_example_name.game.Inventory;
 import io.github.some_example_name.game.CraftingSystem;
 import io.github.some_example_name.game.PreservedFoodManager;
@@ -103,6 +105,12 @@ public class Main extends ApplicationAdapter {
     
     // ゲーム状態管理
     private GameStateManager gameStateManager;
+    
+    // タイトル画面
+    private TitleScreen titleScreen;
+    
+    // マップ画面
+    private MapScreen mapScreen;
     
     // ゲームシステム
     private GameRenderer gameRenderer;
@@ -222,6 +230,14 @@ public class Main extends ApplicationAdapter {
         
         // ゲーム状態管理を初期化
         gameStateManager = new GameStateManager();
+        // タイトル画面から開始
+        gameStateManager.setState(GameState.TITLE_SCREEN);
+        
+        // タイトル画面を初期化
+        titleScreen = new TitleScreen();
+        
+        // マップ画面を初期化
+        mapScreen = new MapScreen();
         
         // ポーズ状態を初期化（後方互換性のため）
         isPaused = false;
@@ -364,6 +380,12 @@ public class Main extends ApplicationAdapter {
         // GameRendererにGameControllerを設定（エンディング画面用）
         gameRenderer.setGameController(gameController);
         
+        // GameRendererにTitleScreenを設定
+        gameRenderer.setTitleScreen(titleScreen);
+        
+        // GameRendererにMapScreenを設定
+        gameRenderer.setMapScreen(mapScreen);
+        
         // パフォーマンスプロファイラーを初期化（デフォルトでは無効）
         performanceProfiler = PerformanceProfiler.getInstance();
         // デバッグモードで有効化する場合は以下のコメントを外す
@@ -449,6 +471,31 @@ public class Main extends ApplicationAdapter {
         // ビューポートを適用
         viewport.apply();
         
+        // タイトル画面の処理
+        if (gameStateManager != null && gameStateManager.isTitleScreen() && titleScreen != null) {
+            // タイトル画面を更新
+            float deltaTime = Gdx.graphics.getDeltaTime();
+            titleScreen.update(deltaTime);
+            
+            // タイトル画面の入力処理
+            if (titleScreen.handleInput()) {
+                // ゲーム開始
+                gameStateManager.setState(GameState.PLAYING);
+                Gdx.app.log("Main", "ゲームを開始しました");
+            }
+            
+            // タイトル画面を描画
+            if (gameRenderer != null) {
+                gameRenderer.renderTitleScreen();
+            } else {
+                // フォールバック: 直接描画
+                titleScreen.render(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+            }
+            
+            // タイトル画面中は他の処理をスキップ
+            return;
+        }
+        
         // 画面をクリア（地形が描画されるので、より明るい背景色に）
         ScreenUtils.clear(0.2f, 0.25f, 0.3f, 1f);
         
@@ -513,6 +560,13 @@ public class Main extends ApplicationAdapter {
                 gameStateManager.setState(GameState.PLAYING);
                 menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
             }
+            // マップが開いている場合は閉じる
+            if (gameStateManager.isMapOpen()) {
+                gameStateManager.setState(GameState.PLAYING);
+                if (mapScreen != null) {
+                    mapScreen.end();
+                }
+            }
             if (gameStateManager.isInventoryOpen()) {
                 gameStateManager.setState(GameState.PLAYING);
                 inventoryOpen = false;
@@ -524,11 +578,44 @@ public class Main extends ApplicationAdapter {
             }
         }
         
+        // Mキーでマップを開閉（ポーズ中でない場合のみ）
+        if (!isPaused && Gdx.input.isKeyJustPressed(Input.Keys.M)) {
+            // ヘルプが開いている場合は閉じる
+            if (gameStateManager.isHelpMenuOpen()) {
+                gameStateManager.setState(GameState.PLAYING);
+                menuSystem.setCurrentMenuState(MenuSystem.MenuState.MAIN_MENU);
+            }
+            // インベントリが開いている場合は閉じる
+            if (gameStateManager.isInventoryOpen()) {
+                gameStateManager.setState(GameState.PLAYING);
+                inventoryOpen = false;
+                showEncyclopedia = false;
+            }
+            if (gameStateManager.isMapOpen()) {
+                gameStateManager.setState(GameState.PLAYING);
+                if (mapScreen != null) {
+                    mapScreen.end();
+                }
+            } else {
+                gameStateManager.setState(GameState.MAP_OPEN);
+                if (mapScreen != null) {
+                    mapScreen.start();
+                }
+            }
+        }
+        
         // インベントリまたは図鑑が開いているときはESCで閉じる
         if ((inventoryOpen || showEncyclopedia) && Gdx.input.isKeyJustPressed(Input.Keys.ESCAPE)) {
             gameStateManager.setState(GameState.PLAYING);
             inventoryOpen = false;
             showEncyclopedia = false;
+        }
+        
+        // マップが開いているときの入力処理
+        if (gameStateManager != null && gameStateManager.isMapOpen() && mapScreen != null) {
+            if (mapScreen.handleInput()) {
+                gameStateManager.setState(GameState.PLAYING);
+            }
         }
         
         // インベントリが開いているときのマウスクリック処理
@@ -675,6 +762,22 @@ public class Main extends ApplicationAdapter {
             } catch (Exception e) {
                 Gdx.app.error("Main", "Error in game update: " + e.getMessage(), e);
             }
+        }
+        
+        // マップ画面の処理
+        if (gameStateManager != null && gameStateManager.isMapOpen() && mapScreen != null) {
+            // マップ画面を描画
+            if (gameRenderer != null) {
+                if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                    performanceProfiler.startSection("render");
+                }
+                gameRenderer.renderMapScreen();
+                if (performanceProfiler != null && performanceProfiler.isEnabled()) {
+                    performanceProfiler.endSection("render");
+                }
+            }
+            // マップ画面中は他の描画をスキップ
+            return;
         }
         
         // カメラのズームを適用（スクロールで変更された可能性があるため）

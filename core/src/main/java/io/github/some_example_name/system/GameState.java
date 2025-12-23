@@ -10,6 +10,8 @@ package io.github.some_example_name.system;
  * @version 1.0.0
  */
 public enum GameState {
+    /** タイトル画面 */
+    TITLE_SCREEN,
     /** ゲームプレイ中 */
     PLAYING,
     /** ポーズ中（メインメニュー） */
@@ -19,5 +21,7 @@ public enum GameState {
     /** アイテム図鑑が開いている */
     ENCYCLOPEDIA_OPEN,
     /** ヘルプメニューが開いている */
-    HELP_MENU
+    HELP_MENU,
+    /** マップ画面が開いている */
+    MAP_OPEN
 }

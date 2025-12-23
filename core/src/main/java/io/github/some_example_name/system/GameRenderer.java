@@ -19,6 +19,8 @@ import io.github.some_example_name.ui.InventoryUI;
 import io.github.some_example_name.ui.ItemEncyclopediaUI;
 import io.github.some_example_name.ui.MenuSystem;
 import io.github.some_example_name.ui.UIRenderer;
+import io.github.some_example_name.system.TitleScreen;
+import io.github.some_example_name.system.MapScreen;
 
 /**
  * ゲームの描画処理を担当するクラス。
@@ -53,6 +55,8 @@ public class GameRenderer {
     private ItemEncyclopediaUI encyclopediaUI;
     private MenuSystem menuSystem;
     private GameController gameController;
+    private TitleScreen titleScreen;
+    private MapScreen mapScreen;
     
     private int screenWidth;
     private int screenHeight;
@@ -410,6 +414,66 @@ public class GameRenderer {
      */
     public void setGameController(GameController gameController) {
         this.gameController = gameController;
+    }
+    
+    /**
+     * TitleScreenを設定します。
+     */
+    public void setTitleScreen(TitleScreen titleScreen) {
+        this.titleScreen = titleScreen;
+    }
+    
+    /**
+     * タイトル画面を描画します。
+     */
+    public void renderTitleScreen() {
+        if (titleScreen == null) {
+            return;
+        }
+        
+        // ビューポートを適用
+        if (viewport != null) {
+            viewport.apply();
+        }
+        
+        // 画面をクリア
+        ScreenUtils.clear(0.1f, 0.15f, 0.2f, 1f);
+        
+        // タイトル画面を描画
+        try {
+            titleScreen.render(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight);
+        } catch (Exception e) {
+            Gdx.app.error("GameRenderer", "Error rendering title screen: " + e.getMessage(), e);
+        }
+    }
+    
+    /**
+     * MapScreenを設定します。
+     */
+    public void setMapScreen(MapScreen mapScreen) {
+        this.mapScreen = mapScreen;
+    }
+    
+    /**
+     * マップ画面を描画します。
+     */
+    public void renderMapScreen() {
+        if (mapScreen == null || terrainManager == null || player == null) {
+            return;
+        }
+        
+        // ビューポートを適用
+        if (viewport != null) {
+            viewport.apply();
+        }
+        
+        // マップ画面を描画
+        try {
+            mapScreen.render(shapeRenderer, batch, font, uiCamera, screenWidth, screenHeight, 
+                           terrainManager, player);
+        } catch (Exception e) {
+            Gdx.app.error("GameRenderer", "Error rendering map screen: " + e.getMessage(), e);
+        }
     }
     
     /**

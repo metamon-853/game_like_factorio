@@ -21,21 +21,74 @@ public class TerrainManager {
     // 生成済みのチャンクを記録（無限マップ用）
     private java.util.Set<String> generatedChunks;
     
+    // 探索済みのタイルを記録（マップ表示用）
+    private java.util.Set<String> exploredTiles;
+    
     // テクスチャマネージャー
     private TerrainTextureManager textureManager;
     
     public TerrainManager() {
         this.terrainTiles = new HashMap<>();
         this.generatedChunks = new java.util.HashSet<>();
+        this.exploredTiles = new java.util.HashSet<>();
         this.textureManager = new TerrainTextureManager();
     }
     
     /**
      * 地形を更新します（カメラの視野範囲内の地形を生成）。
      * @param camera カメラ
+     * @param playerTileX プレイヤーのマップ升X座標（探索済みエリア記録用）
+     * @param playerTileY プレイヤーのマップ升Y座標（探索済みエリア記録用）
      */
-    public void update(OrthographicCamera camera) {
+    public void update(OrthographicCamera camera, int playerTileX, int playerTileY) {
         generateTerrainInView(camera);
+        markExplored(playerTileX, playerTileY);
+    }
+    
+    /**
+     * プレイヤーの周囲を探索済みとしてマークします。
+     * @param playerTileX プレイヤーのマップ升X座標
+     * @param playerTileY プレイヤーのマップ升Y座標
+     */
+    private void markExplored(int playerTileX, int playerTileY) {
+        // プレイヤーの周囲のタイルを探索済みとしてマーク（視野範囲を考慮）
+        int exploreRadius = 5; // 探索半径（マップ升単位）
+        for (int x = playerTileX - exploreRadius; x <= playerTileX + exploreRadius; x++) {
+            for (int y = playerTileY - exploreRadius; y <= playerTileY + exploreRadius; y++) {
+                // 円形の範囲内のみ探索済みとしてマーク
+                int dx = x - playerTileX;
+                int dy = y - playerTileY;
+                if (dx * dx + dy * dy <= exploreRadius * exploreRadius) {
+                    String tileKey = x + "," + y;
+                    exploredTiles.add(tileKey);
+                }
+            }
+        }
+    }
+    
+    /**
+     * 指定されたタイルが探索済みかどうかを判定します。
+     * @param tileX マップ升X座標
+     * @param tileY マップ升Y座標
+     * @return 探索済みの場合true
+     */
+    public boolean isExplored(int tileX, int tileY) {
+        String tileKey = tileX + "," + tileY;
+        return exploredTiles.contains(tileKey);
+    }
+    
+    /**
+     * 探索済みタイルのセットを返します（セーブ用）。
+     */
+    public java.util.Set<String> getExploredTiles() {
+        return exploredTiles;
+    }
+    
+    /**
+     * 探索済みタイルのセットを設定します（ロード用）。
+     */
+    public void setExploredTiles(java.util.Set<String> exploredTiles) {
+        this.exploredTiles = exploredTiles != null ? exploredTiles : new java.util.HashSet<>();
     }
     
     /**
